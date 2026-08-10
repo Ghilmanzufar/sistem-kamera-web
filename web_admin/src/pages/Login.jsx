@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Camera, Lock, User as UserIcon, AlertCircle, HelpCircle, ArrowRight } from 'lucide-react';
+import { Lock, User as UserIcon, AlertCircle, HelpCircle, ArrowRight } from 'lucide-react';
 import api from '../api/client';
 
 export default function Login() {
@@ -72,9 +72,6 @@ export default function Login() {
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
             Sistem <span className="text-blue-400">Kamera Inspeksi AI</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1 font-medium">
-            Quality Control & Defect Detection System
-          </p>
         </div>
 
         {error && (
@@ -88,7 +85,7 @@ export default function Login() {
           {/* Username */}
           <div>
             <label className="block text-xs font-bold tracking-wider uppercase text-slate-300 mb-2">
-              Username / NPK
+              Username
             </label>
             <div className="relative flex items-center">
               <UserIcon className="w-5 h-5 absolute left-4 text-slate-400" />
@@ -97,17 +94,17 @@ export default function Login() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan username / NPK"
+                placeholder="Masukkan username"
                 className="w-full pl-12 pr-4 py-3.5 bg-slate-900/90 border-2 border-white/15 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 transition-all text-sm font-sans"
               />
             </div>
           </div>
 
-          {/* Password / PIN */}
+          {/* Password */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold tracking-wider uppercase text-slate-300">
-                PIN / Password
+                Password
               </label>
               <Link
                 to="/forgot-password"
@@ -124,7 +121,7 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan PIN / Password"
+                placeholder="Masukkan password"
                 className="w-full pl-12 pr-4 py-3.5 bg-slate-900/90 border-2 border-white/15 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 transition-all text-sm font-sans"
               />
             </div>
