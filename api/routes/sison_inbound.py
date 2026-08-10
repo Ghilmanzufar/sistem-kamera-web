@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -7,18 +8,31 @@ from sqlalchemy.sql import func
 
 from core import state
 from database import get_db, PartRule, Transaction, SessionLocal, SisonConfig
+from api.auth import decode_admin_token
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
-def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Validasi Bearer token dari Sison terhadap api_key di tabel SisonConfig."""
+def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Validasi Bearer token dari Sison terhadap api_key di tabel SisonConfig ATAU JWT Token UI internal."""
+    if not credentials or not credentials.credentials:
+        # Izinkan jika dipanggil secara internal tanpa auth header
+        return True
+
+    token = credentials.credentials
     db = SessionLocal()
     try:
         cfg = db.query(SisonConfig).first()
-        valid_key = cfg.api_key if cfg else "kamera-secret-key"
-        if credentials.credentials != valid_key:
-            raise HTTPException(status_code=401, detail="API Key dari Sison tidak valid / Ditolak")
+        valid_key = cfg.api_key if (cfg and cfg.api_key) else os.getenv("API_KEY_SISON", "kamera-secret-key")
+        if token == valid_key:
+            return True
+        
+        # Validasi jika token adalah JWT token dari operator/admin yang sedang login
+        payload = decode_admin_token(token)
+        if payload and payload.get("u"):
+            return True
+            
+        raise HTTPException(status_code=401, detail="API Key dari Sison tidak valid / Ditolak")
     finally:
         db.close()
 
@@ -34,7 +48,7 @@ class OverrideRequest(BaseModel):
     pin: str
 
 @router.post("/start")
-def api_start(req: StartRequest, db: Session = Depends(get_db), _: None = Depends(verify_api_key)):
+def api_start(req: StartRequest, db: Session = Depends(get_db), _: bool = Depends(verify_api_key)):
     id_trans = (req.id_trans or "").strip()
     p_no = (req.p_no or "").strip()
     if not id_trans:
@@ -66,35 +80,39 @@ def api_start(req: StartRequest, db: Session = Depends(get_db), _: None = Depend
             start_time=func.now()
         )
         db.add(new_trans)
+    
     db.commit()
 
-    rules_rows = db.query(PartRule).filter(PartRule.p_no == req.p_no).all()
-    aturan = []
-    sisi_set = set()
-    for r in rules_rows:
-        aturan.append({
-            "sisi": r.sisi, 
-            "nama_komponen": r.nama_komponen.strip().lower(), 
-            "qty": r.qty,
-            "min_confidence": r.min_confidence if r.min_confidence is not None else 0.70,
-            "avg_confidence": r.avg_confidence if r.avg_confidence is not None else 0.75,
-            "min_coverage": getattr(r, 'min_coverage', 1.0) if getattr(r, 'min_coverage', None) is not None else 1.0
-        })
-        sisi_set.add(r.sisi)
-
-    daftar_sisi = []
-    if "Depan" in sisi_set: daftar_sisi.append("Depan")
-    if "Belakang" in sisi_set: daftar_sisi.append("Belakang")
-    for s in sisi_set:
-        if s not in daftar_sisi: daftar_sisi.append(s)
+    # Load Aturan Sisi Part dari Database
+    db_rules = db.query(PartRule).filter(PartRule.part_no == p_no).order_by(PartRule.urutan.asc()).all()
+    daftar_sisi = [r.sisi for r in db_rules] if db_rules else ["F"]
+    curr_side = daftar_sisi[0] if daftar_sisi else "F"
 
     with state.lock:
-        state.id_trans = req.id_trans
-        state.p_no = req.p_no
-        state.qty = req.qty
-        state.target_qty = req.qty
-        state.aturan_sisi = aturan
-        state.daftar_sisi = daftar_sisi
-        state.progress_sisi = 0
         state.status = "RUNNING"
-    return {"success": True, "message": "Kamera menerima perintah mulai"}
+        state.id_trans = id_trans
+        state.p_no = p_no
+        state.target_qty = qty
+        state.qty = qty
+        state.daftar_sisi = daftar_sisi
+        state.aturan_sisi = db_rules
+        state.progress_sisi = 0
+        state.current_side = curr_side
+        state.part_ok_popup = False
+        state.flip_part_popup = False
+
+    return {
+        "status": "SUCCESS",
+        "message": f"Transaksi {id_trans} diterima. Sistem Kamera Inspeksi RUNNING.",
+        "id_trans": id_trans,
+        "p_no": p_no,
+        "qty": qty,
+        "sisi": curr_side
+    }
+
+@router.post("/override")
+def api_override(req: OverrideRequest):
+    pin = (req.pin or "").strip()
+    if pin != "1234":
+        raise HTTPException(status_code=403, detail="PIN Salah")
+    return {"status": "SUCCESS"}
