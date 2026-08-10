@@ -372,16 +372,12 @@ export default function OperatorInspection() {
 
           {/* Right Operator Info Badge */}
           <div className="flex-1 flex flex-col items-center lg:items-end justify-center">
-            <div className="flex items-center gap-2 bg-slate-900/80 px-3.5 py-2 rounded-xl border border-white/10 text-sky-300 text-xs sm:text-sm font-bold">
+            <div className="flex items-center gap-2 bg-slate-900/80 px-4 py-2.5 rounded-xl border border-white/10 text-sky-300 text-xs sm:text-sm font-bold shadow-md">
               <User className="w-4 h-4 text-sky-400" />
               <span>{telemetry.operator?.name || 'Operator'}</span>
-              <span className="text-slate-500">|</span>
+              <span className="text-slate-600">|</span>
               <Clock className="w-3.5 h-3.5 text-slate-400" />
               <span>{loginTimeStr}</span>
-              <span className="text-slate-500">|</span>
-              <span className="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded text-[11px] font-extrabold">
-                {telemetry.operator?.shift || 'Shift 1'}
-              </span>
             </div>
           </div>
 

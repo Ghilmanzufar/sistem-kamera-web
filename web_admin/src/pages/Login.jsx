@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Camera, Lock, User as UserIcon, AlertCircle, HelpCircle, Clock, ArrowRight } from 'lucide-react';
+import { Camera, Lock, User as UserIcon, AlertCircle, HelpCircle, ArrowRight } from 'lucide-react';
 import api from '../api/client';
 
 export default function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [shift, setShift] = useState('Shift 1');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -31,8 +30,7 @@ export default function Login() {
     try {
       const res = await api.post('/api/login', {
         username,
-        password,
-        shift
+        password
       });
 
       if (res.data && res.data.token) {
@@ -42,7 +40,6 @@ export default function Login() {
         localStorage.setItem('user_role', role);
         localStorage.setItem('username', res.data.username);
         localStorage.setItem('operator_name', res.data.fullname || res.data.username);
-        localStorage.setItem('operator_shift', res.data.shift || shift);
 
         // Otomatis arahkan sesuai role
         if (role === 'operator') {
@@ -88,30 +85,6 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Pilihan Shift Kerja */}
-          <div>
-            <label className="block text-xs font-bold tracking-wider uppercase text-slate-300 mb-2">
-              Pilih Shift Kerja
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {['Shift 1', 'Shift 2', 'Shift 3'].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setShift(s)}
-                  className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    shift === s
-                      ? 'bg-blue-500/20 border-blue-400 text-blue-300 shadow-md shadow-blue-500/10'
-                      : 'bg-slate-900/60 border-white/10 text-slate-400 hover:border-white/30'
-                  }`}
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Username */}
           <div>
             <label className="block text-xs font-bold tracking-wider uppercase text-slate-300 mb-2">
@@ -170,7 +143,7 @@ export default function Login() {
 
         <div className="mt-6 pt-4 border-t border-white/10 text-center">
           <p className="text-xs text-slate-400">
-            Sistem secara otomatis mendeteksi role akun Anda (Operator ➡️ Layar Inspeksi | Pengawas/Admin ➡️ Dashboard).
+            Sistem otomatis mengenali peran akun Anda (Operator ➡️ Layar Inspeksi | Pengawas/Admin ➡️ Dashboard).
           </p>
         </div>
       </div>

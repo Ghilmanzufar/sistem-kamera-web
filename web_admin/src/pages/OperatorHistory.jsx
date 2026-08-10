@@ -30,11 +30,9 @@ export default function OperatorHistory() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-950/80 px-4 py-2 rounded-2xl border border-white/10 text-xs sm:text-sm font-bold text-sky-300">
+        <div className="flex items-center gap-2 bg-slate-950/80 px-4 py-2.5 rounded-2xl border border-white/10 text-xs sm:text-sm font-bold text-sky-300">
           <Camera className="w-4 h-4 text-sky-400" />
-          <span>{operatorName}</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-400">{operatorShift}</span>
+          <span>👤 {operatorName}</span>
         </div>
       </div>
 
