@@ -35,7 +35,7 @@ export default function LineMonitoring() {
   }, []);
 
   const summary = monitoringData?.summary || {
-    total_stations: 4,
+    total_stations: 1,
     active_operators: 0,
     today_total_inspections: 0,
     today_ok: 0,
@@ -51,7 +51,7 @@ export default function LineMonitoring() {
       <PageHeader
         title="Monitoring"
         highlightTitle="Line & Operator"
-        subtitle="Pantau 4 stasiun kerja kamera inspeksi dan seluruh operator aktif secara real-time dari office"
+        subtitle="Pantau seluruh stasiun kerja kamera inspeksi dan operator aktif secara real-time dari office"
         actionButton={
           <div className="flex items-center gap-2">
             <span className="flex h-3 w-3 relative">
@@ -68,7 +68,7 @@ export default function LineMonitoring() {
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Stasiun Line"
+          title="Total Stasiun Aktif"
           value={summary.total_stations}
           icon={Tv}
           color="blue"
@@ -115,7 +115,7 @@ export default function LineMonitoring() {
             {activeOpsList.length > 0 ? (
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm animate-pulse">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span>{activeOpsList.length} STASIUN AKTIF</span>
+                <span>{activeOpsList.length} OPERATOR ONLINE</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-slate-800 text-slate-400 border border-white/10">
@@ -154,7 +154,7 @@ export default function LineMonitoring() {
 
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between text-slate-300">
-                      <span className="text-slate-400">Stasiun Komputer:</span>
+                      <span className="text-slate-400">Stasiun Kerja:</span>
                       <span className="font-bold text-sky-300">Station {idx + 1}</span>
                     </div>
                     <div className="flex justify-between text-slate-300">
@@ -181,19 +181,19 @@ export default function LineMonitoring() {
         )}
       </div>
 
-      {/* Grid 4 Kartu Stasiun Kerja / Line Operator */}
+      {/* Grid Dinamis Kartu Stasiun Kerja / Line Operator */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <Radio className="w-4 h-4 text-blue-400 animate-pulse" />
-            <span>Daftar 4 Stasiun Kerja Line 1 Produksi</span>
+            <span>Daftar Stasiun Line Produksi ({stations.length} Stasiun)</span>
           </h3>
           <span className="text-xs text-slate-400">
             Pembaruan otomatis tiap 1.5s
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {stations.map((st) => {
             const isStationNg = st.ng_active || st.status === 'NG';
             const isStationRunning = st.status === 'RUNNING' || st.status === 'OK';
@@ -255,7 +255,7 @@ export default function LineMonitoring() {
                   <div className="bg-slate-900/80 p-3 rounded-2xl border border-white/5 space-y-1.5 mb-2.5">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="font-extrabold uppercase text-slate-400 flex items-center gap-1">
-                        <User className="w-3 h-3 text-sky-400" />
+                        <User className="w-3 text-sky-400" />
                         <span>Operator:</span>
                       </span>
                       {st.operator?.is_active && (
