@@ -279,9 +279,9 @@ export default function OperatorInspection() {
         return;
       }
 
-      const res = await api.post('/api/start', parsed);
+      const res = await api.post('/api/operator/demo-start', parsed);
       if (res.data?.status === 'SUCCESS' || res.status === 200) {
-        toast.success('Simulasi Transaksi SISON Berhasil Terkirim!');
+        toast.success('Simulasi Transaksi SISON Berhasil Diterima!');
         setShowDemoModal(false);
       } else {
         toast.error('Gagal mengirim simulasi SISON: ' + JSON.stringify(res.data));

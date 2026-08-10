@@ -263,3 +263,18 @@ def clear_popup(req: ClearPopupRequest):
         if req.popup_type in ["ALL", "flip_part"]:
             state.flip_part_popup = False
     return {"success": True}
+
+@router.post("/operator/demo-start")
+@router.post("/operator/start-demo")
+def operator_demo_start(req: dict, db: Session = Depends(get_db)):
+    """Memicu simulasi transaksi SISON khusus untuk antarmuka demo operator."""
+    from api.routes.sison_inbound import StartRequest, execute_sison_start
+    start_req = StartRequest(
+        id_trans=req.get("id_trans", f"DEMO-{int(time.time())}"),
+        p_no=req.get("p_no", "74231-0K550-00"),
+        lot=req.get("lot", "-"),
+        unique_no=req.get("unique_no", "-"),
+        p_name=req.get("p_name", "Demo Part Component"),
+        qty=req.get("qty", 1)
+    )
+    return execute_sison_start(start_req, db)
