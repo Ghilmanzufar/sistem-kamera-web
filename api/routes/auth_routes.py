@@ -160,8 +160,8 @@ def admin_login(creds: LoginSchema, request: Request, db: Session = Depends(get_
     fullname = user.fullname.strip() if (getattr(user, 'fullname', None) and user.fullname.strip()) else user.username
     shift = creds.shift.strip() if creds.shift else "Shift 1"
 
-    # Jika yang login adalah operator, sinkronkan info ke system state
-    if user.role == "operator":
+    # Sinkronkan info operator ke system state
+    if user.role == "operator" or not state.operator_name:
         with state.lock:
             state.operator_name = fullname
             state.operator_username = user.username

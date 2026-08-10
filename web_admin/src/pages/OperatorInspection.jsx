@@ -111,6 +111,21 @@ export default function OperatorInspection() {
     };
   }, []);
 
+  // Sinkronisasi Sesi Operator Aktif ke Backend secara Real-Time
+  useEffect(() => {
+    const syncOperatorSession = async () => {
+      try {
+        const username = localStorage.getItem('username') || 'op';
+        const fullname = localStorage.getItem('operator_name') || username;
+        const role = localStorage.getItem('user_role') || 'operator';
+        await api.post('/api/operator/heartbeat', { username, fullname, role });
+      } catch {}
+    };
+    syncOperatorSession();
+    const heartbeatTimer = setInterval(syncOperatorSession, 4000);
+    return () => clearInterval(heartbeatTimer);
+  }, []);
+
   // 2. Tangani Perubahan Popups & NG Alarm
   useEffect(() => {
     if (telemetry.popups) {

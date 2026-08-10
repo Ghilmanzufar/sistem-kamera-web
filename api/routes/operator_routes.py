@@ -19,6 +19,11 @@ class OperatorLoginRequest(BaseModel):
     pin: str
     shift: Optional[str] = "Shift 1"
 
+class OperatorHeartbeatRequest(BaseModel):
+    username: Optional[str] = "op"
+    fullname: Optional[str] = "Operator"
+    role: Optional[str] = "operator"
+
 class NGResolveRequest(BaseModel):
     username: str
     pin: str
@@ -62,7 +67,6 @@ def _get_operator_state_dict() -> dict:
         op_name = state.operator_name
         op_uname = state.operator_username
         op_role = state.operator_role
-        op_shift = getattr(state, 'operator_shift', 'Shift 1')
         op_login_ts = state.operator_login_time
         part_ok = getattr(state, 'part_ok_popup', False)
         flip_part = getattr(state, 'flip_part_popup', False)
@@ -89,7 +93,6 @@ def _get_operator_state_dict() -> dict:
             "name": op_name,
             "username": op_uname,
             "role": op_role,
-            "shift": op_shift,
             "login_time": op_login_ts
         },
         "popups": {
@@ -127,12 +130,23 @@ async def operator_events(request: Request):
         }
     )
 
+@router.post("/operator/heartbeat")
+def operator_heartbeat(req: OperatorHeartbeatRequest):
+    """Heartbeat berkala dari browser layar operator untuk sinkronisasi state aktif."""
+    with state.lock:
+        if not state.operator_name or state.operator_name == "Tidak Ada Operator":
+            state.operator_name = req.fullname or req.username
+            state.operator_username = req.username
+            state.operator_role = req.role
+            if state.operator_login_time == 0.0:
+                state.operator_login_time = time.time()
+    return {"success": True, "operator": state.operator_name}
+
 @router.post("/operator/login")
 def operator_login(req: OperatorLoginRequest, db: Session = Depends(get_db)):
     """Otentikasi operator sebelum memasuki layar kamera inspeksi AI."""
     username = req.username.strip()
     pin = req.pin.strip()
-    shift = req.shift.strip() if req.shift else "Shift 1"
 
     if not username or not pin:
         raise HTTPException(status_code=400, detail="Username dan PIN tidak boleh kosong!")
@@ -150,19 +164,17 @@ def operator_login(req: OperatorLoginRequest, db: Session = Depends(get_db)):
         state.operator_name = fullname
         state.operator_username = user.username
         state.operator_role = user.role
-        state.operator_shift = shift
         state.operator_login_time = time.time()
 
     token = create_admin_token(user.username, user.role, expires_in_seconds=86400)
-    log_audit_event(db, user.username, "OPERATOR_LOGIN", f"Operator {fullname} ({shift}) masuk ke layar inspeksi.")
+    log_audit_event(db, user.username, "OPERATOR_LOGIN", f"Operator {fullname} masuk ke layar inspeksi.")
 
     return {
         "success": True,
         "token": token,
         "username": user.username,
         "fullname": fullname,
-        "role": user.role,
-        "shift": shift
+        "role": user.role
     }
 
 @router.post("/operator/logout")
@@ -173,7 +185,6 @@ def operator_logout(db: Session = Depends(get_db)):
         state.operator_name = ""
         state.operator_username = ""
         state.operator_role = ""
-        state.operator_shift = "Shift 1"
         state.operator_login_time = 0.0
 
     log_audit_event(db, uname, "OPERATOR_LOGOUT", "Operator logout dari layar inspeksi.")
