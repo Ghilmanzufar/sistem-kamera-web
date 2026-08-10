@@ -82,6 +82,9 @@ def decode_and_verify_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Token telah kedaluwarsa. Silakan login kembali.")
     return payload
 
+# Alias untuk kompatibilitas
+decode_admin_token = decode_and_verify_token
+
 def verify_admin_auth(request: Request, credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> dict:
     """Proteksi endpoint admin dengan verifikasi token & hak akses role."""
     payload = decode_and_verify_token(credentials.credentials)

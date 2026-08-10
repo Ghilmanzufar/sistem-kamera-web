@@ -28,9 +28,12 @@ def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends
             return True
         
         # Validasi jika token adalah JWT token dari operator/admin yang sedang login
-        payload = decode_admin_token(token)
-        if payload and payload.get("u"):
-            return True
+        try:
+            payload = decode_admin_token(token)
+            if payload and payload.get("u"):
+                return True
+        except Exception:
+            pass
             
         raise HTTPException(status_code=401, detail="API Key dari Sison tidak valid / Ditolak")
     finally:
