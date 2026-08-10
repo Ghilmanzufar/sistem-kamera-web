@@ -27,6 +27,7 @@ SERVER_START_TIME = time.time()
 class LoginSchema(BaseModel):
     username: str
     password: str
+    shift: Optional[str] = "Shift 1"
 
 def get_local_ip() -> str:
     """Ambil IP lokal PC saat ini."""
@@ -140,23 +141,42 @@ def get_system_status():
         }
 
 @router.post("/admin-login")
+@router.post("/login")
 def admin_login(creds: LoginSchema, request: Request, db: Session = Depends(get_db)):
-    """Otentikasi Web Admin dengan proteksi Brute-Force Rate Limiter & Token Signing."""
+    """Otentikasi Terpadu (Operator / Pengawas / Admin) dengan proteksi Brute-Force Rate Limiter."""
     client_ip = request.client.host if request.client else "unknown"
     check_rate_limit(client_ip)
 
     user = db.query(User).filter(User.username == creds.username).first()
     if not user or not verify_password(creds.password, user.password):
         record_failed_attempt(client_ip)
-        raise HTTPException(status_code=401, detail="Username atau PIN salah!")
+        raise HTTPException(status_code=401, detail="Username atau PIN/Password salah!")
     if not getattr(user, 'is_active', True) or user.role not in ["pengawas", "operator", "admin"]:
         record_failed_attempt(client_ip)
-        raise HTTPException(status_code=403, detail="Akun tidak berwenang mengakses Dashboard!")
+        raise HTTPException(status_code=403, detail="Akun tidak berwenang mengakses sistem!")
     
     clear_failed_attempts(client_ip)
-    token = create_admin_token(user.username, user.role)
-    log_audit_event(db, user.username, "LOGIN", f"Berhasil masuk sebagai {user.role.upper()} (IP: {client_ip})")
-    return {"token": token, "role": user.role, "username": user.username}
+    token = create_admin_token(user.username, user.role, expires_in_seconds=86400)
+    fullname = user.fullname.strip() if (getattr(user, 'fullname', None) and user.fullname.strip()) else user.username
+    shift = creds.shift.strip() if creds.shift else "Shift 1"
+
+    # Jika yang login adalah operator, sinkronkan info ke system state
+    if user.role == "operator":
+        with state.lock:
+            state.operator_name = fullname
+            state.operator_username = user.username
+            state.operator_role = user.role
+            state.operator_shift = shift
+            state.operator_login_time = time.time()
+
+    log_audit_event(db, user.username, "LOGIN", f"Berhasil masuk sebagai {user.role.upper()} (Shift: {shift}, IP: {client_ip})")
+    return {
+        "token": token,
+        "role": user.role,
+        "username": user.username,
+        "fullname": fullname,
+        "shift": shift
+    }
 
 @router.post("/logout")
 def admin_logout_root(db: Session = Depends(get_db), auth: dict = Depends(verify_admin_auth)):
