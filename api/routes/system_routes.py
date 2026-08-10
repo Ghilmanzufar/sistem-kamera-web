@@ -2,10 +2,75 @@ from typing import Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database import get_db, Transaction, AuditLog, log_audit_event
+from database import get_db, Transaction, AuditLog, CameraConfig, User, InspectionLog, log_audit_event
 from api.auth import get_current_user_name
+from core import state, stream_worker
 
 router = APIRouter()
+
+@router.get("/line-monitoring")
+def get_line_monitoring_data(db: Session = Depends(get_db)):
+    """Mengambil status real-time stasiun/line kerja, operator aktif, dan metrik inspeksi untuk Office Admin."""
+    with state.lock:
+        cur_status = state.status
+        p_no = state.p_no
+        qty_rem = state.qty
+        tgt_qty = state.target_qty
+        qty_comp = max(0, tgt_qty - qty_rem) if tgt_qty > 0 else 0
+        side = state.current_side
+        op_name = state.operator_name
+        op_uname = state.operator_username
+        op_role = state.operator_role
+        op_login_ts = state.operator_login_time
+
+    cams = db.query(CameraConfig).all()
+    active_cam = next((c for c in cams if c.is_active), None)
+    
+    # Hitung total inspeksi hari ini
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_logs = db.query(InspectionLog).filter(InspectionLog.created_at >= today_start).all()
+    today_total = len(today_logs)
+    today_ok = len([l for l in today_logs if (l.detection_status or '').upper() == 'OK'])
+    today_ng = len([l for l in today_logs if (l.detection_status or '').upper() == 'NG'])
+
+    stations = [
+        {
+            "id": "STATION-01",
+            "line_name": "Line 1 - QC Inspection Camera",
+            "camera_name": active_cam.name if active_cam else "Kamera Utama",
+            "camera_source": active_cam.source if active_cam else "0",
+            "is_camera_active": stream_worker.is_cam_active,
+            "status": cur_status,
+            "part_no": p_no or "STANDBY",
+            "target_qty": tgt_qty,
+            "qty_completed": qty_comp,
+            "qty_remaining": qty_rem,
+            "current_side": "FRONT" if side == "F" else "REAR",
+            "operator": {
+                "name": op_name or "Tidak Ada Operator",
+                "username": op_uname or "-",
+                "role": op_role or "-",
+                "login_time": op_login_ts,
+                "is_active": bool(op_name)
+            },
+            "video_feed_url": "/api/video_feed",
+            "last_pesan_ui": stream_worker.last_pesan_ui,
+            "ng_active": bool(stream_worker.ng_active or cur_status == "NG")
+        }
+    ]
+
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "summary": {
+            "total_stations": len(stations),
+            "active_operators": 1 if op_name else 0,
+            "today_total_inspections": today_total,
+            "today_ok": today_ok,
+            "today_ng": today_ng,
+            "alarm_ng_active": bool(stream_worker.ng_active or cur_status == "NG")
+        },
+        "stations": stations
+    }
 
 @router.get("/transactions")
 def get_transactions(date_filter: Optional[str] = None, db: Session = Depends(get_db)):

@@ -13,9 +13,10 @@ def get_inspection_logs(
     month_filter: Optional[str] = None,
     part_filter: Optional[str] = None, 
     status_filter: Optional[str] = None, 
+    operator_filter: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """Ambil riwayat log inspeksi kamera (OK & NG) dengan filter tanggal/bulan, part_no, dan status."""
+    """Ambil riwayat log inspeksi kamera (OK & NG) dengan filter tanggal/bulan, part_no, status, dan nama operator."""
     query = db.query(
         InspectionLog,
         Transaction.lot_no,
@@ -50,11 +51,18 @@ def get_inspection_logs(
 
     if status_filter and status_filter.strip() and status_filter != "ALL":
         query = query.filter(InspectionLog.detection_status == status_filter.strip())
+
+    if operator_filter and operator_filter.strip():
+        query = query.filter(InspectionLog.operator_name.ilike(f"%{operator_filter.strip()}%"))
             
     logs_raw = query.order_by(InspectionLog.created_at.desc()).limit(500).all()
     
     result = []
     for log, lot_no, unique_no, part_name, target_qty, qty_actual in logs_raw:
+        img_p = getattr(log, 'image_path', '') or ''
+        if img_p and not img_p.startswith('/'):
+            img_p = '/' + img_p.replace('\\', '/')
+
         result.append({
             "id": log.id,
             "created_at": log.created_at,
@@ -65,6 +73,7 @@ def get_inspection_logs(
             "unique_no": unique_no or "-",
             "detection_status": log.detection_status,
             "confidence_score": log.confidence_score,
+            "image_path": img_p,
             "method": getattr(log, 'method', 'AI') or 'AI',
             "operator_name": getattr(log, 'operator_name', None) or "-",
             "target_qty": target_qty if target_qty is not None else "-",

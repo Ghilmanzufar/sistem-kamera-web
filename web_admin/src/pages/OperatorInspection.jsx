@@ -368,34 +368,34 @@ export default function OperatorInspection() {
           </div>
 
           {/* Right: Operator Badge & Actions (Riwayat Inspeksi + Keluar Shift di bawahnya) */}
-          <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-1.5 min-w-0">
+          <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-2 min-w-0">
             {/* Operator Name & Time */}
-            <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-xl border border-white/10 text-sky-300 text-xs font-bold shadow-md">
-              <User className="w-3.5 h-3.5 text-sky-400" />
-              <span className="truncate max-w-[130px]">{telemetry.operator?.name || 'Operator'}</span>
+            <div className="flex items-center gap-2.5 bg-slate-900/90 px-4 py-2 rounded-xl border border-white/15 text-sky-300 text-sm sm:text-base font-extrabold shadow-md">
+              <User className="w-4 h-4 text-sky-400" />
+              <span className="truncate max-w-[150px]">{telemetry.operator?.name || 'Operator'}</span>
               <span className="text-slate-600">|</span>
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <Clock className="w-4 h-4 text-slate-400" />
               <span>{loginTimeStr}</span>
             </div>
 
-            {/* Sub-Actions: Riwayat Inspeksi & Keluar Shift */}
-            <div className="flex items-center gap-2">
+            {/* Sub-Actions: Riwayat Inspeksi & Keluar Shift (Ukuran Besar & Jelas) */}
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => navigate('/operator/history')}
-                className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] flex items-center gap-1.5 border border-white/10 transition-all shadow-md cursor-pointer hover:border-sky-400"
+                className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-blue-400/30 transition-all shadow-lg shadow-blue-600/30 cursor-pointer hover:scale-105 active:scale-95"
               >
-                <History className="w-3.5 h-3.5 text-sky-400" />
-                <span>Riwayat Inspeksi</span>
+                <History className="w-4 h-4 text-white" />
+                <span>📋 RIWAYAT INSPEKSI</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="py-1 px-2.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-[11px] flex items-center gap-1.5 border border-rose-500/30 transition-all cursor-pointer shadow-md"
+                className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 transition-all cursor-pointer shadow-lg shadow-rose-600/30 hover:scale-105 active:scale-95"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Keluar Shift</span>
+                <LogOut className="w-4 h-4 text-white" />
+                <span>🚪 KELUAR</span>
               </button>
             </div>
           </div>

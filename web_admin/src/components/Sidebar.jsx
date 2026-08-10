@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
+  Tv,
   History, 
   Sliders, 
   BrainCircuit, 
@@ -69,6 +70,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
 
   const allNavItems = [
     { to: "/dashboard", label: "Live Dashboard", icon: LayoutDashboard, roles: ['pengawas', 'admin'] },
+    { to: "/line-monitoring", label: "Monitoring Line", icon: Tv, roles: ['pengawas', 'admin'] },
     { to: "/history", label: "History Inspeksi", icon: History, roles: ['pengawas', 'admin', 'operator'] },
     { to: "/camera", label: "Kamera Manajemen", icon: Camera, roles: ['pengawas', 'admin'] },
     { to: "/models", label: "Model AI", icon: BrainCircuit, roles: ['pengawas', 'admin'] },

@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import OperatorInspection from './pages/OperatorInspection';
 import OperatorHistory from './pages/OperatorHistory';
+import LineMonitoring from './pages/LineMonitoring';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Rules from './pages/Rules';
@@ -192,6 +193,7 @@ export default function App() {
             {/* Fitur & Halaman Pengawas / Admin */}
             <Route element={<PengawasOnlyRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/line-monitoring" element={<LineMonitoring />} />
               <Route path="/camera" element={<Camera />} />
               <Route path="/sison-config" element={<SisonConfig />} />
               <Route path="/logs" element={<Logs />} />
