@@ -97,7 +97,7 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
     db.commit()
 
     # Load Aturan Sisi Part dari Database
-    db_rules = db.query(PartRule).filter(PartRule.part_no == p_no).order_by(PartRule.urutan.asc()).all()
+    db_rules = db.query(PartRule).filter(PartRule.p_no == p_no).order_by(PartRule.id.asc()).all()
     daftar_sisi = [r.sisi for r in db_rules] if db_rules else ["F"]
     curr_side = daftar_sisi[0] if daftar_sisi else "F"
 
