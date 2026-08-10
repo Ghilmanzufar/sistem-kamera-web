@@ -131,19 +131,23 @@ async def operator_events(request: Request):
     )
 
 @router.post("/operator/heartbeat")
-def operator_heartbeat(req: OperatorHeartbeatRequest):
-    """Heartbeat berkala dari browser layar operator untuk sinkronisasi state aktif."""
-    with state.lock:
-        if not state.operator_name or state.operator_name == "Tidak Ada Operator":
-            state.operator_name = req.fullname or req.username
-            state.operator_username = req.username
-            state.operator_role = req.role
-            if state.operator_login_time == 0.0:
-                state.operator_login_time = time.time()
-    return {"success": True, "operator": state.operator_name}
+def operator_heartbeat(req: OperatorHeartbeatRequest, request: Request):
+    """Heartbeat berkala dari browser layar operator untuk sinkronisasi state aktif per-operator."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    uname = req.username or "op"
+    fname = req.fullname or uname
+    u_role = req.role or "operator"
+
+    state.update_operator_heartbeat(
+        username=uname,
+        fullname=fname,
+        role=u_role,
+        client_ip=client_ip
+    )
+    return {"success": True, "active_count": len(state.get_all_active_operators())}
 
 @router.post("/operator/login")
-def operator_login(req: OperatorLoginRequest, db: Session = Depends(get_db)):
+def operator_login(req: OperatorLoginRequest, request: Request, db: Session = Depends(get_db)):
     """Otentikasi operator sebelum memasuki layar kamera inspeksi AI."""
     username = req.username.strip()
     pin = req.pin.strip()
@@ -159,15 +163,17 @@ def operator_login(req: OperatorLoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Role pengguna tidak diizinkan masuk ke layar inspeksi!")
 
     fullname = user.fullname.strip() if (getattr(user, 'fullname', None) and user.fullname.strip()) else username
-    
-    with state.lock:
-        state.operator_name = fullname
-        state.operator_username = user.username
-        state.operator_role = user.role
-        state.operator_login_time = time.time()
+    client_ip = request.client.host if request.client else "127.0.0.1"
+
+    state.update_operator_heartbeat(
+        username=user.username,
+        fullname=fullname,
+        role=user.role,
+        client_ip=client_ip
+    )
 
     token = create_admin_token(user.username, user.role, expires_in_seconds=86400)
-    log_audit_event(db, user.username, "OPERATOR_LOGIN", f"Operator {fullname} masuk ke layar inspeksi.")
+    log_audit_event(db, user.username, "OPERATOR_LOGIN", f"Operator {fullname} masuk ke layar inspeksi (IP: {client_ip}).")
 
     return {
         "success": True,
@@ -177,17 +183,15 @@ def operator_login(req: OperatorLoginRequest, db: Session = Depends(get_db)):
         "role": user.role
     }
 
-@router.post("/operator/logout")
-def operator_logout(db: Session = Depends(get_db)):
-    """Keluar dari sesi operator aktif."""
-    with state.lock:
-        uname = state.operator_username or "OPERATOR"
-        state.operator_name = ""
-        state.operator_username = ""
-        state.operator_role = ""
-        state.operator_login_time = 0.0
+class OperatorLogoutPayload(BaseModel):
+    username: Optional[str] = ""
 
-    log_audit_event(db, uname, "OPERATOR_LOGOUT", "Operator logout dari layar inspeksi.")
+@router.post("/operator/logout")
+def operator_logout(req: Optional[OperatorLogoutPayload] = None, db: Session = Depends(get_db)):
+    """Keluar dari sesi operator aktif."""
+    uname = req.username if (req and req.username) else (state.operator_username or "OPERATOR")
+    state.remove_operator_session(uname)
+    log_audit_event(db, uname, "OPERATOR_LOGOUT", f"Operator {uname} logout dari layar inspeksi.")
     return {"success": True}
 
 @router.post("/operator/manual-pass")

@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/line-monitoring")
 def get_line_monitoring_data(db: Session = Depends(get_db)):
-    """Mengambil status real-time stasiun/line kerja, operator aktif, dan metrik inspeksi untuk Office Admin."""
+    """Mengambil status real-time stasiun/line kerja, seluruh operator aktif, dan metrik inspeksi untuk Office Admin."""
     with state.lock:
         cur_status = state.status
         p_no = state.p_no
@@ -18,14 +18,15 @@ def get_line_monitoring_data(db: Session = Depends(get_db)):
         tgt_qty = state.target_qty
         qty_comp = max(0, tgt_qty - qty_rem) if tgt_qty > 0 else 0
         side = state.current_side
-        op_name = state.operator_name
-        op_uname = state.operator_username
-        op_role = state.operator_role
-        op_login_ts = state.operator_login_time
 
-    cams = db.query(CameraConfig).all()
-    active_cam = next((c for c in cams if c.is_active), None)
-    
+    # Dapatkan seluruh operator yang aktif (Edge, Opera, Chrome, berbagai PC)
+    active_operators = state.get_all_active_operators(timeout_seconds=90.0)
+
+    # Ambil seluruh daftar kamera dari database
+    cams = db.query(CameraConfig).order_by(CameraConfig.id.asc()).all()
+    if not cams:
+        cams = [CameraConfig(id=1, name="Kamera QC Station 1", source="0", is_active=True)]
+
     # Hitung total inspeksi hari ini
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_logs = db.query(InspectionLog).filter(InspectionLog.created_at >= today_start).all()
@@ -33,42 +34,79 @@ def get_line_monitoring_data(db: Session = Depends(get_db)):
     today_ok = len([l for l in today_logs if (l.detection_status or '').upper() == 'OK'])
     today_ng = len([l for l in today_logs if (l.detection_status or '').upper() == 'NG'])
 
-    stations = [
-        {
-            "id": "STATION-01",
-            "line_name": "Line 1 - QC Inspection Camera",
-            "camera_name": active_cam.name if active_cam else "Kamera Utama",
-            "camera_source": active_cam.source if active_cam else "0",
-            "is_camera_active": stream_worker.is_cam_active,
-            "status": cur_status,
-            "part_no": p_no or "STANDBY",
-            "target_qty": tgt_qty,
-            "qty_completed": qty_comp,
-            "qty_remaining": qty_rem,
+    stations = []
+    # Buat slot stasiun (misal 4 stasiun line kerja seperti rencana 1 line 4 PC)
+    for idx, cam in enumerate(cams, 1):
+        station_id = f"STATION-0{idx}"
+        assigned_op = active_operators[idx - 1] if idx - 1 < len(active_operators) else None
+
+        stations.append({
+            "id": station_id,
+            "line_name": f"Line 1 - Station {idx} ({cam.name})",
+            "camera_id": cam.id,
+            "camera_name": cam.name,
+            "camera_source": cam.source,
+            "is_camera_active": stream_worker.is_cam_active if cam.is_active else False,
+            "status": cur_status if cam.is_active else "STANDBY",
+            "part_no": p_no if cam.is_active else "STANDBY",
+            "target_qty": tgt_qty if cam.is_active else 0,
+            "qty_completed": qty_comp if cam.is_active else 0,
+            "qty_remaining": qty_rem if cam.is_active else 0,
             "current_side": "FRONT" if side == "F" else "REAR",
             "operator": {
-                "name": op_name or "Tidak Ada Operator",
-                "username": op_uname or "-",
-                "role": op_role or "-",
-                "login_time": op_login_ts,
-                "is_active": bool(op_name)
+                "name": assigned_op["fullname"] if assigned_op else "Tidak Ada Operator",
+                "username": assigned_op["username"] if assigned_op else "-",
+                "role": assigned_op["role"] if assigned_op else "-",
+                "login_time": assigned_op["login_time"] if assigned_op else 0,
+                "client_ip": assigned_op.get("client_ip", "-") if assigned_op else "-",
+                "is_active": bool(assigned_op)
             },
             "video_feed_url": "/api/video_feed",
-            "last_pesan_ui": stream_worker.last_pesan_ui,
-            "ng_active": bool(stream_worker.ng_active or cur_status == "NG")
-        }
-    ]
+            "last_pesan_ui": stream_worker.last_pesan_ui if cam.is_active else "Standby",
+            "ng_active": bool((stream_worker.ng_active or cur_status == "NG") and cam.is_active)
+        })
+
+    # Tambahkan slot stasiun hingga 4 komputer stasiun line
+    while len(stations) < 4:
+        s_idx = len(stations) + 1
+        assigned_op = active_operators[s_idx - 1] if s_idx - 1 < len(active_operators) else None
+        stations.append({
+            "id": f"STATION-0{s_idx}",
+            "line_name": f"Line 1 - Station {s_idx} (Kamera QC {s_idx})",
+            "camera_id": None,
+            "camera_name": f"Kamera Station {s_idx}",
+            "camera_source": f"{s_idx - 1}",
+            "is_camera_active": False,
+            "status": "STANDBY",
+            "part_no": "STANDBY",
+            "target_qty": 0,
+            "qty_completed": 0,
+            "qty_remaining": 0,
+            "current_side": "FRONT",
+            "operator": {
+                "name": assigned_op["fullname"] if assigned_op else "Tidak Ada Operator",
+                "username": assigned_op["username"] if assigned_op else "-",
+                "role": assigned_op["role"] if assigned_op else "-",
+                "login_time": assigned_op["login_time"] if assigned_op else 0,
+                "client_ip": assigned_op.get("client_ip", "-") if assigned_op else "-",
+                "is_active": bool(assigned_op)
+            },
+            "video_feed_url": "/api/video_feed",
+            "last_pesan_ui": "Slot Stasiun Standby",
+            "ng_active": False
+        })
 
     return {
         "timestamp": datetime.now().isoformat(),
         "summary": {
             "total_stations": len(stations),
-            "active_operators": 1 if op_name else 0,
+            "active_operators": len(active_operators),
             "today_total_inspections": today_total,
             "today_ok": today_ok,
             "today_ng": today_ng,
             "alarm_ng_active": bool(stream_worker.ng_active or cur_status == "NG")
         },
+        "active_operators_list": active_operators,
         "stations": stations
     }
 

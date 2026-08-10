@@ -294,8 +294,9 @@ export default function OperatorInspection() {
   };
 
   const handleLogout = async () => {
+    const myUname = localStorage.getItem('username') || '';
     try {
-      await api.post('/api/operator/logout');
+      await api.post('/api/operator/logout', { username: myUname });
     } catch {}
     localStorage.removeItem('operator_token');
     localStorage.removeItem('operator_name');
@@ -335,7 +336,8 @@ export default function OperatorInspection() {
     }
   }
 
-  // Waktu Login Operator String
+  // Operator yang login di browser lokal ini (Edge / Opera / Chrome)
+  const localOperatorName = localStorage.getItem('operator_name') || localStorage.getItem('username') || 'Operator';
   const opLoginDate = telemetry.operator?.login_time ? new Date(telemetry.operator.login_time * 1000) : new Date();
   const loginTimeStr = opLoginDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
@@ -384,10 +386,10 @@ export default function OperatorInspection() {
 
           {/* Right: Operator Badge & Actions (Riwayat Inspeksi + Keluar Shift di bawahnya) */}
           <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-2 min-w-0">
-            {/* Operator Name & Time */}
+            {/* Operator Name & Time (Terkunci ke user lokal browser) */}
             <div className="flex items-center gap-2.5 bg-slate-900/90 px-4 py-2 rounded-xl border border-white/15 text-sky-300 text-sm sm:text-base font-extrabold shadow-md">
               <User className="w-4 h-4 text-sky-400" />
-              <span className="truncate max-w-[150px]">{telemetry.operator?.name || 'Operator'}</span>
+              <span className="truncate max-w-[150px]">{localOperatorName}</span>
               <span className="text-slate-600">|</span>
               <Clock className="w-4 h-4 text-slate-400" />
               <span>{loginTimeStr}</span>
