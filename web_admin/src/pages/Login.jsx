@@ -140,12 +140,6 @@ export default function Login() {
             <ArrowRight className="w-5 h-5" />
           </button>
         </form>
-
-        <div className="mt-6 pt-4 border-t border-white/10 text-center">
-          <p className="text-xs text-slate-400">
-            Sistem otomatis mengenali peran akun Anda (Operator ➡️ Layar Inspeksi | Pengawas/Admin ➡️ Dashboard).
-          </p>
-        </div>
       </div>
     </div>
   );
