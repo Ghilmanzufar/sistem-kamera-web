@@ -43,9 +43,9 @@ export default function LineMonitoring() {
     alarm_ng_active: false
   };
 
-  // Hanya stasiun yang aktif
+  // Hanya stasiun yang benar-benar aktif (kamera aktif atau ada operator yang sedang bertugas)
   const stations = (monitoringData?.stations || []).filter(
-    st => st.is_camera_active || st.operator?.is_active || (st.status && st.status !== 'OFF')
+    st => st.is_camera_active === true || (st.operator?.is_active === true && st.operator?.name !== 'Tidak Ada Operator')
   );
 
   return (
