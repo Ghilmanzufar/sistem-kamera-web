@@ -143,7 +143,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-230px)] pr-1 scrollbar-thin">
+          <nav className="space-y-2 overflow-y-auto max-h-[calc(100vh-230px)] pr-1 scrollbar-thin">
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -152,9 +152,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                   to={item.to}
                   title={isCollapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold transition-all border ${
+                    `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all border ${
                       isActive
-                        ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30 font-bold'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30 font-extrabold'
                         : 'bg-transparent text-slate-400 border-transparent hover:bg-white/5 hover:text-slate-200'
                     } ${isCollapsed ? 'justify-center px-0' : ''}`
                   }
@@ -170,7 +170,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
               <div className="pt-2">
                 <button
                   onClick={() => setShowSupervisorModal(true)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all border bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 hover:border-amber-500/70 hover:text-amber-200 shadow-lg shadow-amber-500/10 cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-extrabold transition-all border bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 hover:border-amber-500/70 hover:text-amber-200 shadow-lg shadow-amber-500/10 cursor-pointer ${
                     isCollapsed ? 'justify-center px-0' : ''
                   }`}
                   title="Login Pengawas / Admin"

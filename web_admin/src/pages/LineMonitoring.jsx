@@ -43,7 +43,7 @@ export default function LineMonitoring() {
     alarm_ng_active: false
   };
 
-  // Hanya stasiun yang benar-benar aktif (kamera aktif atau ada operator yang sedang bertugas)
+  // Hanya stasiun yang benar-benar aktif (kamera live atau ada operator bertugas)
   const stations = (monitoringData?.stations || []).filter(
     st => st.is_camera_active === true || (st.operator?.is_active === true && st.operator?.name !== 'Tidak Ada Operator')
   );
@@ -60,7 +60,7 @@ export default function LineMonitoring() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 shadow-sm">
+            <span className="text-xs sm:text-sm font-extrabold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border-2 border-emerald-500/20 shadow-sm">
               LIVE MONITORING
             </span>
           </div>
@@ -98,17 +98,17 @@ export default function LineMonitoring() {
       {/* Daftar Kartu Stasiun Line Produksi yang AKTIF Saja */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
+          <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+            <Radio className="w-5 h-5 text-emerald-400 animate-pulse" />
             <span>Stasiun Line Produksi Aktif ({stations.length} Stasiun)</span>
           </h3>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs sm:text-sm font-semibold text-slate-400">
             Pembaruan otomatis tiap 1.5s
           </span>
         </div>
 
         {stations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {stations.map((st) => {
               const isStationNg = st.ng_active || st.status === 'NG';
               const isStationRunning = st.status === 'RUNNING' || st.status === 'OK';
@@ -125,18 +125,18 @@ export default function LineMonitoring() {
               return (
                 <div
                   key={st.id}
-                  className={`glass-card p-5 rounded-3xl border-2 shadow-2xl space-y-4 transition-all duration-300 flex flex-col justify-between ${cardBorder}`}
+                  className={`glass-card p-6 rounded-3xl border-2 shadow-2xl space-y-4 transition-all duration-300 flex flex-col justify-between ${cardBorder}`}
                 >
                   <div>
                     {/* Card Header: Line Name & Live Status Badge */}
-                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3 mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400">
-                          <Tv className="w-4 h-4" />
+                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3.5 mb-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400">
+                          <Tv className="w-5 h-5" />
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-white text-sm tracking-wide">{st.id}</h4>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[120px]">{st.camera_name}</p>
+                          <h4 className="font-black text-white text-base sm:text-lg tracking-wide">{st.id}</h4>
+                          <p className="text-xs text-slate-400 truncate max-w-[130px]">{st.camera_name}</p>
                         </div>
                       </div>
 
@@ -144,7 +144,7 @@ export default function LineMonitoring() {
                     </div>
 
                     {/* Video Live Preview Stream */}
-                    <div className="relative rounded-2xl overflow-hidden bg-black border border-white/10 aspect-video flex items-center justify-center shadow-inner mb-3">
+                    <div className="relative rounded-2xl overflow-hidden bg-black border border-white/10 aspect-video flex items-center justify-center shadow-inner mb-4">
                       {st.is_camera_active ? (
                         <img
                           src={st.video_feed_url}
@@ -152,52 +152,52 @@ export default function LineMonitoring() {
                           className="w-full h-full object-contain"
                         />
                       ) : (
-                        <div className="text-center p-3 text-slate-500 text-[11px]">
-                          <Camera className="w-6 h-6 mx-auto mb-1 text-slate-600 animate-pulse" />
+                        <div className="text-center p-4 text-slate-500 text-xs">
+                          <Camera className="w-7 h-7 mx-auto mb-1.5 text-slate-600 animate-pulse" />
                           Kamera Standby
                         </div>
                       )}
 
                       {st.is_camera_active && (
-                        <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 text-[9px] font-bold text-white flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-[10px] font-bold text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                           <span>LIVE STREAM</span>
                         </div>
                       )}
                     </div>
 
                     {/* Operator Info Box */}
-                    <div className="bg-slate-900/80 p-3 rounded-2xl border border-white/5 space-y-1.5 mb-2.5">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-extrabold uppercase text-slate-400 flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-sky-400" />
+                    <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-white/5 space-y-1.5 mb-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-extrabold uppercase text-slate-400 flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-sky-400" />
                           <span>Operator Bertugas:</span>
                         </span>
                         {st.operator?.is_active && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             Aktif
                           </span>
                         )}
                       </div>
-                      <div className="text-xs font-black text-white truncate">
+                      <div className="text-sm sm:text-base font-black text-white truncate">
                         {st.operator?.name || 'Tidak Ada Operator'}
                       </div>
-                      <div className="text-[10px] text-slate-400">
-                        Login: {loginDateStr}
+                      <div className="text-xs text-slate-400">
+                        Login: <strong className="font-mono text-slate-300">{loginDateStr}</strong>
                       </div>
                     </div>
 
                     {/* Part Number & Progress */}
-                    <div className="bg-slate-900/80 p-3 rounded-2xl border border-white/5 space-y-1 text-xs">
+                    <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-white/5 space-y-1.5 text-xs sm:text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase text-amber-400">Part Aktif:</span>
-                        <span className="text-[10px] font-bold text-blue-300">Sisi {st.current_side}</span>
+                        <span className="text-xs font-bold uppercase text-amber-400">Part Aktif:</span>
+                        <span className="text-xs font-bold text-blue-300">Sisi {st.current_side}</span>
                       </div>
-                      <div className="font-mono font-bold text-white text-xs truncate">
+                      <div className="font-mono font-black text-white text-sm sm:text-base truncate">
                         {st.part_no || 'STANDBY'}
                       </div>
                       {st.target_qty > 0 && (
-                        <div className="text-[10px] text-slate-400 pt-1">
+                        <div className="text-xs font-bold text-slate-300 pt-1">
                           Progress: {st.qty_completed}/{st.target_qty} PCS ({percent}%)
                         </div>
                       )}
@@ -206,7 +206,7 @@ export default function LineMonitoring() {
 
                   {/* Progress Bar */}
                   {st.target_qty > 0 && (
-                    <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/5 mt-2">
+                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5 mt-3">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-500 rounded-full"
                         style={{ width: `${percent}%` }}
@@ -218,10 +218,10 @@ export default function LineMonitoring() {
             })}
           </div>
         ) : (
-          <div className="glass-card p-10 rounded-3xl border border-white/10 text-center space-y-3">
-            <Camera className="w-12 h-12 text-slate-600 mx-auto" />
-            <h4 className="text-base font-bold text-slate-300">Tidak Ada Stasiun Kerja yang Sedang Aktif</h4>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
+          <div className="glass-card p-12 rounded-3xl border-2 border-white/10 text-center space-y-3 shadow-xl">
+            <Camera className="w-14 h-14 text-slate-600 mx-auto" />
+            <h4 className="text-lg font-black text-slate-300">Tidak Ada Stasiun Kerja yang Sedang Aktif</h4>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
               Saat ini belum ada kamera yang menyala atau operator yang membuka layar inspeksi. Stasiun kerja akan otomatis muncul saat stasiun line mulai beroperasi.
             </p>
           </div>
