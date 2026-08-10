@@ -107,6 +107,28 @@ html.light .text-slate-500 {
   color: #64748b !important;
 }
 
+/* Light Mode Accent Text Colors */
+html.light .text-amber-400,
+html.light .text-amber-300 {
+  color: #b45309 !important;
+}
+
+html.light .text-sky-400,
+html.light .text-sky-300,
+html.light .text-blue-300 {
+  color: #0284c7 !important;
+}
+
+html.light .text-emerald-400,
+html.light .text-emerald-300 {
+  color: #15803d !important;
+}
+
+html.light .text-rose-400,
+html.light .text-rose-300 {
+  color: #be123c !important;
+}
+
 /* Light Mode Table Headers & Cells */
 html.light thead,
 html.light thead.sticky,
@@ -144,22 +166,37 @@ html.light input::placeholder {
   color: #94a3b8 !important;
 }
 
-/* Light Mode Mini Cards & Containers */
+/* Light Mode Mini Cards, Box Containers & Station Panels */
 html.light .bg-black\/30,
 html.light .bg-black\/20,
 html.light .bg-black\/40,
 html.light .bg-black\/50,
 html.light .bg-white\/5,
-html.light .bg-white\/10 {
+html.light .bg-white\/10,
+html.light .bg-slate-900,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-800,
+html.light .bg-slate-800\/80 {
   background-color: #f8fafc !important;
   border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-slate-950,
+html.light .bg-slate-950\/80 {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
 
 html.light .border-white\/10,
 html.light .border-white\/5,
 html.light .border-white\/15,
-html.light .border-white\/20 {
+html.light .border-white\/20,
+html.light .border-slate-800,
+html.light .border-slate-700 {
   border-color: #e2e8f0 !important;
 }
 
@@ -217,35 +254,39 @@ html.light .bg-white\/5.border-white\/10:hover {
 }
 
 /* Status Badges in Light Mode maintain strong legible contrast */
-html.light .bg-emerald-500\/20 {
+html.light .bg-emerald-500\/20,
+html.light .bg-emerald-500\/10 {
   background-color: #dcfce7 !important;
   border-color: #86efac !important;
   color: #15803d !important;
 }
 
 html.light .bg-rose-500\/20,
+html.light .bg-rose-500\/10,
 html.light .bg-red-500\/20 {
   background-color: #ffe4e6 !important;
   border-color: #fca5a5 !important;
   color: #be123c !important;
 }
 
-html.light .bg-blue-500\/20 {
+html.light .bg-blue-500\/20,
+html.light .bg-blue-500\/10 {
   background-color: #dbeafe !important;
   border-color: #93c5fd !important;
   color: #1d4ed8 !important;
 }
 
 html.light .bg-amber-500\/20,
+html.light .bg-amber-500\/10,
 html.light .bg-yellow-500\/20 {
   background-color: #fef3c7 !important;
   border-color: #fde68a !important;
   color: #b45309 !important;
 }
 
-html.light .bg-purple-500\/20 {
+html.light .bg-purple-500\/20,
+html.light .bg-purple-500\/10 {
   background-color: #f3e8ff !important;
   border-color: #d8b4fe !important;
   color: #7e22ce !important;
 }
-
