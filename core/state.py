@@ -25,6 +25,7 @@ class SystemState:
         self.operator_name: str = ""       # Nama lengkap operator
         self.operator_username: str = ""   # Username operator (untuk SSO Dashboard)
         self.operator_role: str = ""       # Role operator (operator/pengawas/admin)
+        self.operator_shift: str = "Shift 1" # Shift kerja operator
         self.operator_login_time: float = 0.0
 
     def reset_to_standby(self):

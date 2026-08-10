@@ -9,6 +9,8 @@ from .detector import (
     log_ng_db
 )
 
+from .stream import stream_worker, CameraStreamWorker
+
 __all__ = [
     "state",
     "SystemState",
@@ -19,5 +21,7 @@ __all__ = [
     "KameraProses",
     "model_cache",
     "log_inspeksi_db",
-    "log_ng_db"
+    "log_ng_db",
+    "stream_worker",
+    "CameraStreamWorker"
 ]

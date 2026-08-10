@@ -6,6 +6,8 @@ import api from './api/client';
 
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
+import OperatorInspection from './pages/OperatorInspection';
+import OperatorHistory from './pages/OperatorHistory';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Rules from './pages/Rules';
@@ -15,6 +17,9 @@ import Camera from './pages/Camera';
 import SisonConfig from './pages/SisonConfig';
 import Logs from './pages/Logs';
 import SystemHealth from './pages/SystemHealth';
+import ErrorBoundary from './components/ErrorBoundary';
+import ErrorPage from './pages/ErrorPage';
+import ForgotPassword from './pages/ForgotPassword';
 import { initTheme } from './utils/theme';
 
 function processSSOParams() {
@@ -50,6 +55,7 @@ function isTokenValid(token) {
     const jsonPayload = JSON.parse(atob(base64 + padding));
     if (jsonPayload.exp && Date.now() / 1000 > jsonPayload.exp) {
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('operator_token');
       localStorage.removeItem('user_role');
       localStorage.removeItem('username');
       return false;
@@ -60,7 +66,16 @@ function isTokenValid(token) {
   }
 }
 
-// Layout wrapper with Left Sidebar
+// Protected Route untuk Operator Inspection & Operator History
+function OperatorProtectedRoute() {
+  const opToken = localStorage.getItem('operator_token') || localStorage.getItem('admin_token');
+  if (!opToken || !isTokenValid(opToken)) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+}
+
+// Layout wrapper with Left Sidebar for Admin
 function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diskWarning, setDiskWarning] = useState(false);
@@ -83,7 +98,7 @@ function MainLayout() {
     };
 
     checkDiskHealth();
-    const interval = setInterval(checkDiskHealth, 30000); // Polling setiap 30 detik
+    const interval = setInterval(checkDiskHealth, 30000);
     return () => clearInterval(interval);
   }, []);
   
@@ -132,22 +147,10 @@ function MainLayout() {
 function PengawasOnlyRoute() {
   const rawRole = (localStorage.getItem('user_role') || 'pengawas').toLowerCase();
   if (rawRole === 'operator') {
-    return <Navigate to="/history" replace />;
+    return <Navigate to="/operator/history" replace />;
   }
   return <Outlet />;
 }
-
-function DefaultHomeRedirect() {
-  const rawRole = (localStorage.getItem('user_role') || 'pengawas').toLowerCase();
-  if (rawRole === 'operator') {
-    return <Navigate to="/history" replace />;
-  }
-  return <Navigate to="/dashboard" replace />;
-}
-
-import ErrorBoundary from './components/ErrorBoundary';
-import ErrorPage from './pages/ErrorPage';
-import ForgotPassword from './pages/ForgotPassword';
 
 export default function App() {
   useEffect(() => {
@@ -156,33 +159,37 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <BrowserRouter basename="/admin">
+      <BrowserRouter>
         <Toaster
           position="top-right"
           toastOptions={{
             style: {
-              background: 'rgba(15, 23, 42, 0.9)',
+              background: 'rgba(15, 23, 42, 0.95)',
               color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(12px)',
             },
           }}
         />
         <Routes>
+          {/* Public Authentication Routes */}
+          <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-
-          {/* Dedicated Error Information Page */}
           <Route path="/error" element={<ErrorPage />} />
 
-          {/* Authenticated Layout */}
+          {/* Operator Inspection & Operator History Routes */}
+          <Route element={<OperatorProtectedRoute />}>
+            <Route path="/operator" element={<OperatorInspection />} />
+            <Route path="/operator/history" element={<OperatorHistory />} />
+          </Route>
+
+          {/* Authenticated Admin Dashboard Layout */}
           <Route element={<MainLayout />}>
-            <Route path="/" element={<DefaultHomeRedirect />} />
-            
-            {/* History Inspeksi bisa diakses oleh Pengawas & Operator */}
             <Route path="/history" element={<History />} />
 
-            {/* Fitur & Halaman Pengawas (Full Access) */}
+            {/* Fitur & Halaman Pengawas / Admin */}
             <Route element={<PengawasOnlyRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/camera" element={<Camera />} />

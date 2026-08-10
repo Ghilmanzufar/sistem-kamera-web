@@ -1,0 +1,250 @@
+import os
+import time
+import asyncio
+import json
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from database import get_db, User, verify_password, SisonConfig, log_audit_event
+from core import state, stream_worker
+from api.auth import create_admin_token
+
+router = APIRouter()
+
+class OperatorLoginRequest(BaseModel):
+    username: str
+    pin: str
+    shift: Optional[str] = "Shift 1"
+
+class NGResolveRequest(BaseModel):
+    username: str
+    pin: str
+
+class ClearPopupRequest(BaseModel):
+    popup_type: Optional[str] = "ALL"
+
+@router.get("/video_feed")
+def video_feed():
+    """Streaming video MJPEG real-time dengan anotasi AI YOLOv8."""
+    def gen_frames():
+        while True:
+            frame_bytes = stream_worker.get_latest_jpeg()
+            if frame_bytes is None:
+                time.sleep(0.03)
+                continue
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.03)
+
+    return StreamingResponse(
+        gen_frames(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+def _get_operator_state_dict() -> dict:
+    with state.lock:
+        cur_status = state.status
+        cur_id = state.id_trans
+        cur_pno = state.p_no
+        qty_rem = state.qty
+        tgt_qty = state.target_qty
+        qty_comp = max(0, tgt_qty - qty_rem) if tgt_qty > 0 else 0
+        side = state.current_side
+        mode = getattr(state, 'inspection_mode', 'AI')
+        op_name = state.operator_name
+        op_uname = state.operator_username
+        op_role = state.operator_role
+        op_shift = getattr(state, 'operator_shift', 'Shift 1')
+        op_login_ts = state.operator_login_time
+        part_ok = getattr(state, 'part_ok_popup', False)
+        flip_part = getattr(state, 'flip_part_popup', False)
+        details = dict(state.last_inspection_details) if hasattr(state, 'last_inspection_details') else {}
+
+    ng_active = bool(stream_worker.ng_active or cur_status == "NG")
+    ng_img_path = stream_worker.last_ng_image_path.replace("\\", "/") if stream_worker.last_ng_image_path else ""
+    if ng_img_path and not ng_img_path.startswith("/"):
+        ng_img_path = "/" + ng_img_path
+
+    return {
+        "status": cur_status,
+        "id_trans": cur_id,
+        "p_no": cur_pno,
+        "qty_remaining": qty_rem,
+        "target_qty": tgt_qty,
+        "qty_completed": qty_comp,
+        "current_side": "FRONT" if side == "F" else "REAR",
+        "inspection_mode": mode,
+        "pesan_ui": stream_worker.last_pesan_ui,
+        "is_cam_active": stream_worker.is_cam_active,
+        "reconnect_attempts": stream_worker.reconnect_attempts,
+        "operator": {
+            "name": op_name,
+            "username": op_uname,
+            "role": op_role,
+            "shift": op_shift,
+            "login_time": op_login_ts
+        },
+        "popups": {
+            "part_ok": part_ok,
+            "flip_part": flip_part,
+            "ng_active": ng_active,
+            "ng_image_url": ng_img_path,
+            "details": details
+        }
+    }
+
+@router.get("/operator/state")
+def get_operator_state():
+    """Telemetry status lengkap untuk antarmuka Operator Inspection."""
+    return _get_operator_state_dict()
+
+@router.get("/operator/events")
+async def operator_events(request: Request):
+    """Server-Sent Events (SSE) untuk real-time update tampilan HUD & Popups."""
+    async def event_generator():
+        while True:
+            if await request.is_disconnected():
+                break
+            payload = _get_operator_state_dict()
+            yield f"data: {json.dumps(payload)}\n\n"
+            await asyncio.sleep(0.2)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+@router.post("/operator/login")
+def operator_login(req: OperatorLoginRequest, db: Session = Depends(get_db)):
+    """Otentikasi operator sebelum memasuki layar kamera inspeksi AI."""
+    username = req.username.strip()
+    pin = req.pin.strip()
+    shift = req.shift.strip() if req.shift else "Shift 1"
+
+    if not username or not pin:
+        raise HTTPException(status_code=400, detail="Username dan PIN tidak boleh kosong!")
+
+    user = db.query(User).filter(User.username == username, User.is_active == True).first()
+    if not user or not verify_password(pin, user.password):
+        raise HTTPException(status_code=401, detail="Username atau PIN salah!")
+
+    if user.role not in ["operator", "pengawas", "admin"]:
+        raise HTTPException(status_code=403, detail="Role pengguna tidak diizinkan masuk ke layar inspeksi!")
+
+    fullname = user.fullname.strip() if (getattr(user, 'fullname', None) and user.fullname.strip()) else username
+    
+    with state.lock:
+        state.operator_name = fullname
+        state.operator_username = user.username
+        state.operator_role = user.role
+        state.operator_shift = shift
+        state.operator_login_time = time.time()
+
+    token = create_admin_token(user.username, user.role, expires_in_seconds=86400)
+    log_audit_event(db, user.username, "OPERATOR_LOGIN", f"Operator {fullname} ({shift}) masuk ke layar inspeksi.")
+
+    return {
+        "success": True,
+        "token": token,
+        "username": user.username,
+        "fullname": fullname,
+        "role": user.role,
+        "shift": shift
+    }
+
+@router.post("/operator/logout")
+def operator_logout(db: Session = Depends(get_db)):
+    """Keluar dari sesi operator aktif."""
+    with state.lock:
+        uname = state.operator_username or "OPERATOR"
+        state.operator_name = ""
+        state.operator_username = ""
+        state.operator_role = ""
+        state.operator_shift = "Shift 1"
+        state.operator_login_time = 0.0
+
+    log_audit_event(db, uname, "OPERATOR_LOGOUT", "Operator logout dari layar inspeksi.")
+    return {"success": True}
+
+@router.post("/operator/manual-pass")
+def manual_pass():
+    """Trigger manual pass OK saat mode inspeksi manual atau part OK diverifikasi operator."""
+    with state.lock:
+        curr_status = state.status
+    if curr_status not in ["RUNNING", "OK"]:
+        raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
+    
+    with state.lock:
+        state.manual_pass_trigger = True
+    return {"success": True, "message": "Manual pass triggered."}
+
+@router.post("/operator/manual-reject")
+def manual_reject():
+    """Trigger manual reject NG saat operator menemukan kecacatan secara visual."""
+    with state.lock:
+        curr_status = state.status
+    if curr_status not in ["RUNNING", "OK"]:
+        raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
+    
+    with state.lock:
+        state.manual_reject_trigger = True
+    return {"success": True, "message": "Manual reject triggered."}
+
+@router.post("/operator/mock-detect")
+def mock_detect():
+    """Simulasi trigger deteksi AI untuk testing."""
+    with state.lock:
+        curr_status = state.status
+    if curr_status not in ["RUNNING", "OK"]:
+        raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Mulai transaksi SISON terlebih dahulu!")
+    
+    with state.lock:
+        state.mock_detect_trigger = True
+    return {"success": True, "message": "Mock detect triggered."}
+
+@router.post("/operator/resolve-ng")
+def resolve_ng(req: NGResolveRequest, db: Session = Depends(get_db)):
+    """Verifikasi PIN Pengawas/Admin untuk mematikan sirene NG dan melanjutkan proses inspeksi."""
+    username = req.username.strip()
+    pin = req.pin.strip()
+
+    if not username or not pin:
+        raise HTTPException(status_code=400, detail="Username dan PIN Pengawas harus diisi!")
+
+    user = db.query(User).filter(User.username == username, User.is_active == True).first()
+    if not user or not verify_password(pin, user.password):
+        raise HTTPException(status_code=401, detail="Username atau PIN Pengawas salah!")
+
+    if user.role not in ["pengawas", "admin"]:
+        raise HTTPException(status_code=403, detail="Hanya Pengawas atau Admin yang berhak memvalidasi abnormalitas NG!")
+
+    with state.lock:
+        state.status = "RUNNING"
+        state.cooldown_until = time.time() + 2.0
+
+    stream_worker.ng_active = False
+    log_audit_event(db, user.username, "RESOLVE_NG", f"Pengawas {user.username} memvalidasi NG dan me-resume inspeksi.")
+    return {"success": True, "message": "NG Abnormality berhasil divalidasi. Status kembali RUNNING."}
+
+@router.post("/operator/clear-popup")
+def clear_popup(req: ClearPopupRequest):
+    """Menutup modal popup Part OK atau Balik Part dari antarmuka web."""
+    with state.lock:
+        if req.popup_type in ["ALL", "part_ok"]:
+            state.part_ok_popup = False
+        if req.popup_type in ["ALL", "flip_part"]:
+            state.flip_part_popup = False
+    return {"success": True}

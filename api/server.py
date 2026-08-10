@@ -1,12 +1,45 @@
 import os
+import time
+import threading
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, RedirectResponse
 import uvicorn
 
 from .routes import sison_inbound_router, public_router, admin_protected_router
+from core import stream_worker
+from integrations import start_buffer_sync_worker
+
+def cleanup_old_ng_records(days: int = 30):
+    """Otomatis hapus file foto NG yang berumur > 30 hari untuk menghemat ruang harddisk."""
+    folder = "ng_records"
+    if not os.path.exists(folder):
+        return
+    now = time.time()
+    cutoff = now - (days * 86400)
+    deleted_count = 0
+    try:
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+            if os.path.isfile(file_path) and filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+                if os.path.getmtime(file_path) < cutoff:
+                    os.remove(file_path)
+                    deleted_count += 1
+        if deleted_count > 0:
+            print(f"[CLEANUP] Otomatis menghapus {deleted_count} foto NG lama (> {days} hari).")
+    except Exception as e:
+        print(f"[CLEANUP WARN] Gagal menjalankan pembersihan foto NG: {e}")
+
+def start_periodic_cleanup():
+    def loop():
+        while True:
+            cleanup_old_ng_records(days=30)
+            time.sleep(86400)  # Cek setiap 24 jam
+    t = threading.Thread(target=loop, daemon=True, name="NGCleanupWorker")
+    t.start()
 
 class SPAStaticFiles(StaticFiles):
     """Custom StaticFiles yang mengalihkan 404 Not Found ke index.html (SPA Fallback)."""
@@ -20,9 +53,21 @@ class SPAStaticFiles(StaticFiles):
                     return FileResponse(index_path)
             raise ex
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Mulai workers background
+    stream_worker.start()
+    start_periodic_cleanup()
+    start_buffer_sync_worker()
+    print("[SYSTEM] ✅ Seluruh background service inspeksi kamera & SISON aktif!")
+    yield
+    # Shutdown
+    stream_worker.stop()
+    print("[SYSTEM] Background stream worker dihentikan.")
+
 def create_app() -> FastAPI:
     """FastAPI Application Factory."""
-    app = FastAPI(title="Sistem Kamera Inspeksi AI", version="2.0.0")
+    app = FastAPI(title="Sistem Kamera Inspeksi AI", version="2.0.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -47,7 +92,7 @@ def create_app() -> FastAPI:
     # 1. Rute Inbound SISON (/api/start)
     app.include_router(sison_inbound_router, prefix="/api")
 
-    # 2. Rute Publik (/api/health, /api/status, /api/admin-login, /api/logout)
+    # 2. Rute Publik (/api/video_feed, /api/operator/*, /api/health, /api/admin-login, dll.)
     app.include_router(public_router, prefix="/api")
 
     # 3. Rute Admin Terproteksi (/api/admin/*)
@@ -57,13 +102,15 @@ def create_app() -> FastAPI:
     os.makedirs("web_admin/dist", exist_ok=True)
     os.makedirs("ng_records", exist_ok=True)
     
-    app.mount("/admin", SPAStaticFiles(directory="web_admin/dist", html=True), name="admin")
     app.mount("/ng_records", StaticFiles(directory="ng_records"), name="ng_records")
+    
+    # Mount SPA Static Files di Root ('/')
+    app.mount("/", SPAStaticFiles(directory="web_admin/dist", html=True), name="spa")
 
     return app
 
 app_fastapi = create_app()
 
 def run_fastapi(host: str = "0.0.0.0", port: int = 8000):
-    """Jalankan uvicorn server di background thread."""
-    uvicorn.run(app_fastapi, host=host, port=port, log_level="error")
+    """Jalankan uvicorn server."""
+    uvicorn.run(app_fastapi, host=host, port=port, log_level="info")

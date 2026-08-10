@@ -23,12 +23,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      const isLoginPage = window.location.pathname.endsWith('/login') || window.location.pathname.endsWith('/login.html');
+      const isLoginPage = window.location.pathname === '/' || window.location.pathname.endsWith('/login');
       if (!isLoginPage) {
         localStorage.removeItem('admin_token');
         localStorage.removeItem('user_role');
         localStorage.removeItem('username');
-        window.location.href = '/admin/login';
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
