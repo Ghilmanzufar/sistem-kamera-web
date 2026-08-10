@@ -78,38 +78,36 @@ html.light .glass-container {
 
 html.light .glass-card {
   background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06) !important;
   color: #0f172a !important;
 }
 
 /* Light Mode Text High-Contrast Rules */
-html.light h1,
-html.light h2,
-html.light h3,
-html.light h4,
-html.light strong,
-html.light .text-white,
-html.light .text-slate-100,
-html.light .text-slate-200,
-html.light .font-bold {
+html.light h1:not([style*="color"]),
+html.light h2:not([style*="color"]),
+html.light h3:not([style*="color"]),
+html.light h4:not([style*="color"]),
+html.light strong:not([style*="color"]) {
   color: #0f172a !important;
 }
 
-html.light p,
-html.light label,
-html.light .text-slate-300,
-html.light .text-slate-400 {
+html.light p:not([style*="color"]),
+html.light label:not([style*="color"]) {
   color: #334155 !important;
 }
 
-html.light .text-slate-500 {
+html.light .text-slate-300:not([style*="color"]),
+html.light .text-slate-400:not([style*="color"]) {
+  color: #475569 !important;
+}
+
+html.light .text-slate-500:not([style*="color"]) {
   color: #64748b !important;
 }
 
 /* Light Mode Accent Text Colors */
-html.light .text-amber-400,
-html.light .text-amber-300 {
+html.light .text-amber-400 {
   color: #b45309 !important;
 }
 
@@ -129,6 +127,23 @@ html.light .text-rose-300 {
   color: #be123c !important;
 }
 
+/* Ensure Buttons and Video Live Badges always retain bright text */
+html.light .video-badge,
+html.light button.bg-blue-600,
+html.light button.bg-emerald-600,
+html.light button.bg-rose-600,
+html.light button[class*="bg-gradient-to-r"] {
+  color: #ffffff !important;
+}
+
+html.light .video-badge span,
+html.light button.bg-blue-600 span,
+html.light button.bg-emerald-600 span,
+html.light button.bg-rose-600 span,
+html.light button[class*="bg-gradient-to-r"] span {
+  color: #ffffff !important;
+}
+
 /* Light Mode Table Headers & Cells */
 html.light thead,
 html.light thead.sticky,
@@ -136,7 +151,7 @@ html.light table th {
   color: #0f172a !important;
   background-color: #f1f5f9 !important;
   border-bottom: 2px solid #cbd5e1 !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
 html.light table td {
@@ -148,9 +163,8 @@ html.light tr:hover {
   background-color: #f8fafc !important;
 }
 
-html.light table td .text-slate-400,
 html.light table td .font-mono {
-  color: #334155 !important;
+  color: #0f172a !important;
 }
 
 /* Light Mode Inputs, Selects & Search Bars */
@@ -180,7 +194,7 @@ html.light .bg-slate-900\/90,
 html.light .bg-slate-800,
 html.light .bg-slate-800\/80 {
   background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
 
@@ -197,7 +211,7 @@ html.light .border-white\/15,
 html.light .border-white\/20,
 html.light .border-slate-800,
 html.light .border-slate-700 {
-  border-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
 }
 
 /* Light Mode Modals & Dialogs */
@@ -212,7 +226,7 @@ html.light .fixed.inset-0 .glass-card,
 html.light .fixed.inset-0 .rounded-2xl,
 html.light .fixed.inset-0 .rounded-3xl {
   background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
   color: #0f172a !important;
 }
@@ -220,12 +234,12 @@ html.light .fixed.inset-0 .rounded-3xl {
 /* Light Mode Sidebar & Navbar */
 html.light aside {
   background-color: #ffffff !important;
-  border-right-color: #e2e8f0 !important;
+  border-right-color: #cbd5e1 !important;
 }
 
 html.light header {
-  background-color: rgba(255, 255, 255, 0.8) !important;
-  border-bottom-color: #e2e8f0 !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom-color: #cbd5e1 !important;
 }
 
 html.light aside nav a:not(.bg-blue-600) {

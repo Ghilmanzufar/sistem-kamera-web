@@ -144,7 +144,7 @@ export default function LineMonitoring() {
                     </div>
 
                     {/* Video Live Preview Stream */}
-                    <div className="relative rounded-2xl overflow-hidden bg-black border border-white/10 aspect-video flex items-center justify-center shadow-inner mb-4">
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-700/60 aspect-video flex items-center justify-center shadow-lg mb-4">
                       {st.is_camera_active ? (
                         <img
                           src={st.video_feed_url}
@@ -152,16 +152,18 @@ export default function LineMonitoring() {
                           className="w-full h-full object-contain"
                         />
                       ) : (
-                        <div className="text-center p-4 text-slate-500 text-xs">
-                          <Camera className="w-7 h-7 mx-auto mb-1.5 text-slate-600 animate-pulse" />
-                          Kamera Standby
+                        <div className="text-center p-4 text-slate-400 text-xs">
+                          <Camera className="w-8 h-8 mx-auto mb-1.5 text-slate-500 animate-pulse" />
+                          <span className="font-bold text-slate-300">Kamera Standby</span>
                         </div>
                       )}
 
                       {st.is_camera_active && (
-                        <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-[10px] font-bold text-white flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                          <span>LIVE STREAM</span>
+                        <div className="video-badge absolute top-3 left-3 bg-black/85 px-3 py-1.5 rounded-xl border border-white/30 text-xs font-black flex items-center gap-2 shadow-2xl backdrop-blur-md">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                          <span style={{ color: '#ffffff' }} className="text-white font-black tracking-wider text-xs">
+                            LIVE STREAM
+                          </span>
                         </div>
                       )}
                     </div>
