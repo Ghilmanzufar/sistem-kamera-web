@@ -2,6 +2,7 @@ import os
 import time
 import asyncio
 import json
+import threading
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import StreamingResponse
@@ -9,7 +10,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db, User, verify_password, SisonConfig, log_audit_event
-from core import state, stream_worker
+from core import state, stream_worker, log_inspeksi_db
+from integrations import SisonSender
 from api.auth import create_admin_token
 
 router = APIRouter()
@@ -193,10 +195,6 @@ def operator_logout(req: Optional[OperatorLogoutPayload] = None, db: Session = D
     state.remove_operator_session(uname)
     log_audit_event(db, uname, "OPERATOR_LOGOUT", f"Operator {uname} logout dari layar inspeksi.")
     return {"success": True}
-
-from core import log_inspeksi_db
-from integrations import SisonSender
-import threading
 
 @router.post("/operator/manual-pass")
 def manual_pass():
