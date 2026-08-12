@@ -1,4 +1,6 @@
 .env
+.venv/
+node_modules/
 weights/
 __pycache__/
 *.pyc
@@ -7,3 +9,4 @@ __pycache__/
 *.onnx
 ng_records/*.jpg
 *.db
+
