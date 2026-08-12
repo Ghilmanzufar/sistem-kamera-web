@@ -226,15 +226,10 @@ class KameraProses:
                 status = "NG"
             elif total_required_count > 0:
                 yellow_bgr = (0, 255, 255)
-                yellow_html = "#ffff00"
-                lbl_color = "#ef4444" if not labels_complete else "#10b981"
-                avg_color = "#ef4444" if not avg_conf_ok else "#10b981"
                 lbl_color_bgr = (0, 0, 255) if not labels_complete else (0, 255, 0)
                 avg_color_bgr = (0, 0, 255) if not avg_conf_ok else (0, 255, 0)
                 
-                lbl_html = f"<span style='color:{lbl_color};'>{detected_required_count}/{total_required_count}</span>"
-                avg_html = f"<span style='color:{avg_color};'>{current_avg_conf*100:.0f}%/{target_avg_conf*100:.0f}%</span>"
-                pesan_ui = f"<span style='color:{yellow_html};'>Inspeksi: Labels</span> {lbl_html} <span style='color:{yellow_html};'>(Min {target_coverage*100:.0f}%) | AvgConf:</span> {avg_html}"
+                pesan_ui = f"Inspeksi: Labels {detected_required_count}/{total_required_count} (Min {target_coverage*100:.0f}%) | AvgConf: {current_avg_conf*100:.0f}%/{target_avg_conf*100:.0f}%"
                 color_status = yellow_bgr
                     
                 cv2_text_parts = [

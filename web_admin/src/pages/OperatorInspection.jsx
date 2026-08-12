@@ -383,7 +383,7 @@ export default function OperatorInspection() {
               {statusText}
             </div>
             <div className="text-[11px] text-slate-300 font-medium truncate max-w-sm mx-auto">
-              {telemetry.pesan_ui || '-'}
+              {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : '-'}
             </div>
             {telemetry.p_no && telemetry.status !== 'STANDBY' && (
               <div className="text-[11px] font-black text-emerald-400 mt-0.5">
