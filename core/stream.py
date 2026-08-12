@@ -29,7 +29,13 @@ class CameraStreamWorker:
 
         self.cap = None
         self.cam_source = 0
+        self.cam_name = "Kamera QC Utama"
         self.is_cam_active = False
+        self.is_connected = False
+        self.current_fps = 0.0
+        self.last_inference_ms = 0.0
+        self.last_frame_ts = 0.0
+        self.total_frames_processed = 0
         self.last_cam_check_time = 0.0
         self.is_reconnecting = False
         self.reconnect_attempts = 0
@@ -61,15 +67,18 @@ class CameraStreamWorker:
                 if isinstance(cam_source, str) and cam_source.isdigit():
                     cam_source = int(cam_source)
                 self.cam_source = cam_source
+                self.cam_name = active_cam.name or f"Camera {cam_source}"
                 self.is_cam_active = True
             else:
                 self.cam_source = 0
+                self.cam_name = "Camera 0"
                 self.is_cam_active = False
             db.close()
             print(f"[STREAM SYSTEM] Sumber kamera aktif dari DB: {self.cam_source} (Aktif: {self.is_cam_active})")
         except Exception as e:
             print(f"[STREAM SYSTEM WARN] Gagal membaca konfigurasi kamera DB: {e}")
             self.cam_source = 0
+            self.cam_name = "Camera 0"
             self.is_cam_active = False
 
     def start(self):
@@ -199,6 +208,8 @@ class CameraStreamWorker:
 
             # 4. Tangani jika kamera Standby (OFF)
             if not self.is_cam_active:
+                self.is_connected = False
+                self.current_fps = 0.0
                 frame = self._create_placeholder_frame(
                     "KAMERA STANDBY (OFF)",
                     "Nyalakan saklar kamera di pengaturan admin untuk mengaktifkan video stream.",
@@ -217,6 +228,8 @@ class CameraStreamWorker:
 
             # 6. Tangani jika kamera gagal membaca frame
             if not ret or frame is None:
+                self.is_connected = False
+                self.current_fps = 0.0
                 attempt_str = f"Mencoba reconnect ke-{self.reconnect_attempts}..." if self.reconnect_attempts > 0 else "Periksa kabel USB atau koneksi kamera."
                 frame = self._create_placeholder_frame(
                     "KAMERA TERPUTUS / TIDAK TERDETEKSI",
@@ -229,9 +242,16 @@ class CameraStreamWorker:
                 time.sleep(0.1)
                 continue
 
+            # Berhasil baca frame normal
+            self.is_connected = True
+            self.last_frame_ts = time.time()
+            self.total_frames_processed += 1
+
             # 7. Proses Frame dengan AI YOLO & Aturan Inspeksi
             try:
+                t_inf_start = time.time()
                 frame, pesan_ui = KameraProses.proses_frame(frame, self.model)
+                self.last_inference_ms = round((time.time() - t_inf_start) * 1000, 1)
                 self.last_pesan_ui = pesan_ui
             except Exception as e:
                 print(f"[STREAM PROCESS WARN] Error saat memproses frame AI: {e}")
@@ -262,10 +282,15 @@ class CameraStreamWorker:
             # 9. Update buffer frame JPEG terkompresi
             self._update_encoded_frame(frame)
 
-            # Cap frame rate ~30 FPS
+            # Cap frame rate ~30 FPS & ukur FPS rolling
             elapsed = time.time() - t_start
             sleep_time = max(0.005, (1.0 / 30.0) - elapsed)
             time.sleep(sleep_time)
+            
+            total_loop_time = time.time() - t_start
+            if total_loop_time > 0:
+                instant_fps = 1.0 / total_loop_time
+                self.current_fps = round(self.current_fps * 0.7 + instant_fps * 0.3, 1) if self.current_fps > 0 else round(instant_fps, 1)
 
     def _update_encoded_frame(self, frame):
         try:

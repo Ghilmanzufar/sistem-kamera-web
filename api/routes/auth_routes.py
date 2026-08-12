@@ -51,9 +51,18 @@ def get_uptime_string(seconds: float) -> str:
         return f"{minutes}m {secs}s"
     return f"{secs}s"
 
+from core import state, model_cache, stream_worker
+from integrations import get_buffered_count
+from integrations.sison_client import get_callback_url
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 @router.get("/health")
 def get_system_health(db: Session = Depends(get_db)):
-    """Telemetry status lengkap untuk frontend SystemHealth & Sidebar."""
+    """Telemetry status lengkap untuk frontend SystemHealth, Sidebar, & IT Enterprise Monitoring."""
     now = time.time()
     uptime_sec = round(now - SERVER_START_TIME, 1)
     
@@ -76,21 +85,80 @@ def get_system_health(db: Session = Depends(get_db)):
         total_gb = round(total_b / (1024**3), 2)
         free_gb = round(free_b / (1024**3), 2)
         used_gb = round(used_b / (1024**3), 2)
-        used_pct = round((used_b / total_b) * 100, 1)
-        free_pct = round((free_b / total_b) * 100, 1)
+        used_pct = round((used_b / total_b) * 100, 1) if total_b > 0 else 0.0
+        free_pct = round((free_b / total_b) * 100, 1) if total_b > 0 else 0.0
         is_disk_low = free_pct < 10.0
     except Exception:
         total_gb, free_gb, used_gb, used_pct, free_pct, is_disk_low = 0, 0, 0, 0, 0, False
 
-    # 4. State & AI Model Telemetry
+    # 4. CPU & RAM Telemetry
+    cpu_pct, ram_pct, ram_used_gb, ram_total_gb = 0.0, 0.0, 0.0, 0.0
+    if psutil:
+        try:
+            cpu_pct = round(psutil.cpu_percent(interval=None), 1)
+            vmem = psutil.virtual_memory()
+            ram_pct = round(vmem.percent, 1)
+            ram_used_gb = round(vmem.used / (1024**3), 2)
+            ram_total_gb = round(vmem.total / (1024**3), 2)
+        except Exception:
+            pass
+
+    # 5. State & AI Model Telemetry
     with state.lock:
         app_status = state.status
         active_part = state.p_no
         qty_progress = f"{state.target_qty - state.qty}/{state.target_qty}" if state.target_qty > 0 else "-"
         inspection_mode = getattr(state, "inspection_mode", "AI")
 
-    is_healthy = (db_status == "CONNECTED") and not is_disk_low
-    overall_status = "HEALTHY" if is_healthy else ("DEGRADED" if not is_disk_low else "DISK_SPACE_LOW")
+    # 6. Camera Hardware & Stream Telemetry
+    cam_active = bool(stream_worker.is_cam_active)
+    cam_connected = bool(stream_worker.is_connected)
+    if not cam_active:
+        cam_status_str = "STANDBY"
+    elif cam_connected:
+        cam_status_str = "CONNECTED"
+    elif stream_worker.is_reconnecting:
+        cam_status_str = "RECONNECTING"
+    else:
+        cam_status_str = "DISCONNECTED"
+
+    camera_telemetry = {
+        "status": cam_status_str,
+        "is_active": cam_active,
+        "is_connected": cam_connected,
+        "name": stream_worker.cam_name,
+        "source": str(stream_worker.cam_source),
+        "fps": stream_worker.current_fps,
+        "reconnect_attempts": stream_worker.reconnect_attempts,
+        "total_frames_processed": stream_worker.total_frames_processed,
+        "last_pesan_ui": stream_worker.last_pesan_ui or "Standby"
+    }
+
+    # 7. SISON ERP/MES Status
+    sison_callback = get_callback_url()
+
+    # Evaluasi Status Keseluruhan
+    is_healthy = (db_status == "CONNECTED") and not is_disk_low and (not cam_active or cam_connected)
+    if is_healthy:
+        overall_status = "HEALTHY"
+    elif is_disk_low:
+        overall_status = "DISK_SPACE_LOW"
+    elif db_status != "CONNECTED":
+        overall_status = "BUFFER_FAILOVER"
+    elif cam_active and not cam_connected:
+        overall_status = "CAMERA_FAULT"
+    else:
+        overall_status = "DEGRADED"
+
+    ai_engine_data = {
+        "system_state": app_status,
+        "active_part_no": active_part or "STANDBY",
+        "active_model_name": stream_worker.current_loaded_p_no or (f"{active_part}.pt" if active_part else "Default YOLO"),
+        "inference_latency_ms": stream_worker.last_inference_ms,
+        "progress": qty_progress,
+        "mode": inspection_mode,
+        "cached_models_count": len(model_cache._cache)
+    }
 
     return {
         "status": overall_status,
@@ -99,17 +167,24 @@ def get_system_health(db: Session = Depends(get_db)):
             "seconds": uptime_sec,
             "human": get_uptime_string(uptime_sec)
         },
+        "camera": camera_telemetry,
+        "ai_engine": ai_engine_data,
+        "inspection_engine": ai_engine_data, # Backward compatibility
         "database": {
             "status": db_status,
             "latency_ms": db_latency_ms,
-            "offline_buffer_unsynced_count": buffer_queue
+            "offline_buffer_unsynced_count": buffer_queue,
+            "is_failover_active": db_status != "CONNECTED" or buffer_queue > 0
         },
-        "inspection_engine": {
-            "system_state": app_status,
-            "active_part_no": active_part or "STANDBY",
-            "progress": qty_progress,
-            "mode": inspection_mode,
-            "cached_models_count": len(model_cache._cache)
+        "sison": {
+            "callback_url": sison_callback,
+            "pending_sync_count": buffer_queue
+        },
+        "system_resources": {
+            "cpu_percent": cpu_pct,
+            "ram_percent": ram_pct,
+            "ram_used_gb": ram_used_gb,
+            "ram_total_gb": ram_total_gb
         },
         "disk_storage": {
             "total_gb": total_gb,
