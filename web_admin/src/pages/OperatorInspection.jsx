@@ -204,8 +204,10 @@ export default function OperatorInspection() {
   // Action Handlers
   const handleManualPass = async () => {
     try {
-      await api.post('/api/operator/manual-pass');
-      toast.success('Part Diverifikasi OK (Manual Pass)!');
+      const res = await api.post('/api/operator/manual-pass');
+      toast.success(res.data?.message || 'Part Diverifikasi OK (Manual Pass)!');
+      const stateRes = await api.get('/api/operator/state');
+      if (stateRes.data) setTelemetry(stateRes.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal trigger Pass Manual');
     }
@@ -213,8 +215,10 @@ export default function OperatorInspection() {
 
   const handleManualReject = async () => {
     try {
-      await api.post('/api/operator/manual-reject');
-      toast.error('Part Di-reject (Manual NG)!');
+      const res = await api.post('/api/operator/manual-reject');
+      toast.error(res.data?.message || 'Part Di-reject (Manual NG)!');
+      const stateRes = await api.get('/api/operator/state');
+      if (stateRes.data) setTelemetry(stateRes.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal trigger Reject Manual');
     }
@@ -222,8 +226,10 @@ export default function OperatorInspection() {
 
   const handleMockDetect = async () => {
     try {
-      await api.post('/api/operator/mock-detect');
-      toast('Mock Detect Triggered!', { icon: '📷' });
+      const res = await api.post('/api/operator/mock-detect');
+      toast.success(res.data?.message || 'Mock Detect Berhasil!', { icon: '📷' });
+      const stateRes = await api.get('/api/operator/state');
+      if (stateRes.data) setTelemetry(stateRes.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal trigger Mock Detect');
     }
@@ -283,6 +289,8 @@ export default function OperatorInspection() {
       if (res.data?.status === 'SUCCESS' || res.status === 200) {
         toast.success('Simulasi Transaksi SISON Berhasil Diterima!');
         setShowDemoModal(false);
+        const stateRes = await api.get('/api/operator/state');
+        if (stateRes.data) setTelemetry(stateRes.data);
       } else {
         toast.error('Gagal mengirim simulasi SISON: ' + JSON.stringify(res.data));
       }

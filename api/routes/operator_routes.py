@@ -194,41 +194,120 @@ def operator_logout(req: Optional[OperatorLogoutPayload] = None, db: Session = D
     log_audit_event(db, uname, "OPERATOR_LOGOUT", f"Operator {uname} logout dari layar inspeksi.")
     return {"success": True}
 
+from core import log_inspeksi_db
+from integrations import SisonSender
+import threading
+
 @router.post("/operator/manual-pass")
 def manual_pass():
     """Trigger manual pass OK saat mode inspeksi manual atau part OK diverifikasi operator."""
     with state.lock:
         curr_status = state.status
-    if curr_status not in ["RUNNING", "OK"]:
-        raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
-    
-    with state.lock:
-        state.manual_pass_trigger = True
-    return {"success": True, "message": "Manual pass triggered."}
+        if curr_status not in ["RUNNING", "OK"]:
+            raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
+        
+        state.qty -= 1
+        rem_qty = state.qty
+        cur_pno = state.p_no
+        cur_id = state.id_trans
+        op_name = state.operator_name
+        state.part_ok_popup = True
+        state.last_inspection_details = {
+            "label_terdeteksi": "Pemeriksaan Visual Manual",
+            "avg_confidence": "100% (Manual Pass)",
+            "found_labels": "- INSPEKSI VISUAL OPERATOR : OK"
+        }
+        
+        if rem_qty <= 0:
+            state.status = "COMPLETED"
+            state.completed_time = time.time()
+            stream_worker.last_pesan_ui = "INSPEKSI MANUAL SELESAI (OK)!"
+        else:
+            stream_worker.last_pesan_ui = f"Part Manual OK! Sisa: {rem_qty} PCS"
+
+    threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 1.0, "MANUAL", op_name), daemon=True).start()
+    if rem_qty <= 0:
+        threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1), daemon=True).start()
+        
+    return {"success": True, "message": f"Part Manual OK! Sisa: {max(0, rem_qty)} PCS"}
 
 @router.post("/operator/manual-reject")
 def manual_reject():
     """Trigger manual reject NG saat operator menemukan kecacatan secara visual."""
     with state.lock:
         curr_status = state.status
-    if curr_status not in ["RUNNING", "OK"]:
-        raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
-    
-    with state.lock:
-        state.manual_reject_trigger = True
-    return {"success": True, "message": "Manual reject triggered."}
+        if curr_status not in ["RUNNING", "OK"]:
+            raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
+        
+        state.status = "NG"
+        cur_pno = state.p_no
+        cur_id = state.id_trans
+        op_name = state.operator_name
+        stream_worker.last_pesan_ui = "STATUS: NG (MANUAL REJECT)! INPUT PIN UNTUK VALIDASI."
+        stream_worker.ng_active = True
+
+    threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "NG", 0.0, "MANUAL", op_name), daemon=True).start()
+    threading.Thread(target=SisonSender.send_callback, args=(cur_id, 2), daemon=True).start()
+    return {"success": True, "message": "Manual reject triggered. Status: NG."}
 
 @router.post("/operator/mock-detect")
 def mock_detect():
-    """Simulasi trigger deteksi AI untuk testing."""
+    """Simulasi trigger deteksi AI untuk testing / demo inspeksi."""
     with state.lock:
         curr_status = state.status
-    if curr_status not in ["RUNNING", "OK"]:
-        raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Mulai transaksi SISON terlebih dahulu!")
-    
-    with state.lock:
-        state.mock_detect_trigger = True
-    return {"success": True, "message": "Mock detect triggered."}
+        if curr_status not in ["RUNNING", "OK"]:
+            raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Mulai transaksi SISON terlebih dahulu!")
+        
+        cur_side = state.current_side
+        rules = state.aturan_sisi
+        cur_pno = state.p_no
+        cur_id = state.id_trans
+        op_name = state.operator_name
+        
+        # Cek apakah part memiliki dua sisi (Front & Rear)
+        has_rear = any(r.get("nama_komponen", "").lower().startswith("r-") for r in rules)
+        
+        if cur_side == "F" and has_rear:
+            state.current_side = "R"
+            state.flip_part_popup = True
+            stream_worker.last_pesan_ui = "Sisi Depan OK! Balik Part ke sisi Belakang."
+            return {"success": True, "action": "flip_part", "message": "Sisi Depan OK! Balik Part ke sisi Belakang."}
+        else:
+            state.qty -= 1
+            rem_qty = state.qty
+            state.current_side = "F"
+            state.part_ok_popup = True
+            
+            found_labels_list = []
+            target_rules = [r for r in rules if r.get("nama_komponen")]
+            if target_rules:
+                for r in target_rules:
+                    found_labels_list.append(f"- {r.get('nama_komponen', '').upper()} : 95%")
+            else:
+                found_labels_list.append("- KOMPONEN TERVERIFIKASI : 95%")
+
+            state.last_inspection_details = {
+                "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100%)",
+                "avg_confidence": "95%",
+                "found_labels": "\n".join(found_labels_list)
+            }
+            
+            if rem_qty <= 0:
+                state.status = "COMPLETED"
+                state.completed_time = time.time()
+                stream_worker.last_pesan_ui = "INSPEKSI SELESAI (OK)!"
+            else:
+                stream_worker.last_pesan_ui = f"Part Mock OK! Sisa: {rem_qty} PCS"
+
+    threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 0.95, "AI", op_name), daemon=True).start()
+    if rem_qty <= 0:
+        threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1), daemon=True).start()
+
+    return {
+        "success": True, 
+        "action": "completed" if rem_qty <= 0 else "part_ok", 
+        "message": f"Mock detect berhasil! Sisa: {max(0, rem_qty)} PCS"
+    }
 
 @router.post("/operator/resolve-ng")
 def resolve_ng(req: NGResolveRequest, db: Session = Depends(get_db)):
