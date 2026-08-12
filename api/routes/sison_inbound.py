@@ -101,6 +101,20 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
     daftar_sisi = [r.sisi for r in db_rules] if db_rules else ["F"]
     curr_side = daftar_sisi[0] if daftar_sisi else "F"
 
+    # Konversi ORM object ke plain dict agar aman diakses lintas-thread dengan .get()
+    rules_as_dict = [
+        {
+            "id": r.id,
+            "p_no": r.p_no,
+            "sisi": r.sisi,
+            "nama_komponen": r.nama_komponen,
+            "min_confidence": r.min_confidence if r.min_confidence is not None else 0.70,
+            "avg_confidence": r.avg_confidence if r.avg_confidence is not None else 0.75,
+            "min_coverage": r.min_coverage if r.min_coverage is not None else 1.0,
+        }
+        for r in db_rules
+    ]
+
     with state.lock:
         state.status = "RUNNING"
         state.id_trans = id_trans
@@ -108,7 +122,7 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
         state.target_qty = qty
         state.qty = qty
         state.daftar_sisi = daftar_sisi
-        state.aturan_sisi = db_rules
+        state.aturan_sisi = rules_as_dict
         state.progress_sisi = 0
         state.current_side = curr_side
         state.part_ok_popup = False

@@ -14,9 +14,6 @@ class SystemState:
         self.daftar_sisi: list = []
         self.progress_sisi: int = 0
         self.cooldown_until: float = 0.0
-        self.mock_detect_trigger: bool = False
-        self.manual_pass_trigger: bool = False
-        self.manual_reject_trigger: bool = False
         self.inspection_mode: str = "AI"  # "AI" or "MANUAL"
         self.part_ok_popup: bool = False
         self.current_side: str = "F"      # "F" = Front, "R" = Rear
@@ -99,9 +96,6 @@ class SystemState:
             self.progress_sisi = 0
             self.current_side = "F"
             self.completed_time = 0.0
-            self.manual_pass_trigger = False
-            self.manual_reject_trigger = False
-            self.mock_detect_trigger = False
             self.inspection_mode = "AI"
 
 state = SystemState()

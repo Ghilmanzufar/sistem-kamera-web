@@ -173,53 +173,7 @@ class KameraProses:
             detected_confidences = []
             min_conf_failed = False
 
-            manual_pass = False
-            manual_reject = False
-            with state.lock:
-                if getattr(state, 'manual_pass_trigger', False):
-                    manual_pass = True
-                    state.manual_pass_trigger = False
-                elif getattr(state, 'manual_reject_trigger', False):
-                    manual_reject = True
-                    state.manual_reject_trigger = False
-
-            if manual_pass:
-                with state.lock:
-                    state.qty -= 1
-                    state.part_ok_popup = True
-                    cur_pno = state.p_no
-                    cur_id = state.id_trans
-                    rem_qty = state.qty
-                    state.last_inspection_details = {
-                        "label_terdeteksi": "Pemeriksaan Visual Manual",
-                        "avg_confidence": "100% (Manual Pass)",
-                        "found_labels": "- INSPEKSI VISUAL OPERATOR : OK"
-                    }
-                
-                threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 1.0, "MANUAL", state.operator_name)).start()
-                
-                if rem_qty <= 0:
-                    with state.lock:
-                        state.status = "COMPLETED"
-                        state.completed_time = time.time()
-                    threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1)).start()
-                    pesan_ui = "INSPEKSI MANUAL SELESAI (OK)!"
-                    color_status = (0, 255, 0)
-                else:
-                    pesan_ui = f"Part Manual OK! Sisa: {rem_qty} PCS"
-                    color_status = (0, 255, 0)
-
-            elif manual_reject:
-                with state.lock:
-                    state.status = "NG"
-                    cur_pno = state.p_no
-                    cur_id = state.id_trans
-                threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "NG", 0.0, "MANUAL", state.operator_name)).start()
-                threading.Thread(target=SisonSender.send_callback, args=(cur_id, 2)).start()
-                pesan_ui = "STATUS: NG (MANUAL REJECT)! INPUT PIN UNTUK VALIDASI."
-                color_status = (0, 0, 255)
-
-            elif model is not None:
+            if model is not None:
                 with state.lock:
                     state.inspection_mode = "AI"
                 results = model.track(frame, persist=True, verbose=False, conf=0.20)
@@ -254,23 +208,6 @@ class KameraProses:
 
             aturan_aktif = get_rules_for_side(aturan_sisi, current_side)
             has_rear = any(r.get("nama_komponen", "").lower().startswith("r-") for r in aturan_sisi)
-
-            was_mock_triggered = False
-            with state.lock:
-                if getattr(state, 'mock_detect_trigger', False):
-                    was_mock_triggered = True
-                    target_rules = aturan_aktif if aturan_aktif else aturan_sisi
-                    if target_rules:
-                        for req in target_rules:
-                            lbl = req.get("nama_komponen", "").lower()
-                            label_counts[lbl] = 1
-                            label_max_conf[lbl] = 0.95
-                            detected_confidences.append(0.95)
-                    else:
-                        label_counts["mock_component"] = 1
-                        label_max_conf["mock_component"] = 0.95
-                        detected_confidences.append(0.95)
-                    state.mock_detect_trigger = False
 
             metrics = calculate_inspection_metrics(aturan_aktif, label_counts, detected_confidences)
             required_labels = metrics["required_labels"]
@@ -341,31 +278,6 @@ class KameraProses:
                             else:
                                 pesan_ui = "Part OK! Lanjut part berikutnya."
                                 color_status = (0, 255, 0)
-
-            elif was_mock_triggered:
-                with state.lock:
-                    state.qty -= 1
-                    state.current_side = "F"
-                    state.part_ok_popup = True
-                    cur_pno = state.p_no
-                    cur_id = state.id_trans
-                    rem_qty = state.qty
-                    state.last_inspection_details = {
-                        "label_terdeteksi": "Simulasi Mock Detect",
-                        "avg_confidence": "95%",
-                        "found_labels": "- MOCK COMPONENT : 95%"
-                    }
-                threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 0.95, "AI", state.operator_name)).start()
-                if rem_qty <= 0:
-                    with state.lock:
-                        state.status = "COMPLETED"
-                        state.completed_time = time.time()
-                    threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1)).start()
-                    pesan_ui = "INSPEKSI SELESAI!"
-                    color_status = (0, 255, 0)
-                else:
-                    pesan_ui = "Part Mock OK! Lanjut part berikutnya."
-                    color_status = (0, 255, 0)
 
         elif status == "NG":
             pesan_ui = "STATUS: NG! INPUT PIN UNTUK VALIDASI."
