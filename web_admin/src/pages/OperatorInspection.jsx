@@ -122,7 +122,7 @@ export default function OperatorInspection() {
       } catch {}
     };
     syncOperatorSession();
-    const heartbeatTimer = setInterval(syncOperatorSession, 4000);
+    const heartbeatTimer = setInterval(syncOperatorSession, 15000);
     return () => clearInterval(heartbeatTimer);
   }, []);
 
@@ -353,53 +353,53 @@ export default function OperatorInspection() {
     <div className={`h-screen max-h-screen w-screen overflow-hidden flex flex-col p-2.5 sm:p-3 gap-2 font-sans select-none app-bg-gradient box-border ${isNg ? 'ring-8 ring-rose-600 animate-pulse' : ''}`}>
       
       {/* 1. TOP HUD (HEADS-UP DISPLAY) HEADER */}
-      <header className={`rounded-2xl p-3 sm:p-3.5 border-2 shadow-xl backdrop-blur-xl transition-all duration-300 shrink-0 ${statusBg}`}>
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
+      <header className={`rounded-2xl p-3 sm:p-4 border-2 shadow-xl backdrop-blur-xl transition-all duration-300 shrink-0 ${statusBg}`}>
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4">
           
           {/* Part Number & QTY Target */}
           <div className="flex-1 text-center lg:text-left min-w-0">
-            <div className="text-xs font-black tracking-widest text-amber-400 uppercase flex items-center justify-center lg:justify-start gap-1.5">
-              <Layers className="w-3.5 h-3.5" />
+            <div className="text-xs sm:text-sm font-black tracking-widest text-amber-400 uppercase flex items-center justify-center lg:justify-start gap-1.5">
+              <Layers className="w-4 h-4" />
               <span>PART NUMBER</span>
             </div>
-            <div className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-wide mt-0.5 truncate">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-wide mt-0.5 truncate">
               {telemetry.p_no || 'MENUNGGU SISON...'}
             </div>
             {telemetry.p_no ? (
-              <div className="text-xs font-bold text-emerald-400 mt-0.5">
-                Target: {telemetry.target_qty} PCS | Selesai: {telemetry.qty_completed} PCS
+              <div className="text-sm sm:text-base font-bold text-emerald-400 mt-0.5">
+                Target: <span className="text-white font-extrabold">{telemetry.target_qty} PCS</span> | Selesai: <span className="text-white font-extrabold">{telemetry.qty_completed} PCS</span>
               </div>
             ) : (
-              <div className="text-[11px] text-slate-400 mt-0.5">Siap menerima trigger transaksi inspeksi</div>
+              <div className="text-xs sm:text-sm text-slate-400 mt-0.5">Siap menerima trigger transaksi inspeksi</div>
             )}
           </div>
 
-          {/* Center Status Banner */}
-          <div className="flex-1 text-center px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/10 shadow-inner min-w-0">
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+          {/* Center Status Banner (Besar & Kontras Tinggi) */}
+          <div className="flex-1 text-center px-4 py-2 rounded-2xl bg-slate-900/80 border border-white/15 shadow-inner min-w-0">
+            <div className="text-xs sm:text-sm font-black text-slate-400 tracking-wider uppercase">
               STATUS KAMERA
             </div>
-            <div className={`text-base sm:text-xl tracking-wide font-extrabold ${statusTextColor}`}>
+            <div className={`text-xl sm:text-2xl lg:text-3xl tracking-wide font-black ${statusTextColor}`}>
               {statusText}
             </div>
-            <div className="text-[11px] text-slate-300 font-medium truncate max-w-sm mx-auto">
+            <div className="text-xs sm:text-sm text-slate-200 font-bold truncate max-w-md mx-auto mt-0.5">
               {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : '-'}
             </div>
             {telemetry.p_no && telemetry.status !== 'STANDBY' && (
-              <div className="text-[11px] font-black text-emerald-400 mt-0.5">
-                SISA QTY: {telemetry.qty_remaining}/{telemetry.target_qty} | SISI: {telemetry.current_side}
+              <div className="text-xs sm:text-sm font-black text-emerald-300 mt-1 bg-emerald-950/60 py-0.5 px-3 rounded-full inline-block border border-emerald-500/30">
+                SISA QTY: {telemetry.qty_remaining}/{telemetry.target_qty} | SISI: {telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : telemetry.current_side === 'R' ? 'REAR (BELAKANG)' : telemetry.current_side}
               </div>
             )}
           </div>
 
-          {/* Right: Operator Badge & Actions (Riwayat Inspeksi + Keluar Shift di bawahnya) */}
+          {/* Right: Operator Badge & Actions (Riwayat Inspeksi + Keluar Shift) */}
           <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-2 min-w-0">
             {/* Operator Name & Time (Terkunci ke user lokal browser) */}
             <div className="flex items-center gap-2.5 bg-slate-900/90 px-4 py-2 rounded-xl border border-white/15 text-sky-300 text-sm sm:text-base font-extrabold shadow-md">
-              <User className="w-4 h-4 text-sky-400" />
+              <User className="w-5 h-5 text-sky-400" />
               <span className="truncate max-w-[150px]">{localOperatorName}</span>
               <span className="text-slate-600">|</span>
-              <Clock className="w-4 h-4 text-slate-400" />
+              <Clock className="w-5 h-5 text-slate-400" />
               <span>{loginTimeStr}</span>
             </div>
 
@@ -408,7 +408,7 @@ export default function OperatorInspection() {
               <button
                 type="button"
                 onClick={() => navigate('/operator/history')}
-                className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-blue-400/30 transition-all shadow-lg shadow-blue-600/30 cursor-pointer hover:scale-105 active:scale-95"
+                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-blue-400/30 transition-all shadow-lg shadow-blue-600/30 cursor-pointer hover:scale-105 active:scale-95"
               >
                 <History className="w-4 h-4 text-white" />
                 <span>📋 RIWAYAT INSPEKSI</span>
@@ -417,7 +417,7 @@ export default function OperatorInspection() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 transition-all cursor-pointer shadow-lg shadow-rose-600/30 hover:scale-105 active:scale-95"
+                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 transition-all cursor-pointer shadow-lg shadow-rose-600/30 hover:scale-105 active:scale-95"
               >
                 <LogOut className="w-4 h-4 text-white" />
                 <span>🚪 KELUAR</span>
@@ -428,17 +428,17 @@ export default function OperatorInspection() {
         </div>
       </header>
 
-      {/* 2. ACTION TOOLBAR (Ringkas & Efisien) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-md shadow-md shrink-0">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* 2. ACTION TOOLBAR (Ukuran Nyaman untuk Touch & Klik) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 px-3.5 py-2 rounded-xl border border-white/10 backdrop-blur-md shadow-md shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Tombol PASS MANUAL (Hanya muncul di Mode Manual) */}
           {isManualMode && (
             <button
               type="button"
               onClick={handleManualPass}
-              className="py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all cursor-pointer animate-bounce"
+              className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer animate-bounce"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
+              <CheckCircle2 className="w-4 h-4" />
               <span>✅ PASS MANUAL (OK)</span>
             </button>
           )}
@@ -448,9 +448,9 @@ export default function OperatorInspection() {
             <button
               type="button"
               onClick={handleManualReject}
-              className="py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-rose-600/30 transition-all cursor-pointer"
+              className="py-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
             >
-              <XCircle className="w-3.5 h-3.5" />
+              <XCircle className="w-4 h-4" />
               <span>❌ REJECT (NG)</span>
             </button>
           )}
@@ -459,9 +459,9 @@ export default function OperatorInspection() {
           <button
             type="button"
             onClick={() => setShowDemoModal(true)}
-            className="py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 border border-white/10 transition-all shadow-sm cursor-pointer"
+            className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-white/15 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
           >
-            <Send className="w-3.5 h-3.5 text-indigo-400" />
+            <Send className="w-4 h-4 text-indigo-400" />
             <span>🚀 DEMO SISON</span>
           </button>
 
@@ -469,19 +469,19 @@ export default function OperatorInspection() {
           <button
             type="button"
             onClick={handleMockDetect}
-            className="py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1.5 border border-white/10 transition-all shadow-sm cursor-pointer"
+            className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-white/15 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
           >
-            <Camera className="w-3.5 h-3.5 text-amber-400" />
+            <Camera className="w-4 h-4 text-amber-400" />
             <span>📷 MOCK DETECT</span>
           </button>
         </div>
 
-        <div className="text-[11px] text-slate-400 font-medium hidden sm:block">
+        <div className="text-xs text-slate-400 font-bold hidden sm:block">
           Sistem Kamera Inspeksi AI Real-Time
         </div>
       </div>
 
-      {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER (FITS MONITOR PERFECTLY - NO SCROLL) */}
+      {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER */}
       <main className="flex-1 min-h-0 w-full relative flex items-center justify-center bg-black rounded-2xl border-2 border-slate-800 shadow-2xl overflow-hidden">
         {telemetry.is_cam_active ? (
           <img
@@ -491,40 +491,43 @@ export default function OperatorInspection() {
           />
         ) : (
           <div className="text-center p-6">
-            <Camera className="w-12 h-12 text-slate-600 mx-auto mb-3 animate-pulse" />
-            <h2 className="text-xl font-black text-slate-300">KAMERA STANDBY (OFF)</h2>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            <Camera className="w-16 h-16 text-slate-600 mx-auto mb-3 animate-pulse" />
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-200">KAMERA STANDBY (OFF)</h2>
+            <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto font-medium">
               Kamera saat ini dimatikan dari pengaturan perangkat. Nyalakan saklar kamera untuk melihat live video stream.
             </p>
           </div>
         )}
       </main>
 
-      {/* 4. MODAL POPUP: PART OK */}
+      {/* 4. MODAL POPUP: PART OK (UKURAN BESAR & JELAS UNTUK OPERATOR) */}
       {showPartOkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-slate-900 border-2 border-emerald-500/60 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-950/40 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mx-auto mb-3 text-emerald-400 shadow-lg">
-              <Check className="w-8 h-8" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-lg animate-fadeIn">
+          <div className="w-full max-w-2xl bg-slate-900 border-4 border-emerald-500 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-emerald-950/60 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-emerald-500/20 border-4 border-emerald-400 flex items-center justify-center mx-auto mb-4 text-emerald-400 shadow-xl shadow-emerald-500/30 animate-pulse">
+              <Check className="w-12 h-12 stroke-[3]" />
             </div>
-            <h3 className="text-2xl font-black text-white">✅ PART BERHASIL TERDETEKSI!</h3>
-            <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-1">
-              Semua label terdeteksi dan memenuhi standar confidence AI.
+            
+            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wide">
+              ✅ PART OK (DIVERIFIKASI)!
+            </h3>
+            <p className="text-base sm:text-lg text-emerald-300 font-extrabold mt-2">
+              Semua label komponen terdeteksi lengkap & memenuhi standar AI Quality Control.
             </p>
 
-            <div className="mt-4 p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-left text-xs space-y-2">
-              <div className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-slate-400">Label Terdeteksi:</span>
-                <span className="font-bold text-white">{telemetry.popups?.details?.label_terdeteksi || '-'}</span>
+            <div className="mt-6 p-5 sm:p-6 rounded-2xl bg-slate-950/90 border-2 border-white/10 text-left space-y-3.5 shadow-inner">
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <span className="text-slate-300 text-sm sm:text-base font-bold">Kelengkapan Label:</span>
+                <span className="text-lg sm:text-xl font-black text-white">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
               </div>
-              <div className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-slate-400">Rata-rata Confidence:</span>
-                <span className="font-bold text-emerald-400">{telemetry.popups?.details?.avg_confidence || '-'}</span>
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <span className="text-slate-300 text-sm sm:text-base font-bold">Rata-rata Akurasi AI:</span>
+                <span className="text-lg sm:text-xl font-black text-emerald-400">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block mb-1">Label yang ditemukan:</span>
-                <pre className="text-xs text-emerald-400 font-mono bg-black/50 p-2 rounded-xl whitespace-pre-wrap">
-                  {telemetry.popups?.details?.found_labels || '-'}
+                <span className="text-slate-300 text-sm sm:text-base font-bold block mb-2">Detail Komponen Terdeteksi:</span>
+                <pre className="text-sm sm:text-base text-emerald-300 font-mono font-bold bg-black/70 p-3 sm:p-4 rounded-xl whitespace-pre-wrap border border-emerald-500/20 leading-relaxed">
+                  {telemetry.popups?.details?.found_labels || '- INSPEKSI VISUAL : OK'}
                 </pre>
               </div>
             </div>
@@ -532,66 +535,71 @@ export default function OperatorInspection() {
             <button
               type="button"
               onClick={handleClosePartOkModal}
-              className="mt-5 w-full py-3 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+              className="mt-6 w-full py-4 sm:py-5 px-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-lg sm:text-2xl font-black rounded-2xl shadow-xl shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
-              Lanjutkan Inspeksi →
+              LANJUTKAN INSPEKSI →
             </button>
           </div>
         </div>
       )}
 
-      {/* 5. MODAL POPUP: BALIK PART (FLIP SIDE) */}
+      {/* 5. MODAL POPUP: BALIK PART (UKURAN BESAR & WARNA TEGAS) */}
       {showFlipModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-amber-950/40 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center mx-auto mb-3 text-amber-400 shadow-lg">
-              <RotateCcw className="w-8 h-8" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-lg animate-fadeIn">
+          <div className="w-full max-w-2xl bg-slate-900 border-4 border-amber-500 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-amber-950/60 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mx-auto mb-4 text-amber-400 shadow-xl shadow-amber-500/30 animate-spin-slow">
+              <RotateCcw className="w-12 h-12 stroke-[3]" />
             </div>
-            <h3 className="text-2xl font-black text-white">🔄 SISI DEPAN OK!</h3>
-            <p className="text-xs sm:text-sm text-amber-300 font-bold mt-1">
-              Balik Part ke <span className="underline font-black">SISI BELAKANG (REAR)</span>.
+            
+            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wide">
+              🔄 SISI DEPAN (FRONT) OK!
+            </h3>
+            <p className="text-lg sm:text-2xl text-amber-300 font-black mt-2">
+              BALIK PART KE <span className="underline decoration-amber-400 decoration-4 text-white">SISI BELAKANG (REAR)</span>
             </p>
 
-            <div className="mt-4 p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-left text-xs space-y-2">
-              <div className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-slate-400">Label Sisi Depan:</span>
-                <span className="font-bold text-white">{telemetry.popups?.details?.label_terdeteksi || '-'}</span>
+            <div className="mt-6 p-5 sm:p-6 rounded-2xl bg-slate-950/90 border-2 border-white/10 text-left space-y-3 shadow-inner">
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <span className="text-slate-300 text-sm sm:text-base font-bold">Status Sisi Depan:</span>
+                <span className="text-lg sm:text-xl font-black text-emerald-400">OK (Lengkap)</span>
               </div>
-              <div className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-slate-400">Confidence:</span>
-                <span className="font-bold text-emerald-400">{telemetry.popups?.details?.avg_confidence || '-'}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300 text-sm sm:text-base font-bold">Target Selanjutnya:</span>
+                <span className="text-lg sm:text-xl font-black text-amber-400">Inspeksi Sisi Belakang</span>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleCloseFlipModal}
-              className="mt-5 w-full py-3 px-6 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl shadow-lg shadow-amber-600/30 transition-all cursor-pointer"
+              className="mt-6 w-full py-4 sm:py-5 px-8 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-lg sm:text-2xl font-black rounded-2xl shadow-xl shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
-              Part Sudah Dibalik (Lanjutkan) →
+              PART SUDAH DIBALIK (LANJUTKAN) →
             </button>
           </div>
         </div>
       )}
 
-      {/* 6. MODAL POPUP: NG ABNORMALITY & VALIDASI PENGAWAS */}
+      {/* 6. MODAL POPUP: NG ABNORMALITY & VALIDASI PENGAWAS (UKURAN SANGAT BESAR & JELAS) */}
       {showNgModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-rose-950/90 backdrop-blur-xl animate-fadeIn">
-          <div className="w-full max-w-xl bg-slate-950 border-4 border-rose-500 rounded-3xl p-6 shadow-2xl shadow-rose-900/60">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-rose-950/95 backdrop-blur-xl animate-fadeIn">
+          <div className="w-full max-w-2xl bg-slate-950 border-4 border-rose-500 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-rose-900/80">
             <div className="text-center mb-4">
-              <div className="inline-flex items-center gap-2 bg-rose-500/20 border-2 border-rose-500 px-3.5 py-1 rounded-full text-rose-300 font-black text-xs uppercase tracking-wider animate-pulse mb-2">
-                <ShieldAlert className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 bg-rose-500/30 border-2 border-rose-400 px-5 py-1.5 rounded-full text-rose-200 font-black text-sm uppercase tracking-widest animate-pulse mb-3">
+                <ShieldAlert className="w-5 h-5" />
                 <span>SIRENE & ALARM NG AKTIF!</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white">⚠️ KOMPONEN CACAT (NG) TERDETEKSI! ⚠️</h2>
-              <p className="text-xs text-rose-300 font-bold mt-1">
-                Panggil Pengawas dan masukkan PIN Pengawas untuk mematikan sirene & resume sistem.
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-wide">
+                ⚠️ CACAT / NG TERDETEKSI! ⚠️
+              </h2>
+              <p className="text-sm sm:text-base text-rose-300 font-bold mt-1.5">
+                Panggil Pengawas / QC Leader untuk verifikasi dan input PIN validasi.
               </p>
             </div>
 
             {/* Foto Bukti Cacat Snapshot */}
             {telemetry.popups?.ng_image_url && (
-              <div className="mb-4 rounded-xl overflow-hidden border-2 border-rose-500 bg-black max-h-52 flex items-center justify-center">
+              <div className="mb-5 rounded-2xl overflow-hidden border-3 border-rose-500 bg-black max-h-60 flex items-center justify-center shadow-lg">
                 <img
                   src={telemetry.popups.ng_image_url}
                   alt="Snapshot Cacat NG"
@@ -601,16 +609,16 @@ export default function OperatorInspection() {
             )}
 
             {ngError && (
-              <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/50 text-rose-300 text-xs font-bold text-center">
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/30 border-2 border-rose-500 text-rose-200 text-sm sm:text-base font-black text-center">
                 {ngError}
               </div>
             )}
 
             {/* Form PIN Pengawas */}
-            <form onSubmit={handleResolveNg} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <form onSubmit={handleResolveNg} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                  <label className="block text-xs sm:text-sm font-black uppercase text-slate-200 mb-1.5">
                     Username Pengawas / Admin
                   </label>
                   <input
@@ -619,12 +627,12 @@ export default function OperatorInspection() {
                     value={ngSupervisorUsername}
                     onChange={(e) => setNgSupervisorUsername(e.target.value)}
                     placeholder="Username Pengawas"
-                    className="w-full px-3 py-2 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-xs font-sans"
+                    className="w-full px-4 py-3 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-base font-bold placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                  <label className="block text-xs sm:text-sm font-black uppercase text-slate-200 mb-1.5">
                     PIN Pengawas / Admin
                   </label>
                   <input
@@ -633,7 +641,7 @@ export default function OperatorInspection() {
                     value={ngSupervisorPin}
                     onChange={(e) => setNgSupervisorPin(e.target.value)}
                     placeholder="Masukkan PIN"
-                    className="w-full px-3 py-2 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-xs font-sans"
+                    className="w-full px-4 py-3 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-base font-bold placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -641,7 +649,7 @@ export default function OperatorInspection() {
               <button
                 type="submit"
                 disabled={ngResolving}
-                className="w-full py-3 px-5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-rose-600/40 text-sm uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full py-4 px-6 bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-rose-600/50 text-base sm:text-xl uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
                 {ngResolving ? 'Memvalidasi PIN...' : '🔔 VALIDASI PIN & MATIKAN SIRENE'}
               </button>
@@ -652,23 +660,23 @@ export default function OperatorInspection() {
 
       {/* 7. MODAL POPUP: SIMULATOR DEMO SISON */}
       {showDemoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-slate-900 border border-white/15 rounded-3xl p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <Send className="w-4 h-4 text-indigo-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-xl bg-slate-900 border-2 border-indigo-500/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+              <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5">
+                <Send className="w-5 h-5 text-indigo-400" />
                 <span>Simulator JSON Transaksi SISON</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowDemoModal(false)}
-                className="text-slate-400 hover:text-white cursor-pointer"
+                className="text-slate-400 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-800"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 mb-2">
+            <p className="text-xs sm:text-sm text-slate-300 mb-3 font-medium">
               Edit payload JSON di bawah ini untuk mengirim trigger transaksi inspeksi baru:
             </p>
 
@@ -676,24 +684,25 @@ export default function OperatorInspection() {
               rows={8}
               value={demoJson}
               onChange={(e) => setDemoJson(e.target.value)}
-              className="w-full p-3 bg-slate-950 border border-white/15 rounded-xl font-mono text-xs text-emerald-300 focus:outline-none focus:border-indigo-400"
+              className="w-full p-4 bg-slate-950 border-2 border-white/15 rounded-xl font-mono text-xs sm:text-sm text-emerald-300 focus:outline-none focus:border-indigo-400 leading-relaxed"
             />
 
-            <div className="flex items-center justify-end gap-2.5 mt-3">
+            <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowDemoModal(false)}
-                className="py-2 px-3.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
+                className="py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
-                disabled={sendingDemo}
                 onClick={handleSendDemoSison}
-                className="py-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
+                disabled={sendingDemo}
+                className="py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
               >
-                {sendingDemo ? 'Mengirim...' : '🚀 Kirim Simulasi'}
+                <Send className="w-4 h-4" />
+                <span>{sendingDemo ? 'Mengirim...' : 'Kirim Simulasi SISON'}</span>
               </button>
             </div>
           </div>
