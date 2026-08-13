@@ -362,10 +362,12 @@ def clear_popup(req: ClearPopupRequest):
         if req.popup_type in ["ALL", "flip_part"]:
             state.flip_part_popup = False
             
-        # Jika batch inspeksi selesai (COMPLETED atau qty <= 0), reset state ke STANDBY
-        if state.status == "COMPLETED" or state.qty <= 0:
-            state.reset_to_standby()
-            stream_worker.last_pesan_ui = "STANDBY"
+        should_reset = bool(state.status == "COMPLETED" or state.qty <= 0)
+
+    if should_reset:
+        state.reset_to_standby()
+        stream_worker.last_pesan_ui = "STANDBY"
+
     return {"success": True}
 
 @router.post("/operator/demo-start")

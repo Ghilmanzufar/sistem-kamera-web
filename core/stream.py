@@ -37,6 +37,7 @@ class CameraStreamWorker:
         self.last_frame_ts = 0.0
         self.total_frames_processed = 0
         self.last_cam_check_time = 0.0
+        self.last_model_check_time = 0.0
         self.is_reconnecting = False
         self.reconnect_attempts = 0
         self.last_pesan_ui = "STANDBY"
@@ -163,9 +164,9 @@ class CameraStreamWorker:
         while self.running:
             t_start = time.time()
 
-            # 1. Sinkronisasi status saklar kamera dari database setiap 1 detik
+            # 1. Sinkronisasi status saklar kamera dari database setiap 3 detik
             now_ts = time.time()
-            if now_ts - self.last_cam_check_time >= 1.0:
+            if now_ts - self.last_cam_check_time >= 3.0:
                 self.last_cam_check_time = now_ts
                 try:
                     db_cam_session = SessionLocal()
@@ -189,22 +190,24 @@ class CameraStreamWorker:
                 except Exception:
                     pass
 
-            # 2. Status Reset jika COMPLETED > 5 detik
+            # 2. Status Reset jika COMPLETED > 30 detik (agar popup tidak tertutup tiba-tiba)
             with state.lock:
                 current_status = state.status
                 completed_time = state.completed_time
                 p_no = state.p_no
 
-            if current_status == "COMPLETED" and completed_time > 0 and (now_ts - completed_time) >= 5.0:
+            if current_status == "COMPLETED" and completed_time > 0 and (now_ts - completed_time) >= 30.0:
                 state.reset_to_standby()
 
-            # 3. Lazy & Hot-reload model AI YOLOv8
-            model_path = os.path.join(os.getcwd(), "weights", f"{p_no}.pt")
-            curr_mtime = os.path.getmtime(model_path) if os.path.exists(model_path) else 0.0
-            if p_no != "" and (p_no != self.current_loaded_p_no or curr_mtime > self.last_model_mtime):
-                self.model = KameraProses.load_model(p_no)
-                self.current_loaded_p_no = p_no
-                self.last_model_mtime = curr_mtime
+            # 3. Lazy & Hot-reload model AI YOLOv8 (cek disk hanya setiap 3 detik atau saat part berubah)
+            if p_no != "" and (p_no != self.current_loaded_p_no or (now_ts - self.last_model_check_time >= 3.0)):
+                self.last_model_check_time = now_ts
+                model_path = os.path.join(os.getcwd(), "weights", f"{p_no}.pt")
+                curr_mtime = os.path.getmtime(model_path) if os.path.exists(model_path) else 0.0
+                if p_no != self.current_loaded_p_no or curr_mtime > self.last_model_mtime:
+                    self.model = KameraProses.load_model(p_no)
+                    self.current_loaded_p_no = p_no
+                    self.last_model_mtime = curr_mtime
 
             # 4. Tangani jika kamera Standby (OFF)
             if not self.is_cam_active:

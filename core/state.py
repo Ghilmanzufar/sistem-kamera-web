@@ -4,7 +4,7 @@ import time
 class SystemState:
     """Thread-safe singleton state untuk sinkronisasi data antar thread, modul, & stasiun kerja."""
     def __init__(self):
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.status: str = "STANDBY"
         self.id_trans: str = ""
         self.p_no: str = ""
