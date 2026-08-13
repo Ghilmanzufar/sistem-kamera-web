@@ -486,6 +486,7 @@ export default function OperatorInspection() {
   const isManualMode = isRunning && (telemetry.inspection_mode === 'MANUAL');
   const isNg = telemetry.status === 'NG';
   const isCompleted = telemetry.status === 'COMPLETED';
+  const isPopupVisible = showPartOkModal || showFlipModal;
 
   let statusBg = 'bg-slate-900 border-slate-700';
   let statusText = 'STANDBY';
@@ -495,6 +496,10 @@ export default function OperatorInspection() {
     statusBg = 'bg-rose-950/80 border-rose-500 animate-pulse';
     statusText = 'NG TERDETEKSI';
     statusTextColor = 'text-rose-400 font-black';
+  } else if (isPopupVisible) {
+    statusBg = 'bg-blue-900/90 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300';
+    statusText = showFlipModal ? 'MENUNGGU BALIK PART (REAR)' : 'MENUNGGU KONFIRMASI OPERATOR';
+    statusTextColor = 'text-blue-300 font-black tracking-widest';
   } else if (isCompleted) {
     statusBg = 'bg-sky-950/80 border-sky-500';
     statusText = 'SELESAI (OK)';
