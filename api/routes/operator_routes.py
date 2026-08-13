@@ -378,6 +378,9 @@ def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get
     
     with state.lock:
         state.status = "RUNNING"
+        state.current_side = "F"
+        state.flip_part_popup = False
+        state.part_ok_popup = False
         state.cooldown_until = time.time() + 2.0
         cur_op = state.operator_name or state.operator_username or "Operator"
         cur_id = state.id_trans
