@@ -274,7 +274,7 @@ class KameraProses:
                             state.current_side = "R"
                             state.flip_part_popup = True
                             pesan_ui = "Sisi Depan OK! Balik Part ke sisi Belakang."
-                            color_status = (0, 255, 165)
+                            color_status = (0, 255, 0)
                         else:
                             state.qty -= 1
                             state.current_side = "F"

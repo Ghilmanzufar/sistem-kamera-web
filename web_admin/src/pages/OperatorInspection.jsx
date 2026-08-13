@@ -125,7 +125,7 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[10px] font-bold text-slate-300 bg-black/50 px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/10">
-            <GripHorizontal className="w-3.5 h-3.5 text-amber-400" /> <span>✥ Geser</span>
+            <GripHorizontal className="w-3.5 h-3.5 text-emerald-400" /> <span>✥ Geser</span>
           </span>
           {onClose && (
             <button
