@@ -488,7 +488,7 @@ export default function OperatorInspection() {
       statusTextColor = 'text-amber-400 font-bold';
     } else {
       statusBg = 'bg-emerald-950/80 border-emerald-500';
-      statusText = telemetry.status === 'OK' ? 'INSPEKSI AI AKTIF' : 'PROSES (AI AUTO)';
+      statusText = 'DETECT PART';
       statusTextColor = 'text-emerald-400 font-bold';
     }
   }
