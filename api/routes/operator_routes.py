@@ -272,6 +272,7 @@ def mock_detect():
         if cur_side == "F" and has_rear:
             state.current_side = "R"
             state.flip_part_popup = True
+            state.part_ok_popup = False
             
             front_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("f-")]
             found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 96%" for r in front_rules] if front_rules else ["- SISI DEPAN (FRONT) : 95%"]
@@ -286,12 +287,13 @@ def mock_detect():
             state.qty -= 1
             rem_qty = state.qty
             state.current_side = "F"
+            state.flip_part_popup = False
             
             if rem_qty <= 0:
                 state.part_ok_popup = False
                 state.flip_part_popup = False
                 state.completed_time = time.time()
-                stream_worker.last_pesan_ui = "STANDBY"
+                stream_worker.last_pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
                 state.reset_to_standby()
             else:
                 state.part_ok_popup = True

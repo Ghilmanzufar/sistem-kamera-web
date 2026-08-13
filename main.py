@@ -61,7 +61,7 @@ def main():
     open_browser_delayed(f"http://localhost:{port}/", delay=1.5)
 
     # Jalankan Uvicorn ASGI Server
-    uvicorn.run(app_fastapi, host=host, port=port, log_level="info")
+    uvicorn.run(app_fastapi, host=host, port=port, log_level="info", access_log=False)
 
 if __name__ == '__main__':
     main()
