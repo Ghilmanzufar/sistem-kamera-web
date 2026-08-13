@@ -722,26 +722,26 @@ export default function OperatorInspection() {
         </DraggableFloatingCard>
       )}
 
-      {/* 5. DRAGGABLE FLOATING POPUP: BALIK PART (COMPACT ZERO-SCROLL) */}
+      {/* 5. DRAGGABLE FLOATING POPUP: SISI DEPAN OK (IDENTIK DENGAN POPUP SISI BELAKANG) */}
       {showFlipModal && (
         <DraggableFloatingCard
-          title="BALIK PART (SISI DEPAN OK)"
-          badge="SISI BELAKANG (REAR)"
-          color="amber"
-          icon={RotateCcw}
+          title={`PART #${(telemetry.qty_completed || 0) + 1} - SISI DEPAN (FRONT) OK`}
+          badge="BALIK KE REAR"
+          color="emerald"
+          icon={Check}
           onClose={handleCloseFlipModal}
         >
           <div className="text-center space-y-2.5">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-md shrink-0 animate-spin-slow">
-                <RotateCcw className="w-6 h-6 stroke-[3]" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
+                <Check className="w-6 h-6 stroke-[3]" />
               </div>
               <div className="text-left min-w-0">
                 <h3 className="text-base sm:text-lg font-black text-white leading-tight truncate">
-                  🔄 SISI DEPAN (FRONT) OK!
+                  ✅ SISI DEPAN (FRONT) OK!
                 </h3>
-                <p className="text-[11px] sm:text-xs text-amber-300 font-extrabold truncate">
-                  Balik part ke <span className="underline text-white">SISI BELAKANG (REAR)</span>.
+                <p className="text-[11px] sm:text-xs text-emerald-300 font-bold truncate">
+                  Silakan balik part ke <span className="underline decoration-emerald-400 decoration-2 font-black">SISI BELAKANG (REAR)</span>.
                 </p>
               </div>
             </div>
@@ -749,8 +749,8 @@ export default function OperatorInspection() {
             {/* Metrik Kelengkapan & Rata-rata Confidence Sisi Depan */}
             <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10 text-xs">
               <div className="text-left">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Status Depan:</span>
-                <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">OK (Lolos AI)</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Kelengkapan:</span>
+                <span className="font-extrabold text-white text-xs sm:text-sm">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
               </div>
               <div className="text-left">
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Rata-rata Akurasi:</span>
@@ -761,16 +761,16 @@ export default function OperatorInspection() {
             {/* Daftar Label Komponen Sisi Depan yang Terdeteksi */}
             {telemetry.popups?.details?.found_labels && (
               <div className="text-left">
-                <span className="text-[10px] uppercase font-bold text-amber-400/90 block mb-1">
-                  Komponen Sisi Depan Terdeteksi:
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                  Komponen & Skor Confidence Terdeteksi:
                 </span>
                 <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10 max-h-24 overflow-y-auto">
                   {telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
                     <span 
                       key={idx} 
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/40 text-[11px] font-mono font-bold text-amber-300 shadow-sm"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300 shadow-sm"
                     >
-                      <Check className="w-3 h-3 text-amber-400 shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-400 shrink-0" />
                       <span>{lbl.replace(/^-\s*/, '')}</span>
                     </span>
                   ))}
@@ -781,9 +781,9 @@ export default function OperatorInspection() {
             <button
               type="button"
               onClick={handleCloseFlipModal}
-              className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
-              🔄 PART SUDAH DIBALIK (LANJUT KE REAR) →
+              🔄 PART SUDAH DIBALIK (LANJUTKAN KE SISI BELAKANG) →
             </button>
           </div>
         </DraggableFloatingCard>
