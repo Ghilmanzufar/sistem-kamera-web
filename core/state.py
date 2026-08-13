@@ -19,6 +19,7 @@ class SystemState:
         self.current_side: str = "F"      # "F" = Front, "R" = Rear
         self.flip_part_popup: bool = False
         self.last_inspection_details: dict = {}
+        self.live_metrics: dict = {}
         self.completed_time: float = 0.0
         self.operator_name: str = ""       # Nama operator utama
         self.operator_username: str = ""   # Username operator utama

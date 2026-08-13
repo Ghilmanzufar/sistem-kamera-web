@@ -175,7 +175,8 @@ export default function OperatorInspection() {
       ng_active: false,
       ng_image_url: '',
       details: {}
-    }
+    },
+    live_metrics: {}
   });
 
   // Modal States
@@ -524,19 +525,65 @@ export default function OperatorInspection() {
           </div>
 
           {/* Center Status Banner (Besar & Kontras Tinggi) */}
-          <div className="flex-1 text-center px-4 py-2 rounded-2xl bg-slate-900/80 border border-white/15 shadow-inner min-w-0">
-            <div className="text-xs sm:text-sm font-black text-slate-400 tracking-wider uppercase">
-              STATUS KAMERA
+          <div className="flex-1 text-center px-3.5 py-2 rounded-2xl bg-slate-900/90 border border-white/15 shadow-inner min-w-0">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <span className="text-[11px] font-black text-slate-400 tracking-wider uppercase">
+                STATUS INSPEKSI
+              </span>
+              {telemetry.p_no && telemetry.status !== 'STANDBY' && (
+                <span className="text-[11px] font-black text-amber-300 bg-black/60 px-2 py-0.5 rounded-md border border-white/10">
+                  SISI: {telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : telemetry.current_side === 'R' ? 'REAR (BELAKANG)' : telemetry.current_side}
+                </span>
+              )}
             </div>
-            <div className={`text-xl sm:text-2xl lg:text-3xl tracking-wide font-black ${statusTextColor}`}>
+
+            <div className={`text-xl sm:text-2xl lg:text-3xl tracking-wide font-black ${statusTextColor} my-0.5`}>
               {statusText}
             </div>
-            <div className="text-xs sm:text-sm text-slate-200 font-bold truncate max-w-md mx-auto mt-0.5">
-              {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : '-'}
-            </div>
-            {telemetry.p_no && telemetry.status !== 'STANDBY' && (
-              <div className="text-xs sm:text-sm font-black text-emerald-300 mt-1 bg-emerald-950/60 py-0.5 px-3 rounded-full inline-block border border-emerald-500/30">
-                SISA QTY: {telemetry.qty_remaining}/{telemetry.target_qty} | SISI: {telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : telemetry.current_side === 'R' ? 'REAR (BELAKANG)' : telemetry.current_side}
+
+            {/* Dynamic Status Badges: Labels & Avg Conf dengan warna Merah (Belum Capai Standar) vs Hijau (Memenuhi Standar) */}
+            {telemetry.status !== 'STANDBY' && telemetry.p_no ? (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
+                {/* 1. Badge Kelengkapan Label */}
+                <div className={`px-2.5 py-1 rounded-lg text-xs font-black border flex items-center gap-1.5 transition-all ${
+                  telemetry.live_metrics?.labels_complete
+                    ? 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300 shadow-sm'
+                    : 'bg-rose-950/80 border-rose-500/60 text-rose-300 animate-pulse'
+                }`}>
+                  <span>🏷️ Label:</span>
+                  <span className={`text-sm font-black ${telemetry.live_metrics?.labels_complete ? 'text-white' : 'text-rose-200'}`}>
+                    {telemetry.live_metrics?.detected_count ?? 0}/{telemetry.live_metrics?.total_count ?? 0}
+                  </span>
+                  <span className={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${
+                    telemetry.live_metrics?.labels_complete ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/30 text-rose-200'
+                  }`}>
+                    {telemetry.live_metrics?.labels_complete ? 'STANDAR TERCAPAI' : 'BELUM CAPAI STANDAR'}
+                  </span>
+                </div>
+
+                {/* 2. Badge Rata-rata Akurasi AI */}
+                <div className={`px-2.5 py-1 rounded-lg text-xs font-black border flex items-center gap-1.5 transition-all ${
+                  telemetry.live_metrics?.avg_conf_ok
+                    ? 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300 shadow-sm'
+                    : 'bg-rose-950/80 border-rose-500/60 text-rose-300 animate-pulse'
+                }`}>
+                  <span>⚡ Akurasi AI:</span>
+                  <span className={`text-sm font-black ${telemetry.live_metrics?.avg_conf_ok ? 'text-white' : 'text-rose-200'}`}>
+                    {telemetry.live_metrics?.current_avg_conf ?? 0}%
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    / Min {telemetry.live_metrics?.target_avg_conf ?? 75}%
+                  </span>
+                  <span className={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${
+                    telemetry.live_metrics?.avg_conf_ok ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/30 text-rose-200'
+                  }`}>
+                    {telemetry.live_metrics?.avg_conf_ok ? 'MEMENUHI STANDAR' : 'DI BAWAH STANDAR'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 font-bold truncate max-w-md mx-auto mt-0.5">
+                {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : 'Kamera Standby - Menunggu Transaksi SISON'}
               </div>
             )}
           </div>

@@ -237,6 +237,17 @@ class KameraProses:
             labels_complete = metrics["labels_complete"]
             avg_conf_ok = metrics["avg_conf_ok"]
 
+            with state.lock:
+                state.live_metrics = {
+                    "detected_count": detected_required_count,
+                    "total_count": total_required_count,
+                    "labels_complete": bool(labels_complete),
+                    "current_avg_conf": round(current_avg_conf * 100, 1),
+                    "target_avg_conf": round(target_avg_conf * 100, 1),
+                    "avg_conf_ok": bool(avg_conf_ok),
+                    "min_coverage": round(target_coverage * 100, 0),
+                }
+
             if label_counts.get("ng", 0) > 0:
                 with state.lock:
                     state.status = "NG"

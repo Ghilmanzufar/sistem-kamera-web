@@ -73,6 +73,7 @@ def _get_operator_state_dict() -> dict:
         part_ok = getattr(state, 'part_ok_popup', False)
         flip_part = getattr(state, 'flip_part_popup', False)
         details = dict(state.last_inspection_details) if hasattr(state, 'last_inspection_details') else {}
+        live_metrics = dict(state.live_metrics) if hasattr(state, 'live_metrics') else {}
 
     ng_active = bool(stream_worker.ng_active or cur_status == "NG")
     ng_img_path = stream_worker.last_ng_image_path.replace("\\", "/") if stream_worker.last_ng_image_path else ""
@@ -89,6 +90,7 @@ def _get_operator_state_dict() -> dict:
         "current_side": "FRONT" if side == "F" else "REAR",
         "inspection_mode": mode,
         "pesan_ui": stream_worker.last_pesan_ui,
+        "live_metrics": live_metrics,
         "is_cam_active": stream_worker.is_cam_active,
         "reconnect_attempts": stream_worker.reconnect_attempts,
         "operator": {
