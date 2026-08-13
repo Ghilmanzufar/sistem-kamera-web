@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
-  Layers, User, Clock, Eye, GripHorizontal, Video, RefreshCw, Power
+  Layers, User, Clock, Eye, GripHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -184,13 +184,6 @@ export default function OperatorInspection() {
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [showCameraModal, setShowCameraModal] = useState(false);
-
-  // Camera Management States for Operator
-  const [cameraList, setCameraList] = useState([]);
-  const [loadingCameras, setLoadingCameras] = useState(false);
-  const [scanningCameras, setScanningCameras] = useState(false);
-  const [switchingCameraId, setSwitchingCameraId] = useState(null);
 
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
@@ -390,51 +383,6 @@ export default function OperatorInspection() {
       if (stateRes.data) setTelemetry(stateRes.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal trigger Mock Detect');
-    }
-  };
-
-  // Camera Management Handlers for Operator
-  const fetchCameras = async (silent = false) => {
-    if (!silent) setLoadingCameras(true);
-    try {
-      const res = await api.get('/api/cameras');
-      setCameraList(res.data || []);
-    } catch (err) {
-      if (!silent) toast.error('Gagal mengambil daftar kamera');
-    } finally {
-      if (!silent) setLoadingCameras(false);
-    }
-  };
-
-  const handleScanCameras = async () => {
-    setScanningCameras(true);
-    try {
-      const res = await api.post('/api/cameras/scan');
-      setCameraList(res.data || []);
-      toast.success(`Pindai selesai! Ditemukan ${res.data?.length || 0} kamera hardware.`);
-    } catch (err) {
-      toast.error('Gagal memindai perangkat kamera hardware');
-    } finally {
-      setScanningCameras(false);
-    }
-  };
-
-  const handleToggleCamera = async (c) => {
-    setSwitchingCameraId(c.id);
-    try {
-      const res = await api.put(`/api/cameras/${c.id}/toggle`);
-      if (res.data?.is_active) {
-        toast.success(`Kamera "${c.name || 'Kamera'}" dinyalakan (ON / Aktif)!`, { icon: '🟢' });
-      } else {
-        toast(`Kamera "${c.name || 'Kamera'}" dimatikan (OFF / Standby).`, { icon: '⏸️' });
-      }
-      await fetchCameras(true);
-      const stateRes = await api.get('/api/operator/state');
-      if (stateRes.data) setTelemetry(stateRes.data);
-    } catch (err) {
-      toast.error('Gagal mengubah saklar kamera');
-    } finally {
-      setSwitchingCameraId(null);
     }
   };
 
@@ -689,16 +637,6 @@ export default function OperatorInspection() {
           >
             <Camera className="w-4 h-4 text-amber-400" />
             <span>📷 MOCK DETECT</span>
-          </button>
-
-          {/* Tombol Pengaturan Kamera Langsung Operator */}
-          <button
-            type="button"
-            onClick={() => { setShowCameraModal(true); fetchCameras(); }}
-            className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-white/15 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
-          >
-            <Video className="w-4 h-4 text-emerald-400" />
-            <span>📷 PILIH KAMERA</span>
           </button>
         </div>
 
@@ -1011,134 +949,6 @@ export default function OperatorInspection() {
               >
                 <Send className="w-4 h-4" />
                 <span>{sendingDemo ? 'Mengirim...' : '🚀 Kirim Simulasi SISON'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 8. MODAL POPUP: PEMILIHAN & SAKLAR KAMERA OPERATOR */}
-      {showCameraModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-2xl bg-slate-900 border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
-                  <Video className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
-                    Pengaturan & Pemilihan Kamera USB
-                  </h3>
-                  <p className="text-xs text-slate-400 font-bold">
-                    Pilih kamera aktif untuk live stream & inspeksi AI di lini kerja
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCameraModal(false)}
-                className="text-slate-400 hover:text-white cursor-pointer p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Toolbar Scan Ulang */}
-            <div className="flex items-center justify-between gap-3 bg-slate-950 p-3 rounded-2xl border border-white/10 text-xs">
-              <span className="text-slate-300 font-medium">
-                💡 Baru mencolok kabel USB kamera baru?
-              </span>
-              <button
-                type="button"
-                onClick={handleScanCameras}
-                disabled={scanningCameras}
-                className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all disabled:opacity-50 cursor-pointer"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${scanningCameras ? 'animate-spin' : ''}`} />
-                <span>{scanningCameras ? 'Memindai...' : 'Deteksi Ulang Hardware'}</span>
-              </button>
-            </div>
-
-            {/* Daftar Kamera */}
-            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-              {loadingCameras ? (
-                <div className="text-center py-8 text-slate-400 text-xs font-bold animate-pulse">
-                  Memuat daftar perangkat kamera...
-                </div>
-              ) : cameraList.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-xs font-bold bg-slate-950/60 rounded-2xl border border-white/5">
-                  Tidak ada kamera terdeteksi. Pastikan kabel USB kamera terhubung.
-                </div>
-              ) : (
-                cameraList.map((c) => {
-                  const isSwitching = switchingCameraId === c.id;
-                  const src = String(c?.source || '0');
-                  const camName = c?.name || `USB Camera (Index ${src})`;
-
-                  return (
-                    <div
-                      key={c.id || src}
-                      className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
-                        c.is_active
-                          ? 'bg-emerald-950/40 border-emerald-500/50 shadow-md shadow-emerald-950/50'
-                          : 'bg-slate-950/60 border-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                          c.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/40' : 'bg-slate-800 text-slate-500'
-                        }`}>
-                          <Video className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-white text-sm truncate">{camName}</span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-slate-300 border border-white/10 font-bold">
-                              Port: {src}
-                            </span>
-                          </div>
-                          <div className="text-xs mt-0.5">
-                            {c.is_active ? (
-                              <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                                AKTIF DIGUNAKAN
-                              </span>
-                            ) : (
-                              <span className="text-slate-500 font-bold">Standby (OFF)</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Tombol Saklar */}
-                      <button
-                        type="button"
-                        disabled={isSwitching}
-                        onClick={() => handleToggleCamera(c)}
-                        className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow transition-all cursor-pointer disabled:opacity-50 ${
-                          c.is_active
-                            ? 'bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-500/30'
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
-                        }`}
-                      >
-                        <Power className="w-3.5 h-3.5" />
-                        <span>{isSwitching ? 'Memproses...' : c.is_active ? 'Matikan' : 'Aktifkan'}</span>
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Footer Modal */}
-            <div className="pt-2 flex items-center justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCameraModal(false)}
-                className="py-2.5 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm cursor-pointer"
-              >
-                Tutup
               </button>
             </div>
           </div>
