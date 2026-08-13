@@ -559,32 +559,38 @@ export default function OperatorInspection() {
           {/* Right: Operator Badge & Actions (Riwayat Inspeksi + Keluar Shift) */}
           <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-2 min-w-0">
             {/* Operator Name & Time (Terkunci ke user lokal browser) */}
-            <div className="flex items-center gap-2.5 bg-slate-900/90 px-4 py-2 rounded-xl border border-white/15 text-sky-300 text-sm sm:text-base font-extrabold shadow-md">
-              <User className="w-5 h-5 text-sky-400" />
-              <span className="truncate max-w-[150px]">{localOperatorName}</span>
-              <span className="text-slate-600">|</span>
-              <Clock className="w-5 h-5 text-slate-400" />
-              <span>{loginTimeStr}</span>
+            <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-2xl border border-white/10 text-sky-300 text-xs sm:text-sm font-extrabold shadow-inner backdrop-blur-md">
+              <div className="w-6 h-6 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
+                <User className="w-3.5 h-3.5" />
+              </div>
+              <span className="truncate max-w-[140px] text-white">{localOperatorName}</span>
+              <span className="text-slate-600 font-normal">|</span>
+              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="font-mono text-slate-300">{loginTimeStr}</span>
             </div>
 
-            {/* Sub-Actions: Riwayat Inspeksi & Keluar Shift (Ukuran Besar & Jelas) */}
+            {/* Sub-Actions: Riwayat Inspeksi & Keluar Shift (Ultra-Modern Glassmorphic Design) */}
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => navigate('/operator/history')}
-                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-blue-400/30 transition-all shadow-lg shadow-blue-600/30 cursor-pointer hover:scale-105 active:scale-95"
+                className="group relative overflow-hidden py-2 px-3.5 rounded-2xl bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-blue-700/90 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-blue-400/30 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/40 backdrop-blur-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
               >
-                <History className="w-4 h-4 text-white" />
-                <span>📋 RIWAYAT INSPEKSI</span>
+                <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-sky-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
+                  <History className="w-3.5 h-3.5" />
+                </div>
+                <span className="tracking-wide">Riwayat Inspeksi</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 transition-all cursor-pointer shadow-lg shadow-rose-600/30 hover:scale-105 active:scale-95"
+                className="group relative overflow-hidden py-2 px-3.5 rounded-2xl bg-gradient-to-r from-rose-600/90 via-red-600/90 to-rose-700/90 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 shadow-lg shadow-rose-600/25 hover:shadow-rose-500/40 backdrop-blur-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
               >
-                <LogOut className="w-4 h-4 text-white" />
-                <span>🚪 KELUAR</span>
+                <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-rose-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
+                  <LogOut className="w-3.5 h-3.5" />
+                </div>
+                <span className="tracking-wide">Keluar</span>
               </button>
             </div>
           </div>

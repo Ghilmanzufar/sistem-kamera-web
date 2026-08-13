@@ -66,10 +66,12 @@ export default function OperatorHistory() {
           <button
             type="button"
             onClick={() => navigate('/operator')}
-            className="py-3 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm flex items-center gap-2.5 shadow-xl shadow-blue-600/30 transition-all cursor-pointer hover:scale-105 active:scale-95"
+            className="group py-2.5 px-5 rounded-2xl bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-blue-700/90 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2.5 border border-blue-400/30 shadow-lg shadow-blue-600/25 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span>◀️ KEMBALI KE LAYAR KAMERA</span>
+            <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-sky-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
+              <ArrowLeft className="w-3.5 h-3.5" />
+            </div>
+            <span>Kembali ke Layar Kamera</span>
           </button>
 
           <div>
@@ -85,16 +87,20 @@ export default function OperatorHistory() {
           <button
             type="button"
             onClick={() => { setShowCameraModal(true); fetchCameras(); }}
-            className="py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer hover:scale-105 active:scale-95"
+            className="group py-2.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600/90 via-teal-600/90 to-emerald-700/90 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2.5 border border-emerald-400/30 shadow-lg shadow-emerald-600/25 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
           >
-            <Video className="w-4 h-4" />
-            <span>📷 PILIH KAMERA</span>
+            <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-emerald-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
+              <Video className="w-3.5 h-3.5" />
+            </div>
+            <span>Pilih Kamera</span>
           </button>
 
           {/* Badge Nama Operator */}
-          <div className="flex items-center gap-2 bg-slate-950/80 px-4 py-2.5 rounded-2xl border border-white/10 text-xs sm:text-sm font-bold text-sky-300">
-            <User className="w-4 h-4 text-sky-400" />
-            <span>👤 {operatorName}</span>
+          <div className="flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs sm:text-sm font-extrabold text-sky-300 shadow-inner backdrop-blur-md">
+            <div className="w-6 h-6 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
+              <User className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-white">{operatorName}</span>
           </div>
         </div>
       </div>
