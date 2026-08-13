@@ -658,18 +658,18 @@ export default function OperatorInspection() {
           icon={Check}
           onClose={handleClosePartOkModal}
         >
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-2.5">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
-                <Check className="w-7 h-7 stroke-[3]" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
+                <Check className="w-6 h-6 stroke-[3]" />
               </div>
               <div className="text-left min-w-0">
-                <h3 className="text-lg sm:text-xl font-black text-white leading-tight truncate">
+                <h3 className="text-base sm:text-lg font-black text-white leading-tight truncate">
                   {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
                     ? "🎉 SELURUH BATCH SELESAI (OK)!"
                     : "✅ PART OK (DIVERIFIKASI)!"}
                 </h3>
-                <p className="text-xs sm:text-sm text-emerald-300 font-bold truncate">
+                <p className="text-[11px] sm:text-xs text-emerald-300 font-bold truncate">
                   {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
                     ? `Semua target ${telemetry.target_qty} PCS selesai diverifikasi.`
                     : `Sisi Depan & Belakang OK. Sisa: ${telemetry.qty_remaining} PCS.`}
@@ -677,21 +677,42 @@ export default function OperatorInspection() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-white/10 text-xs">
+            {/* Metrik Kelengkapan & Rata-rata Confidence */}
+            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10 text-xs">
               <div className="text-left">
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Kelengkapan:</span>
-                <span className="font-extrabold text-white text-sm">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
+                <span className="font-extrabold text-white text-xs sm:text-sm">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
               </div>
               <div className="text-left">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Akurasi AI:</span>
-                <span className="font-extrabold text-emerald-400 text-sm">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Rata-rata Akurasi:</span>
+                <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
               </div>
             </div>
+
+            {/* Daftar Label Komponen & Confidence Terdeteksi */}
+            {telemetry.popups?.details?.found_labels && (
+              <div className="text-left">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                  Komponen & Skor Confidence Terdeteksi:
+                </span>
+                <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10 max-h-24 overflow-y-auto">
+                  {telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
+                    <span 
+                      key={idx} 
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300 shadow-sm"
+                    >
+                      <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span>{lbl.replace(/^-\s*/, '')}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
               onClick={handleClosePartOkModal}
-              className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
               {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
                 ? "✅ SELESAI (KEMBALI KE STANDBY)"
@@ -710,36 +731,57 @@ export default function OperatorInspection() {
           icon={RotateCcw}
           onClose={handleCloseFlipModal}
         >
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-2.5">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-md shrink-0 animate-spin-slow">
-                <RotateCcw className="w-7 h-7 stroke-[3]" />
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-md shrink-0 animate-spin-slow">
+                <RotateCcw className="w-6 h-6 stroke-[3]" />
               </div>
               <div className="text-left min-w-0">
-                <h3 className="text-lg sm:text-xl font-black text-white leading-tight truncate">
+                <h3 className="text-base sm:text-lg font-black text-white leading-tight truncate">
                   🔄 SISI DEPAN (FRONT) OK!
                 </h3>
-                <p className="text-xs sm:text-sm text-amber-300 font-extrabold truncate">
+                <p className="text-[11px] sm:text-xs text-amber-300 font-extrabold truncate">
                   Balik part ke <span className="underline text-white">SISI BELAKANG (REAR)</span>.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-white/10 text-xs">
+            {/* Metrik Kelengkapan & Rata-rata Confidence Sisi Depan */}
+            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10 text-xs">
               <div className="text-left">
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Status Depan:</span>
-                <span className="font-extrabold text-emerald-400 text-sm">OK (Lolos AI)</span>
+                <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">OK (Lolos AI)</span>
               </div>
               <div className="text-left">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Akurasi:</span>
-                <span className="font-extrabold text-emerald-400 text-sm">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Rata-rata Akurasi:</span>
+                <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
               </div>
             </div>
+
+            {/* Daftar Label Komponen Sisi Depan yang Terdeteksi */}
+            {telemetry.popups?.details?.found_labels && (
+              <div className="text-left">
+                <span className="text-[10px] uppercase font-bold text-amber-400/90 block mb-1">
+                  Komponen Sisi Depan Terdeteksi:
+                </span>
+                <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10 max-h-24 overflow-y-auto">
+                  {telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
+                    <span 
+                      key={idx} 
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/40 text-[11px] font-mono font-bold text-amber-300 shadow-sm"
+                    >
+                      <Check className="w-3 h-3 text-amber-400 shrink-0" />
+                      <span>{lbl.replace(/^-\s*/, '')}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
               onClick={handleCloseFlipModal}
-              className="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
               🔄 PART SUDAH DIBALIK (LANJUT KE REAR) →
             </button>
