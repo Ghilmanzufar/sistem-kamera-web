@@ -769,10 +769,10 @@ export default function OperatorInspection() {
         </DraggableFloatingCard>
       )}
 
-      {/* 4.5 DRAGGABLE FLOATING POPUP: BATCH INSPEKSI SELESAI (100% OK) */}
+      {/* 4.5 DRAGGABLE FLOATING POPUP: INSPEKSI SELESAI (100% OK) */}
       {showCompletedModal && (
         <DraggableFloatingCard
-          title="BATCH INSPEKSI SELESAI"
+          title="INSPEKSI SELESAI"
           badge="100% OK"
           color="emerald"
           icon={CheckCircle2}
@@ -785,53 +785,44 @@ export default function OperatorInspection() {
               </div>
               <div className="min-w-0">
                 <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                  🎉 Seluruh Part Selesai Diinspeksi!
+                  Seluruh Part Selesai Diinspeksi!
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
-                  Semua sisi part ({telemetry.target_qty || 2} PCS) lolos verifikasi AI dengan status OK.
+                  Semua sisi part terdeteksi dengan status OK.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 bg-slate-900/90 p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
-              <div className="text-center">
-                <span className="text-slate-400 block text-[11px] uppercase font-extrabold mb-0.5">Target QTY:</span>
-                <span className="font-black text-white text-base">{telemetry.target_qty || 2} PCS</span>
+            {/* Metrik Target, Selesai OK, Yield Rate (Masing-masing beda baris) */}
+            <div className="flex flex-col gap-2 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 border border-white/5">
+                <span className="text-slate-400 font-extrabold uppercase text-xs">Target QTY:</span>
+                <span className="font-black text-white text-sm sm:text-base font-mono">{telemetry.target_qty || 2} PCS</span>
               </div>
-              <div className="text-center border-x border-white/15">
-                <span className="text-slate-400 block text-[11px] uppercase font-extrabold mb-0.5">Selesai OK:</span>
-                <span className="font-black text-emerald-400 text-base">{telemetry.target_qty || 2} PCS</span>
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
+                <span className="text-slate-300 font-extrabold uppercase text-xs">Selesai OK:</span>
+                <span className="font-black text-emerald-400 text-sm sm:text-base font-mono">{telemetry.target_qty || 2} PCS</span>
               </div>
-              <div className="text-center">
-                <span className="text-slate-400 block text-[11px] uppercase font-extrabold mb-0.5">Yield Rate:</span>
-                <span className="font-black text-teal-400 text-base">100% OK</span>
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-teal-950/40 border border-teal-500/20">
+                <span className="text-slate-300 font-extrabold uppercase text-xs">Yield Rate (% Lolos):</span>
+                <span className="font-black text-teal-400 text-sm sm:text-base font-mono">100% OK</span>
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-950/60 rounded-2xl border border-emerald-500/30 text-xs sm:text-sm text-emerald-200 font-semibold flex items-center justify-between">
-              <span>Part No: <strong className="text-white font-mono">{telemetry.p_no || '74231-0K550-00'}</strong></span>
-              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">Callback SISON Terkirim</span>
+            {/* Part Number */}
+            <div className="px-3.5 py-2.5 bg-slate-900/90 rounded-2xl border border-white/15 text-xs sm:text-sm flex items-center justify-between">
+              <span className="text-slate-400 font-extrabold uppercase text-xs">Part Number:</span>
+              <strong className="text-white font-mono font-bold text-sm sm:text-base">{telemetry.p_no || '74231-0K550-00'}</strong>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  handleFinishBatch();
-                  setShowDemoModal(true);
-                }}
-                className="py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
-              >
-                <Send className="w-4 h-4" />
-                <span>🚀 Tes Demo Lagi</span>
-              </button>
-
+            {/* Tombol Selesai & Standby */}
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleFinishBatch}
-                className="py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer text-center hover:scale-105 active:scale-95"
+                className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer text-center hover:scale-[1.01] active:scale-[0.99]"
               >
-                <span>✅ Selesai & Standby</span>
+                <span>✅ SELESAI & STANDBY</span>
               </button>
             </div>
           </div>
