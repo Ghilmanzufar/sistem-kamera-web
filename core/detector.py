@@ -256,6 +256,9 @@ class KameraProses:
             if has_ng:
                 with state.lock:
                     state.status = "NG"
+                    state.current_side = "F"
+                    state.flip_part_popup = False
+                    state.part_ok_popup = False
                 status = "NG"
             elif total_required_count > 0:
                 yellow_bgr = (0, 255, 255)
@@ -308,7 +311,7 @@ class KameraProses:
                                 color_status = (0, 255, 0)
 
         elif status == "NG":
-            pesan_ui = "STATUS: NG! INPUT PIN UNTUK VALIDASI."
+            pesan_ui = "STATUS: NG! SILAKAN KONFIRMASI PADA MODAL ALARM."
             color_status = (0, 0, 255)
             overlay = frame.copy()
             cv2.rectangle(overlay, (0,0), (frame.shape[1], frame.shape[0]), (0,0,255), -1)
