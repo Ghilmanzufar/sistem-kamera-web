@@ -1,11 +1,25 @@
 def get_rules_for_side(all_rules: list, side: str) -> list:
     """
-    Filter aturan berdasarkan prefix sisi ('f-' untuk Front, 'r-' untuk Rear).
-    Jika label tidak memiliki prefix, diasumsikan legacy single-side (semua rule dipakai).
+    Filter aturan berdasarkan sisi ('f-' untuk Front/Depan, 'r-' untuk Rear/Belakang).
+    Mendukung input: 'F', 'FRONT', 'R', 'REAR'.
+    Menjamin sisi Depan (F) selalu terisolasi secara ketat dari sisi Belakang (R).
     """
-    prefix = side.lower() + "-"
-    filtered = [r for r in all_rules if r.get("nama_komponen", "").lower().startswith(prefix)]
-    return filtered if filtered else all_rules
+    side_str = str(side or 'F').strip().upper()
+    is_rear = side_str in ["R", "REAR", "BELAKANG"]
+    prefix = "r-" if is_rear else "f-"
+    
+    # 1. Filter berdasarkan prefix nama_komponen ('f-' atau 'r-')
+    filtered = [r for r in all_rules if str(r.get("nama_komponen", "")).lower().startswith(prefix)]
+    if filtered:
+        return filtered
+    
+    # 2. Filter berdasarkan field 'sisi' di database
+    side_char = "R" if is_rear else "F"
+    filtered_by_col = [r for r in all_rules if str(r.get("sisi", "")).strip().upper() == side_char]
+    if filtered_by_col:
+        return filtered_by_col
+
+    return all_rules
 
 def calculate_inspection_metrics(aturan_aktif: list, label_counts: dict, detected_confidences: list) -> dict:
     """
