@@ -8,14 +8,14 @@ import {
 import toast from 'react-hot-toast';
 import api from '../api/client';
 
-// Komponen Popup Melayang yang Dapat Digeser (Draggable Floating Popup)
+// Komponen Popup Melayang yang Dapat Digeser (Draggable Floating Popup - Compact Zero-Scroll)
 function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', onClose, children }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('pre')) return;
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea')) return;
     setIsDragging(true);
     dragRef.current = {
       startX: e.clientX,
@@ -26,7 +26,7 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
   };
 
   const handleTouchStart = (e) => {
-    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('pre')) return;
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea')) return;
     if (e.touches.length === 1) {
       setIsDragging(true);
       dragRef.current = {
@@ -106,41 +106,41 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
       style={{
         transform: `translate(calc(-50% + ${position.x}px), ${position.y}px)`,
       }}
-      className={`fixed z-40 top-20 left-1/2 w-[92vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-3xl border-4 ${colorStyles.border} shadow-2xl ${colorStyles.glow} transition-shadow select-none animate-fadeIn`}
+      className={`fixed z-40 top-16 left-1/2 w-[90vw] max-w-lg sm:max-w-xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
     >
       {/* Draggable Header Handle */}
       <div
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className={`px-4 py-3 rounded-t-[22px] border-b flex items-center justify-between cursor-grab active:cursor-grabbing ${colorStyles.headerBg}`}
+        className={`px-3.5 py-2 rounded-t-[14px] border-b flex items-center justify-between cursor-grab active:cursor-grabbing ${colorStyles.headerBg}`}
       >
         <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider">
-          {Icon && <Icon className="w-5 h-5 shrink-0" />}
+          {Icon && <Icon className="w-4 h-4 shrink-0" />}
           <span className="truncate">{title}</span>
           {badge && (
-            <span className={`text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border font-black ${colorStyles.badgeBg} shrink-0`}>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-black ${colorStyles.badgeBg} shrink-0`}>
               {badge}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] sm:text-xs font-bold text-slate-300 bg-black/50 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-white/10">
-            <GripHorizontal className="w-4 h-4 text-amber-400" /> <span>✥ Geser</span>
+          <span className="text-[10px] font-bold text-slate-300 bg-black/50 px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/10">
+            <GripHorizontal className="w-3.5 h-3.5 text-amber-400" /> <span>✥ Geser</span>
           </span>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-1 rounded-md hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Popup Body */}
-      <div className="p-5 sm:p-7 max-h-[75vh] overflow-y-auto">
+      {/* Popup Body (Compact, Zero-Scroll) */}
+      <div className="p-4 sm:p-5 overflow-hidden">
         {children}
       </div>
     </div>
@@ -649,7 +649,7 @@ export default function OperatorInspection() {
         )}
       </main>
 
-      {/* 4. DRAGGABLE FLOATING POPUP: PART OK / BATCH SELESAI */}
+      {/* 4. DRAGGABLE FLOATING POPUP: PART OK / BATCH SELESAI (COMPACT ZERO-SCROLL) */}
       {showPartOkModal && (
         <DraggableFloatingCard
           title={telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0 ? "BATCH SELESAI" : `PART #${telemetry.qty_completed || 1} SELESAI`}
@@ -658,44 +658,40 @@ export default function OperatorInspection() {
           icon={Check}
           onClose={handleClosePartOkModal}
         >
-          <div className="text-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-emerald-500/20 border-4 border-emerald-400 flex items-center justify-center mx-auto mb-3 text-emerald-400 shadow-xl shadow-emerald-500/30 animate-pulse">
-              <Check className="w-10 h-10 sm:w-12 sm:h-12 stroke-[3]" />
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
+                <Check className="w-7 h-7 stroke-[3]" />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-lg sm:text-xl font-black text-white leading-tight truncate">
+                  {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
+                    ? "🎉 SELURUH BATCH SELESAI (OK)!"
+                    : "✅ PART OK (DIVERIFIKASI)!"}
+                </h3>
+                <p className="text-xs sm:text-sm text-emerald-300 font-bold truncate">
+                  {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
+                    ? `Semua target ${telemetry.target_qty} PCS selesai diverifikasi.`
+                    : `Sisi Depan & Belakang OK. Sisa: ${telemetry.qty_remaining} PCS.`}
+                </p>
+              </div>
             </div>
-            
-            <h3 className="text-2xl sm:text-4xl font-black text-white tracking-wide">
-              {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
-                ? "🎉 SELURUH BATCH SELESAI (OK)!"
-                : "✅ PART OK (DIVERIFIKASI)!"}
-            </h3>
-            
-            <p className="text-sm sm:text-lg text-emerald-300 font-extrabold mt-1.5">
-              {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
-                ? `Seluruh target ${telemetry.target_qty}/${telemetry.target_qty} PCS telah berhasil diverifikasi lengkap dan dilaporkan ke SISON.`
-                : `Kedua sisi (Front & Rear) telah lolos Quality Control. Sisa: ${telemetry.qty_remaining} PCS.`}
-            </p>
 
-            <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-white/10 text-left space-y-2.5 shadow-inner">
-              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
-                <span className="text-slate-300 text-xs sm:text-sm font-bold">Kelengkapan Komponen:</span>
-                <span className="text-base sm:text-lg font-black text-white">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
+            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-white/10 text-xs">
+              <div className="text-left">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Kelengkapan:</span>
+                <span className="font-extrabold text-white text-sm">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
-                <span className="text-slate-300 text-xs sm:text-sm font-bold">Rata-rata Akurasi AI:</span>
-                <span className="text-base sm:text-lg font-black text-emerald-400">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
-              </div>
-              <div>
-                <span className="text-slate-300 text-xs sm:text-sm font-bold block mb-1.5">Komponen Terverifikasi:</span>
-                <pre className="text-xs sm:text-sm text-emerald-300 font-mono font-bold bg-black/70 p-3 rounded-xl whitespace-pre-wrap border border-emerald-500/20 leading-relaxed">
-                  {telemetry.popups?.details?.found_labels || '- INSPEKSI VISUAL : OK'}
-                </pre>
+              <div className="text-left">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Akurasi AI:</span>
+                <span className="font-extrabold text-emerald-400 text-sm">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleClosePartOkModal}
-              className="mt-5 w-full py-3.5 sm:py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-base sm:text-xl font-black rounded-2xl shadow-xl shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
               {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
                 ? "✅ SELESAI (KEMBALI KE STANDBY)"
@@ -705,7 +701,7 @@ export default function OperatorInspection() {
         </DraggableFloatingCard>
       )}
 
-      {/* 5. DRAGGABLE FLOATING POPUP: BALIK PART (SISI DEPAN OK) */}
+      {/* 5. DRAGGABLE FLOATING POPUP: BALIK PART (COMPACT ZERO-SCROLL) */}
       {showFlipModal && (
         <DraggableFloatingCard
           title="BALIK PART (SISI DEPAN OK)"
@@ -714,39 +710,36 @@ export default function OperatorInspection() {
           icon={RotateCcw}
           onClose={handleCloseFlipModal}
         >
-          <div className="text-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mx-auto mb-3 text-amber-400 shadow-xl shadow-amber-500/30 animate-spin-slow">
-              <RotateCcw className="w-10 h-10 sm:w-12 sm:h-12 stroke-[3]" />
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-md shrink-0 animate-spin-slow">
+                <RotateCcw className="w-7 h-7 stroke-[3]" />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-lg sm:text-xl font-black text-white leading-tight truncate">
+                  🔄 SISI DEPAN (FRONT) OK!
+                </h3>
+                <p className="text-xs sm:text-sm text-amber-300 font-extrabold truncate">
+                  Balik part ke <span className="underline text-white">SISI BELAKANG (REAR)</span>.
+                </p>
+              </div>
             </div>
-            
-            <h3 className="text-2xl sm:text-4xl font-black text-white tracking-wide">
-              🔄 SISI DEPAN (FRONT) OK!
-            </h3>
-            <p className="text-base sm:text-xl text-amber-300 font-black mt-1.5">
-              Silakan Balik Part ke <span className="underline decoration-amber-400 decoration-4 text-white">SISI BELAKANG (REAR)</span>
-            </p>
 
-            <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-white/10 text-left space-y-2.5 shadow-inner">
-              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
-                <span className="text-slate-300 text-xs sm:text-sm font-bold">Status Sisi Depan:</span>
-                <span className="text-base sm:text-lg font-black text-emerald-400">OK (Lengkap & Lolos AI)</span>
+            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-white/10 text-xs">
+              <div className="text-left">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Status Depan:</span>
+                <span className="font-extrabold text-emerald-400 text-sm">OK (Lolos AI)</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
-                <span className="text-slate-300 text-xs sm:text-sm font-bold">Akurasi Sisi Depan:</span>
-                <span className="text-base sm:text-lg font-black text-emerald-400">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
-              </div>
-              <div>
-                <span className="text-slate-300 text-xs sm:text-sm font-bold block mb-1.5">Komponen Sisi Depan Terdeteksi:</span>
-                <pre className="text-xs sm:text-sm text-emerald-300 font-mono font-bold bg-black/70 p-3 rounded-xl whitespace-pre-wrap border border-emerald-500/20 leading-relaxed">
-                  {telemetry.popups?.details?.found_labels || '- SISI DEPAN (FRONT) : OK'}
-                </pre>
+              <div className="text-left">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Akurasi:</span>
+                <span className="font-extrabold text-emerald-400 text-sm">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleCloseFlipModal}
-              className="mt-5 w-full py-3.5 sm:py-4 px-6 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-base sm:text-xl font-black rounded-2xl shadow-xl shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
               🔄 PART SUDAH DIBALIK (LANJUT KE REAR) →
             </button>
@@ -762,76 +755,75 @@ export default function OperatorInspection() {
           color="rose"
           icon={ShieldAlert}
         >
-          <div className="text-center mb-3">
-            <div className="inline-flex items-center gap-2 bg-rose-500/30 border-2 border-rose-400 px-4 py-1 rounded-full text-rose-200 font-black text-xs sm:text-sm uppercase tracking-widest animate-pulse mb-2">
-              <ShieldAlert className="w-4 h-4" />
-              <span>SIRENE & ALARM NG AKTIF!</span>
+          <div className="space-y-2.5">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-1.5 bg-rose-500/30 border border-rose-400 px-3 py-0.5 rounded-full text-rose-200 font-black text-xs uppercase tracking-wider animate-pulse mb-1">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>SIRENE & ALARM NG AKTIF!</span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-black text-white">
+                ⚠️ CACAT / NG TERDETEKSI! ⚠️
+              </h2>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
-              ⚠️ CACAT / NG TERDETEKSI! ⚠️
-            </h2>
-            <p className="text-xs sm:text-sm text-rose-300 font-bold mt-1">
-              Panggil Pengawas / QC Leader untuk verifikasi dan input PIN validasi.
-            </p>
+
+            {/* Foto Bukti Cacat Snapshot */}
+            {telemetry.popups?.ng_image_url && (
+              <div className="rounded-xl overflow-hidden border border-rose-500 bg-black max-h-36 flex items-center justify-center shadow-md">
+                <img
+                  src={telemetry.popups.ng_image_url}
+                  alt="Snapshot Cacat NG"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+
+            {ngError && (
+              <div className="p-2 rounded-lg bg-rose-500/30 border border-rose-500 text-rose-200 text-xs font-black text-center">
+                {ngError}
+              </div>
+            )}
+
+            {/* Form PIN Pengawas */}
+            <form onSubmit={handleResolveNg} className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-200 mb-1">
+                    Username Pengawas
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={ngSupervisorUsername}
+                    onChange={(e) => setNgSupervisorUsername(e.target.value)}
+                    placeholder="Username"
+                    className="w-full px-2.5 py-1.5 bg-slate-900 border border-white/20 rounded-lg text-white focus:outline-none focus:border-rose-400 text-xs font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-200 mb-1">
+                    PIN (Default: 1234)
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={ngSupervisorPin}
+                    onChange={(e) => setNgSupervisorPin(e.target.value)}
+                    placeholder="PIN"
+                    className="w-full px-2.5 py-1.5 bg-slate-900 border border-white/20 rounded-lg text-white focus:outline-none focus:border-rose-400 text-xs font-bold"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={ngResolving}
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-rose-600/50 text-xs sm:text-sm uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {ngResolving ? 'Memvalidasi PIN...' : '🔔 VALIDASI PIN & MATIKAN SIRENE'}
+              </button>
+            </form>
           </div>
-
-          {/* Foto Bukti Cacat Snapshot */}
-          {telemetry.popups?.ng_image_url && (
-            <div className="mb-4 rounded-2xl overflow-hidden border-2 border-rose-500 bg-black max-h-52 flex items-center justify-center shadow-lg">
-              <img
-                src={telemetry.popups.ng_image_url}
-                alt="Snapshot Cacat NG"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-
-          {ngError && (
-            <div className="mb-3 p-3 rounded-xl bg-rose-500/30 border border-rose-500 text-rose-200 text-xs sm:text-sm font-black text-center">
-              {ngError}
-            </div>
-          )}
-
-          {/* Form PIN Pengawas */}
-          <form onSubmit={handleResolveNg} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-black uppercase text-slate-200 mb-1">
-                  Username Pengawas
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={ngSupervisorUsername}
-                  onChange={(e) => setNgSupervisorUsername(e.target.value)}
-                  placeholder="Username Pengawas"
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-sm font-bold placeholder:text-slate-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-slate-200 mb-1">
-                  PIN Pengawas (Default: 1234)
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={ngSupervisorPin}
-                  onChange={(e) => setNgSupervisorPin(e.target.value)}
-                  placeholder="Masukkan PIN"
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-sm font-bold placeholder:text-slate-500"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={ngResolving}
-              className="w-full py-3.5 px-6 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-rose-600/50 text-sm sm:text-base uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
-            >
-              {ngResolving ? 'Memvalidasi PIN...' : '🔔 VALIDASI PIN & MATIKAN SIRENE'}
-            </button>
-          </form>
         </DraggableFloatingCard>
       )}
 
