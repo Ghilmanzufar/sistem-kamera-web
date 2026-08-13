@@ -547,7 +547,7 @@ export default function OperatorInspection() {
             )}
             {telemetry.p_no && telemetry.status !== 'STANDBY' && (
               <div className="text-xs sm:text-sm font-black text-emerald-300 mt-1 bg-emerald-950/60 py-0.5 px-3 rounded-full inline-block border border-emerald-500/30">
-                SISA QTY: {telemetry.qty_remaining}/{telemetry.target_qty} | SISI: {telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : telemetry.current_side === 'R' ? 'REAR (BELAKANG)' : telemetry.current_side}
+                SISI: {telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : telemetry.current_side === 'R' ? 'REAR (BELAKANG)' : telemetry.current_side}
               </div>
             )}
           </div>
