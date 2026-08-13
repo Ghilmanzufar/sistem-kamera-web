@@ -793,7 +793,7 @@ export default function OperatorInspection() {
               </div>
             </div>
 
-            {/* Metrik Target, Selesai OK, Yield Rate (Masing-masing beda baris) */}
+            {/* Metrik Target & Selesai OK */}
             <div className="flex flex-col gap-2 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 border border-white/5">
                 <span className="text-slate-400 font-extrabold uppercase text-xs">Target QTY:</span>
@@ -802,10 +802,6 @@ export default function OperatorInspection() {
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
                 <span className="text-slate-300 font-extrabold uppercase text-xs">Selesai OK:</span>
                 <span className="font-black text-emerald-400 text-sm sm:text-base font-mono">{telemetry.target_qty || 2} PCS</span>
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-teal-950/40 border border-teal-500/20">
-                <span className="text-slate-300 font-extrabold uppercase text-xs">Yield Rate (% Lolos):</span>
-                <span className="font-black text-teal-400 text-sm sm:text-base font-mono">100% OK</span>
               </div>
             </div>
 
