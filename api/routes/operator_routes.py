@@ -315,7 +315,7 @@ def mock_detect():
         "message": f"Mock detect berhasil! Sisa: {max(0, rem_qty)} PCS"
     }
 
-@router.post("/operator/demo-ng")
+@router.api_route("/operator/demo-ng", methods=["GET", "POST"])
 def operator_demo_ng(db: Session = Depends(get_db)):
     """Memicu simulasi abnormalitas cacat (NG) untuk demo dan preview desain modal alarm."""
     import numpy as np
@@ -371,10 +371,10 @@ def operator_demo_ng(db: Session = Depends(get_db)):
         "message": "Demo alarm NG berhasil dipicu! Periksa modal alarm merah."
     }
 
-@router.post("/operator/resolve-ng")
-def resolve_ng(req: NGResolveRequest, db: Session = Depends(get_db)):
+@router.api_route("/operator/resolve-ng", methods=["GET", "POST"])
+def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get_db)):
     """Konfirmasi abnormalitas NG (Cacat Terkonfirmasi atau False Alarm / Abaikan) langsung dari modal."""
-    action_type = (req.action or "CONFIRM_NG").upper()
+    action_type = (req.action if req and req.action else "CONFIRM_NG").upper()
     
     with state.lock:
         state.status = "RUNNING"
