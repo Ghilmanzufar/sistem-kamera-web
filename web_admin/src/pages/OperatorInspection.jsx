@@ -532,8 +532,21 @@ export default function OperatorInspection() {
             <div className={`text-xl sm:text-2xl lg:text-3xl tracking-wide font-black ${statusTextColor}`}>
               {statusText}
             </div>
-            <div className="text-xs sm:text-sm text-slate-200 font-bold truncate max-w-md mx-auto mt-0.5">
-              {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : '-'}
+            <div className="text-xs sm:text-sm text-slate-200 font-bold truncate max-w-lg mx-auto mt-0.5">
+              {telemetry.live_metrics?.total_count > 0 ? (
+                <span>
+                  Inspeksi: Labels{' '}
+                  <span className={telemetry.live_metrics.labels_complete ? 'text-emerald-400 font-black' : 'text-rose-400 font-black'}>
+                    {telemetry.live_metrics.detected_count}/{telemetry.live_metrics.total_count}
+                  </span>
+                  {' '}(Min {telemetry.live_metrics.min_coverage || 100}%) | AvgConf:{' '}
+                  <span className={telemetry.live_metrics.avg_conf_ok ? 'text-emerald-400 font-black' : 'text-rose-400 font-black'}>
+                    {telemetry.live_metrics.current_avg_conf}%/{telemetry.live_metrics.target_avg_conf}%
+                  </span>
+                </span>
+              ) : (
+                <span>{telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : '-'}</span>
+              )}
             </div>
             {telemetry.p_no && telemetry.status !== 'STANDBY' && (
               <div className="text-xs sm:text-sm font-black text-emerald-300 mt-1 bg-emerald-950/60 py-0.5 px-3 rounded-full inline-block border border-emerald-500/30">
