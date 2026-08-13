@@ -181,7 +181,6 @@ export default function OperatorInspection() {
 
   // Modal States
   const [showPartOkModal, setShowPartOkModal] = useState(false);
-  const [showCompletedModal, setShowCompletedModal] = useState(false);
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -277,27 +276,16 @@ export default function OperatorInspection() {
   // 2. Tangani Perubahan Popups & NG Alarm
   useEffect(() => {
     if (telemetry.popups) {
-      const isBatchCompleted = telemetry.status === 'COMPLETED' || (telemetry.popups.part_ok && telemetry.qty_remaining === 0 && telemetry.target_qty > 0);
-      
-      if (isBatchCompleted) {
-        setShowCompletedModal(true);
-        setShowPartOkModal(false);
-        setShowFlipModal(false);
+      if (telemetry.popups.part_ok && telemetry.status !== 'STANDBY') {
+        setShowPartOkModal(true);
       } else {
-        setShowCompletedModal(false);
-        
-        if (telemetry.popups.part_ok && telemetry.qty_remaining > 0 && telemetry.status !== 'STANDBY') {
-          setShowPartOkModal(true);
-        } else {
-          setShowPartOkModal(false);
-        }
-        if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
-          setShowFlipModal(true);
-        } else {
-          setShowFlipModal(false);
-        }
+        setShowPartOkModal(false);
       }
-
+      if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
+        setShowFlipModal(true);
+      } else {
+        setShowFlipModal(false);
+      }
       if (telemetry.popups.ng_active || telemetry.status === 'NG') {
         setShowNgModal(true);
         startSirenAlert();
@@ -306,7 +294,7 @@ export default function OperatorInspection() {
         stopSirenAlert();
       }
     }
-  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining, telemetry.target_qty]);
+  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining]);
 
   // Audio Sirene Synth Web Audio
   const startSirenAlert = () => {
@@ -691,139 +679,100 @@ export default function OperatorInspection() {
         )}
       </main>
 
-      {/* 4. DRAGGABLE FLOATING POPUP: PART OK (Hanya Muncul Antar-Part) */}
-      {showPartOkModal && telemetry.qty_remaining > 0 && (
-        <DraggableFloatingCard
-          title={`PART #${telemetry.qty_completed || 1} SELESAI`}
-          badge={`SISA ${telemetry.qty_remaining} PCS`}
-          color="emerald"
-          icon={Check}
-          onClose={handleClosePartOkModal}
-        >
-          <div className="space-y-4 text-left">
-            {/* Judul Rata Kiri */}
-            <div className="flex items-center gap-3.5 pb-0.5">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
-                <Check className="w-6 h-6 stroke-[3]" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
-                  Part berhasil terdeteksi!
-                </h3>
-                <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
-                  Sisi Depan & Belakang OK. Sisa: {telemetry.qty_remaining} PCS.
-                </p>
-              </div>
-            </div>
+      {/* 4. DRAGGABLE FLOATING POPUP: PART OK / INSPEKSI SELESAI */}
+      {showPartOkModal && (() => {
+        const isFinalPart = telemetry.qty_remaining <= 0 || telemetry.status === 'COMPLETED';
+        const currentPartNum = isFinalPart ? (telemetry.target_qty || 2) : ((telemetry.qty_completed || 0) + 1);
 
-            {/* 1. Metrik Kelengkapan Label & Rata-rata Akurasi (Di atas) */}
-            <div className="grid grid-cols-2 gap-3 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
-              <div className="px-1">
-                <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Label Terdeteksi:</span>
-                <span className="font-black text-white text-sm sm:text-base">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
+        return (
+          <DraggableFloatingCard
+            title={isFinalPart ? "INSPEKSI SELESAI" : `PART #${currentPartNum} SELESAI`}
+            badge={isFinalPart ? "SELESAI (100% OK)" : `SISA ${telemetry.qty_remaining} PCS`}
+            color="emerald"
+            icon={Check}
+            onClose={isFinalPart ? handleFinishBatch : handleClosePartOkModal}
+          >
+            <div className="space-y-4 text-left">
+              {/* Judul Rata Kiri */}
+              <div className="flex items-center gap-3.5 pb-0.5">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
+                  <Check className="w-6 h-6 stroke-[3]" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
+                    {isFinalPart ? "Seluruh Part Selesai Diinspeksi!" : "Part berhasil terdeteksi!"}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
+                    {isFinalPart
+                      ? `Semua sisi part (${telemetry.target_qty || 2} PCS) terdeteksi dengan status OK.`
+                      : `Sisi Depan & Belakang OK. Sisa: ${telemetry.qty_remaining} PCS.`}
+                  </p>
+                </div>
               </div>
-              <div className="border-l border-white/15 pl-3.5">
-                <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Rata-rata Akurasi:</span>
-                <span className="font-black text-emerald-400 text-sm sm:text-base">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
-              </div>
-            </div>
 
-            {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah & tinggi dinamis tanpa scroll) */}
-            <div>
-              <span className="text-xs uppercase font-extrabold text-slate-300 block mb-2 tracking-wide">
-                Nama Label Terverifikasi:
-              </span>
-              <div className="flex flex-col gap-2 p-2.5 sm:p-3 bg-slate-900/90 rounded-2xl border border-white/15 shadow-inner">
-                {telemetry.popups?.details?.found_labels ? (
-                  telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs sm:text-sm font-mono font-bold text-emerald-200 shadow-sm"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span className="truncate">{lbl.replace(/^-\s*/, '').split(':')[0]?.trim() || lbl.replace(/^-\s*/, '')}</span>
+              {/* 1. Metrik Kelengkapan Label & Rata-rata Akurasi (Di atas) */}
+              <div className="grid grid-cols-2 gap-3 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
+                <div className="px-1">
+                  <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Label Terdeteksi:</span>
+                  <span className="font-black text-white text-sm sm:text-base">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
+                </div>
+                <div className="border-l border-white/15 pl-3.5">
+                  <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Rata-rata Akurasi:</span>
+                  <span className="font-black text-emerald-400 text-sm sm:text-base">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
+                </div>
+              </div>
+
+              {/* 2. Nama Label Terverifikasi */}
+              <div>
+                <span className="text-xs uppercase font-extrabold text-slate-300 block mb-2 tracking-wide">
+                  Nama Label Terverifikasi {isFinalPart ? "(Sisi Belakang Akhir):" : ":"}
+                </span>
+                <div className="flex flex-col gap-2 p-2.5 sm:p-3 bg-slate-900/90 rounded-2xl border border-white/15 shadow-inner">
+                  {telemetry.popups?.details?.found_labels ? (
+                    telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs sm:text-sm font-mono font-bold text-emerald-200 shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <span className="truncate">{lbl.replace(/^-\s*/, '').split(':')[0]?.trim() || lbl.replace(/^-\s*/, '')}</span>
+                        </div>
+                        {lbl.includes(':') && (
+                          <span className="text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shrink-0 border border-emerald-500/30">
+                            {lbl.split(':')[1]?.trim()}
+                          </span>
+                        )}
                       </div>
-                      {lbl.includes(':') && (
-                        <span className="text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shrink-0 border border-emerald-500/30">
-                          {lbl.split(':')[1]?.trim()}
-                        </span>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-400 font-bold p-1">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
-                )}
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-400 font-bold p-1">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Tombol Lanjutkan */}
-            <button
-              type="button"
-              onClick={handleClosePartOkModal}
-              className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-1"
-            >
-              ✅ LANJUTKAN KE PART BERIKUTNYA ({(telemetry.qty_completed || 0) + 1}/{telemetry.target_qty}) →
-            </button>
-          </div>
-        </DraggableFloatingCard>
-      )}
-
-      {/* 4.5 DRAGGABLE FLOATING POPUP: INSPEKSI SELESAI (100% OK) */}
-      {showCompletedModal && (
-        <DraggableFloatingCard
-          title="INSPEKSI SELESAI"
-          badge="100% OK"
-          color="emerald"
-          icon={CheckCircle2}
-          onClose={handleFinishBatch}
-        >
-          <div className="space-y-4 text-left">
-            <div className="flex items-center gap-3.5 pb-0.5">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-bounce">
-                <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                  Seluruh Part Selesai Diinspeksi!
-                </h3>
-                <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
-                  Semua sisi part terdeteksi dengan status OK.
-                </p>
-              </div>
+              {/* Tombol Aksi Dinamis */}
+              {isFinalPart ? (
+                <button
+                  type="button"
+                  onClick={handleFinishBatch}
+                  className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-1"
+                >
+                  ✅ SELESAI & STANDBY
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleClosePartOkModal}
+                  className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-1"
+                >
+                  ✅ LANJUTKAN KE PART BERIKUTNYA ({currentPartNum + 1}/{telemetry.target_qty}) →
+                </button>
+              )}
             </div>
-
-            {/* Metrik Target & Selesai OK */}
-            <div className="flex flex-col gap-2 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 border border-white/5">
-                <span className="text-slate-400 font-extrabold uppercase text-xs">Target QTY:</span>
-                <span className="font-black text-white text-sm sm:text-base font-mono">{telemetry.target_qty || 2} PCS</span>
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
-                <span className="text-slate-300 font-extrabold uppercase text-xs">Selesai OK:</span>
-                <span className="font-black text-emerald-400 text-sm sm:text-base font-mono">{telemetry.target_qty || 2} PCS</span>
-              </div>
-            </div>
-
-            {/* Part Number */}
-            <div className="px-3.5 py-2.5 bg-slate-900/90 rounded-2xl border border-white/15 text-xs sm:text-sm flex items-center justify-between">
-              <span className="text-slate-400 font-extrabold uppercase text-xs">Part Number:</span>
-              <strong className="text-white font-mono font-bold text-sm sm:text-base">{telemetry.p_no || '74231-0K550-00'}</strong>
-            </div>
-
-            {/* Tombol Selesai & Standby */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleFinishBatch}
-                className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer text-center hover:scale-[1.01] active:scale-[0.99]"
-              >
-                <span>✅ SELESAI & STANDBY</span>
-              </button>
-            </div>
-          </div>
-        </DraggableFloatingCard>
-      )}
+          </DraggableFloatingCard>
+        );
+      })()}
 
       {/* 5. DRAGGABLE FLOATING POPUP: SISI DEPAN OK */}
       {showFlipModal && (
