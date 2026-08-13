@@ -702,12 +702,12 @@ export default function OperatorInspection() {
               </div>
             </div>
 
-            {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah) */}
+            {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah & tinggi dinamis tanpa scroll) */}
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
                 Nama Label:
               </span>
-              <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10 max-h-32 overflow-y-auto">
+              <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10">
                 {telemetry.popups?.details?.found_labels ? (
                   telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
                     <div 
@@ -782,12 +782,12 @@ export default function OperatorInspection() {
               </div>
             </div>
 
-            {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah) */}
+            {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah & tinggi dinamis tanpa scroll) */}
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
                 Nama Label:
               </span>
-              <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10 max-h-32 overflow-y-auto">
+              <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10">
                 {telemetry.popups?.details?.found_labels ? (
                   telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
                     <div 
