@@ -315,6 +315,62 @@ def mock_detect():
         "message": f"Mock detect berhasil! Sisa: {max(0, rem_qty)} PCS"
     }
 
+@router.post("/operator/demo-ng")
+def operator_demo_ng(db: Session = Depends(get_db)):
+    """Memicu simulasi abnormalitas cacat (NG) untuk demo dan preview desain modal alarm."""
+    import numpy as np
+    import cv2
+    from core.stream import cleanup_old_ng_records
+    
+    with state.lock:
+        state.status = "NG"
+        if not state.id_trans:
+            state.id_trans = f"DEMO-{int(time.time())}"
+        if not state.p_no:
+            state.p_no = "74231-0K550-00"
+        cur_id = state.id_trans
+        cur_pno = state.p_no
+        op_name = state.operator_name or "Operator Demo"
+        
+    stream_worker.ng_active = True
+    os.makedirs("ng_records", exist_ok=True)
+    cleanup_old_ng_records(directory="ng_records", days=30)
+    
+    timestamp = int(time.time())
+    filename = f"ng_records/NG_{cur_id}_{timestamp}.jpg"
+    
+    # Ambil frame saat ini atau buat simulasi frame cacat
+    frame = None
+    if hasattr(stream_worker, 'latest_frame_raw') and stream_worker.latest_frame_raw is not None:
+        frame = stream_worker.latest_frame_raw.copy()
+    
+    if frame is None:
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        frame[:] = (20, 20, 30)
+        cv2.putText(frame, "SIMULASI SNAPSHOT CACAT NG", (60, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+        cv2.putText(frame, f"PART: {cur_pno}", (60, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 2)
+        cv2.putText(frame, "STATUS: DEFECT DETECTED (98%)", (60, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
+    else:
+        # Gambar kotak anotasi cacat simulasi
+        h, w = frame.shape[:2]
+        x1, y1 = int(w * 0.35), int(h * 0.35)
+        x2, y2 = int(w * 0.65), int(h * 0.65)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+        cv2.putText(frame, "NG-SCRATCH (98%)", (x1, max(25, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+    try:
+        cv2.imwrite(filename, frame)
+        stream_worker.last_ng_image_path = filename
+        stream_worker.last_pesan_ui = "⚠️ STATUS: NG TERDETEKSI! SILAKAN KONFIRMASI."
+        threading.Thread(target=log_ng_db, args=(cur_id, cur_pno, filename, op_name), daemon=True).start()
+    except Exception as e:
+        print(f"[DEMO NG WARN] Gagal menyimpan snapshot demo NG: {e}")
+
+    return {
+        "success": True,
+        "message": "Demo alarm NG berhasil dipicu! Periksa modal alarm merah."
+    }
+
 @router.post("/operator/resolve-ng")
 def resolve_ng(req: NGResolveRequest, db: Session = Depends(get_db)):
     """Konfirmasi abnormalitas NG (Cacat Terkonfirmasi atau False Alarm / Abaikan) langsung dari modal."""

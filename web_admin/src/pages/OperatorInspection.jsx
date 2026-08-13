@@ -382,6 +382,17 @@ export default function OperatorInspection() {
     }
   };
 
+  const handleDemoNg = async () => {
+    try {
+      const res = await api.post('/api/operator/demo-ng');
+      toast.error(res.data?.message || 'Demo Trigger NG Aktif!', { icon: '⚠️' });
+      const stateRes = await api.get('/api/operator/state');
+      if (stateRes.data) setTelemetry(stateRes.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Gagal trigger Demo NG');
+    }
+  };
+
   const handleClosePartOkModal = async () => {
     setShowPartOkModal(false);
     try {
@@ -631,6 +642,16 @@ export default function OperatorInspection() {
           >
             <Camera className="w-4 h-4 text-amber-400" />
             <span>📷 MOCK DETECT</span>
+          </button>
+
+          {/* Tombol Demo Trigger NG (Testing UI) */}
+          <button
+            type="button"
+            onClick={handleDemoNg}
+            className="py-2 px-4 rounded-xl bg-rose-950/80 hover:bg-rose-900/90 text-rose-200 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-500/40 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-400" />
+            <span>⚠️ DEMO TRIGGER NG</span>
           </button>
         </div>
 
