@@ -217,6 +217,9 @@ export default function OperatorInspection() {
   const sirenGainRef = useRef(null);
   const audioCtxRef = useRef(null);
 
+  // Reference to pause SSE updates briefly after actions to prevent state flicker
+  const ignoreSseRef = useRef(0);
+
   // 1. Sinkronisasi Real-Time via SSE (Server-Sent Events) dengan Fallback Polling
   useEffect(() => {
     let eventSource = null;
@@ -226,6 +229,7 @@ export default function OperatorInspection() {
       eventSource = new EventSource('/api/operator/events');
       eventSource.onmessage = (e) => {
         try {
+          if (Date.now() < ignoreSseRef.current) return; // Abaikan event basi setelah tombol ditekan
           const data = JSON.parse(e.data);
           setTelemetry(data);
         } catch (err) {
@@ -237,6 +241,7 @@ export default function OperatorInspection() {
         if (!fallbackInterval) {
           fallbackInterval = setInterval(async () => {
             try {
+              if (Date.now() < ignoreSseRef.current) return;
               const res = await api.get('/api/operator/state');
               if (res.data) setTelemetry(res.data);
             } catch {}
@@ -246,6 +251,7 @@ export default function OperatorInspection() {
     } catch {
       fallbackInterval = setInterval(async () => {
         try {
+          if (Date.now() < ignoreSseRef.current) return;
           const res = await api.get('/api/operator/state');
           if (res.data) setTelemetry(res.data);
         } catch {}
@@ -387,6 +393,7 @@ export default function OperatorInspection() {
   };
 
   const handleClosePartOkModal = async () => {
+    ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
     setShowPartOkModal(false);
     try {
       await api.post('/api/operator/clear-popup', { popup_type: 'part_ok' });
@@ -394,6 +401,7 @@ export default function OperatorInspection() {
   };
 
   const handleFinishBatch = async () => {
+    ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
     setShowPartOkModal(false);
     try {
       await api.post('/api/operator/clear-popup', { popup_type: 'ALL' });
@@ -403,6 +411,7 @@ export default function OperatorInspection() {
   };
 
   const handleCloseFlipModal = async () => {
+    ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
     setShowFlipModal(false);
     try {
       await api.post('/api/operator/clear-popup', { popup_type: 'flip_part' });
