@@ -98,5 +98,9 @@ class SystemState:
             self.current_side = "F"
             self.completed_time = 0.0
             self.inspection_mode = "AI"
+            self.part_ok_popup = False
+            self.flip_part_popup = False
+            self.last_inspection_details = {}
+            self.live_metrics = {}
 
 state = SystemState()
