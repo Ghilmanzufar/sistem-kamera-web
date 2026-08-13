@@ -690,7 +690,13 @@ export default function OperatorInspection() {
               </div>
             </div>
 
-            {/* 1. Nama Label (Daftar Label Komponen Terdeteksi) */}
+            {/* 1. Rata-rata Akurasi (Di atas) */}
+            <div className="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-white/10 text-xs">
+              <span className="text-slate-400 font-bold uppercase text-[10px]">Rata-rata Akurasi:</span>
+              <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
+            </div>
+
+            {/* 2. Nama Label (Di bawah rata-rata akurasi) */}
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
                 Nama Label:
@@ -710,12 +716,6 @@ export default function OperatorInspection() {
                   <span className="text-xs text-slate-400 font-bold">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
                 )}
               </div>
-            </div>
-
-            {/* 2. Rata-rata Akurasi (Pindah ke bawah label) */}
-            <div className="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-white/10 text-xs">
-              <span className="text-slate-400 font-bold uppercase text-[10px]">Rata-rata Akurasi:</span>
-              <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
             </div>
 
             {/* Tombol Lanjutkan */}
@@ -757,7 +757,13 @@ export default function OperatorInspection() {
               </div>
             </div>
 
-            {/* 1. Nama Label (Daftar Label Komponen Sisi Depan Terdeteksi) */}
+            {/* 1. Rata-rata Akurasi (Di atas) */}
+            <div className="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-white/10 text-xs">
+              <span className="text-slate-400 font-bold uppercase text-[10px]">Rata-rata Akurasi:</span>
+              <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
+            </div>
+
+            {/* 2. Nama Label (Di bawah rata-rata akurasi) */}
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
                 Nama Label:
@@ -777,12 +783,6 @@ export default function OperatorInspection() {
                   <span className="text-xs text-slate-400 font-bold">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
                 )}
               </div>
-            </div>
-
-            {/* 2. Rata-rata Akurasi (Pindah ke bawah label) */}
-            <div className="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-white/10 text-xs">
-              <span className="text-slate-400 font-bold uppercase text-[10px]">Rata-rata Akurasi:</span>
-              <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
             </div>
 
             {/* Tombol Lanjutkan */}
