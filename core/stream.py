@@ -267,6 +267,7 @@ class CameraStreamWorker:
                 self.ng_active = True
                 self.ng_event_id += 1
                 os.makedirs("ng_records", exist_ok=True)
+                cleanup_old_ng_records(directory="ng_records", days=30)
                 timestamp = int(time.time())
                 filename = f"ng_records/NG_{cur_id}_{timestamp}.jpg"
                 try:
@@ -306,4 +307,26 @@ class CameraStreamWorker:
         with self.frame_lock:
             return self.latest_frame_bytes
 
+def cleanup_old_ng_records(directory: str = "ng_records", days: int = 30):
+    """Menghapus otomatis foto bukti cacat NG yang lebih tua dari batas retensi (default: 30 hari)."""
+    try:
+        if not os.path.exists(directory):
+            return
+        now = time.time()
+        cutoff = now - (days * 86400)
+        deleted_count = 0
+        for fname in os.listdir(directory):
+            fpath = os.path.join(directory, fname)
+            if os.path.isfile(fpath) and os.path.getmtime(fpath) < cutoff:
+                try:
+                    os.remove(fpath)
+                    deleted_count += 1
+                except Exception:
+                    pass
+        if deleted_count > 0:
+            print(f"[STORAGE CLEANUP] Berhasil membersihkan {deleted_count} file foto NG lama (> {days} hari).")
+    except Exception as e:
+        print(f"[STORAGE CLEANUP WARN] Gagal auto-cleanup foto NG: {e}")
+
 stream_worker = CameraStreamWorker()
+

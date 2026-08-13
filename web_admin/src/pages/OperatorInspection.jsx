@@ -185,11 +185,8 @@ export default function OperatorInspection() {
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
 
-  // Form NG Verification
-  const [ngSupervisorUsername, setNgSupervisorUsername] = useState('');
-  const [ngSupervisorPin, setNgSupervisorPin] = useState('');
+  // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
-  const [ngError, setNgError] = useState('');
 
   // Demo SISON JSON Form (Default: 2 PCS Multi-Sisi Front & Rear)
   const [demoJson, setDemoJson] = useState(() => {
@@ -399,25 +396,23 @@ export default function OperatorInspection() {
     } catch {}
   };
 
-  const handleResolveNg = async (e) => {
-    e.preventDefault();
-    setNgError('');
+  const handleResolveNg = async (actionType = 'CONFIRM_NG') => {
     setNgResolving(true);
-
     try {
-      const res = await api.post('/api/operator/resolve-ng', {
-        username: ngSupervisorUsername,
-        pin: ngSupervisorPin
-      });
+      const res = await api.post('/api/operator/resolve-ng', { action: actionType });
       if (res.data?.success) {
         stopSirenAlert();
         setShowNgModal(false);
-        setNgSupervisorUsername('');
-        setNgSupervisorPin('');
-        toast.success('NG Abnormality Validated! Status kembali RUNNING.');
+        if (actionType === 'CONFIRM_NG') {
+          toast.error('Part Cacat (NG) Telah Dikonfirmasi!');
+        } else {
+          toast.success('Alarm NG Dibatalkan (Bukan NG/Abaikan).');
+        }
+        const stateRes = await api.get('/api/operator/state');
+        if (stateRes.data) setTelemetry(stateRes.data);
       }
     } catch (err) {
-      setNgError(err.response?.data?.detail || 'Username/PIN Pengawas salah atau tidak valid!');
+      toast.error(err.response?.data?.detail || 'Gagal merespons alarm NG');
     } finally {
       setNgResolving(false);
     }
@@ -823,15 +818,16 @@ export default function OperatorInspection() {
         </DraggableFloatingCard>
       )}
 
-      {/* 6. DRAGGABLE FLOATING POPUP: NG ABNORMALITY & VALIDASI PENGAWAS */}
+      {/* 6. DRAGGABLE FLOATING POPUP: NG ABNORMALITY & KONFIRMASI */}
       {showNgModal && (
         <DraggableFloatingCard
           title="ALARM CACAT (NG) AKTIF"
-          badge="VALIDASI PENGAWAS"
+          badge="KONFIRMASI CACAT"
           color="rose"
           icon={ShieldAlert}
+          onClose={() => handleResolveNg('DISMISS')}
         >
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             <div className="text-center">
               <div className="inline-flex items-center gap-1.5 bg-rose-500/30 border border-rose-400 px-3 py-0.5 rounded-full text-rose-200 font-black text-xs uppercase tracking-wider animate-pulse mb-1">
                 <ShieldAlert className="w-3.5 h-3.5" />
@@ -840,65 +836,49 @@ export default function OperatorInspection() {
               <h2 className="text-lg sm:text-xl font-black text-white">
                 ⚠️ CACAT / NG TERDETEKSI! ⚠️
               </h2>
+              <p className="text-xs text-rose-300 font-medium mt-0.5">
+                Periksa bukti foto cacat di bawah, lalu tentukan konfirmasi.
+              </p>
             </div>
 
             {/* Foto Bukti Cacat Snapshot */}
-            {telemetry.popups?.ng_image_url && (
-              <div className="rounded-xl overflow-hidden border border-rose-500 bg-black max-h-36 flex items-center justify-center shadow-md">
+            {telemetry.popups?.ng_image_url ? (
+              <div className="rounded-xl overflow-hidden border-2 border-rose-500 bg-black max-h-56 flex items-center justify-center shadow-lg relative group">
                 <img
                   src={telemetry.popups.ng_image_url}
                   alt="Snapshot Cacat NG"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain max-h-56"
                 />
+                <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-rose-300 font-mono border border-rose-500/50">
+                  BUKTI SNAPSHOT AI
+                </span>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-slate-900 border border-rose-500/40 text-center text-xs text-rose-300">
+                Memproses snapshot foto cacat...
               </div>
             )}
 
-            {ngError && (
-              <div className="p-2 rounded-lg bg-rose-500/30 border border-rose-500 text-rose-200 text-xs font-black text-center">
-                {ngError}
-              </div>
-            )}
-
-            {/* Form PIN Pengawas */}
-            <form onSubmit={handleResolveNg} className="space-y-2.5">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-200 mb-1">
-                    Username Pengawas
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={ngSupervisorUsername}
-                    onChange={(e) => setNgSupervisorUsername(e.target.value)}
-                    placeholder="Username"
-                    className="w-full px-2.5 py-1.5 bg-slate-900 border border-white/20 rounded-lg text-white focus:outline-none focus:border-rose-400 text-xs font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-200 mb-1">
-                    PIN (Default: 1234)
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={ngSupervisorPin}
-                    onChange={(e) => setNgSupervisorPin(e.target.value)}
-                    placeholder="PIN"
-                    className="w-full px-2.5 py-1.5 bg-slate-900 border border-white/20 rounded-lg text-white focus:outline-none focus:border-rose-400 text-xs font-bold"
-                  />
-                </div>
-              </div>
+            {/* Tombol Konfirmasi NG / False Alarm */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                disabled={ngResolving}
+                onClick={() => handleResolveNg('DISMISS')}
+                className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-white/20 text-slate-200 font-bold rounded-xl shadow text-xs uppercase tracking-wide transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <span>❌ BUKAN NG (ABAIKAN)</span>
+              </button>
 
               <button
-                type="submit"
+                type="button"
                 disabled={ngResolving}
-                className="w-full py-2.5 px-4 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-rose-600/50 text-xs sm:text-sm uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                onClick={() => handleResolveNg('CONFIRM_NG')}
+                className="w-full py-2.5 px-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-rose-600/50 text-xs uppercase tracking-wide transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                {ngResolving ? 'Memvalidasi PIN...' : '🔔 VALIDASI PIN & MATIKAN SIRENE'}
+                <span>🚨 YA, KONFIRMASI NG</span>
               </button>
-            </form>
+            </div>
           </div>
         </DraggableFloatingCard>
       )}

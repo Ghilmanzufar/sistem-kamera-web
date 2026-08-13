@@ -248,7 +248,12 @@ class KameraProses:
                     "min_coverage": round(target_coverage * 100, 0),
                 }
 
-            if label_counts.get("ng", 0) > 0:
+            # Mentrigger NG jika terdeteksi label "ng", berakhiran "-ng", berawalan "ng-", atau mengandung "-ng-" / "_ng"
+            has_ng = any(
+                lbl == "ng" or lbl.endswith("-ng") or lbl.startswith("ng-") or "-ng-" in lbl or "_ng" in lbl or "ng_" in lbl
+                for lbl in label_counts.keys()
+            )
+            if has_ng:
                 with state.lock:
                     state.status = "NG"
                 status = "NG"

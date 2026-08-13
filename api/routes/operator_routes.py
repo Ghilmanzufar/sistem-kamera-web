@@ -27,8 +27,9 @@ class OperatorHeartbeatRequest(BaseModel):
     role: Optional[str] = "operator"
 
 class NGResolveRequest(BaseModel):
-    username: str
-    pin: str
+    action: Optional[str] = "CONFIRM_NG"
+    username: Optional[str] = ""
+    pin: Optional[str] = ""
 
 class ClearPopupRequest(BaseModel):
     popup_type: Optional[str] = "ALL"
@@ -316,27 +317,29 @@ def mock_detect():
 
 @router.post("/operator/resolve-ng")
 def resolve_ng(req: NGResolveRequest, db: Session = Depends(get_db)):
-    """Verifikasi PIN Pengawas/Admin untuk mematikan sirene NG dan melanjutkan proses inspeksi."""
-    username = req.username.strip()
-    pin = req.pin.strip()
-
-    if not username or not pin:
-        raise HTTPException(status_code=400, detail="Username dan PIN Pengawas harus diisi!")
-
-    user = db.query(User).filter(User.username == username, User.is_active == True).first()
-    if not user or not verify_password(pin, user.password):
-        raise HTTPException(status_code=401, detail="Username atau PIN Pengawas salah!")
-
-    if user.role not in ["pengawas", "admin"]:
-        raise HTTPException(status_code=403, detail="Hanya Pengawas atau Admin yang berhak memvalidasi abnormalitas NG!")
-
+    """Konfirmasi abnormalitas NG (Cacat Terkonfirmasi atau False Alarm / Abaikan) langsung dari modal."""
+    action_type = (req.action or "CONFIRM_NG").upper()
+    
     with state.lock:
         state.status = "RUNNING"
         state.cooldown_until = time.time() + 2.0
+        cur_op = state.operator_name or state.operator_username or "Operator"
+        cur_id = state.id_trans
+        cur_pno = state.p_no
 
     stream_worker.ng_active = False
-    log_audit_event(db, user.username, "RESOLVE_NG", f"Pengawas {user.username} memvalidasi NG dan me-resume inspeksi.")
-    return {"success": True, "message": "NG Abnormality berhasil divalidasi. Status kembali RUNNING."}
+
+    if action_type in ["CONFIRM_NG", "CONFIRM", "YES"]:
+        msg = f"Part dikonfirmasi cacat (NG) oleh {cur_op}."
+    else:
+        msg = f"Alarm NG diabaikan / False Alarm oleh {cur_op}."
+
+    try:
+        log_audit_event(db, cur_op, "RESOLVE_NG", f"{msg} (Trans: {cur_id}, Part: {cur_pno})")
+    except Exception:
+        pass
+
+    return {"success": True, "message": msg}
 
 @router.post("/operator/clear-popup")
 def clear_popup(req: ClearPopupRequest):
