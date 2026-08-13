@@ -14,7 +14,6 @@ import History from './pages/History';
 import Rules from './pages/Rules';
 import Models from './pages/Models';
 import Users from './pages/Users';
-import Camera from './pages/Camera';
 import SisonConfig from './pages/SisonConfig';
 import Logs from './pages/Logs';
 import SystemHealth from './pages/SystemHealth';
@@ -194,7 +193,6 @@ export default function App() {
             <Route element={<PengawasOnlyRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/line-monitoring" element={<LineMonitoring />} />
-              <Route path="/camera" element={<Camera />} />
               <Route path="/sison-config" element={<SisonConfig />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/rules" element={<Rules />} />

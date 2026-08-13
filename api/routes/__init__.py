@@ -16,6 +16,7 @@ from .system_routes import router as system_router
 public_router = APIRouter()
 public_router.include_router(auth_router)
 public_router.include_router(operator_router)
+public_router.include_router(camera_router)
 
 # Router terproteksi admin (dengan dependency verify_admin_auth)
 admin_protected_router = APIRouter(dependencies=[Depends(verify_admin_auth)])
