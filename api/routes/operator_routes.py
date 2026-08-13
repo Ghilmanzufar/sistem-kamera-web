@@ -212,19 +212,21 @@ def manual_pass():
         cur_pno = state.p_no
         cur_id = state.id_trans
         op_name = state.operator_name
+        
+        state.last_inspection_details = {
+            "label_terdeteksi": "Pemeriksaan Visual Manual",
+            "avg_confidence": "100% (Manual Pass)",
+            "found_labels": "- INSPEKSI VISUAL OPERATOR : OK"
+        }
+
         if rem_qty <= 0:
-            state.part_ok_popup = False
+            state.status = "COMPLETED"
+            state.part_ok_popup = True
             state.flip_part_popup = False
             state.completed_time = time.time()
-            stream_worker.last_pesan_ui = "STANDBY"
-            state.reset_to_standby()
+            stream_worker.last_pesan_ui = "BATCH SELESAI (100% OK)! SILAKAN MULAI TRANSAKSI BARU."
         else:
             state.part_ok_popup = True
-            state.last_inspection_details = {
-                "label_terdeteksi": "Pemeriksaan Visual Manual",
-                "avg_confidence": "100% (Manual Pass)",
-                "found_labels": "- INSPEKSI VISUAL OPERATOR : OK"
-            }
             stream_worker.last_pesan_ui = f"Part Manual OK! Sisa: {rem_qty} PCS"
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 1.0, "MANUAL", op_name), daemon=True).start()
@@ -257,6 +259,8 @@ def mock_detect():
     """Simulasi trigger deteksi AI untuk testing / demo inspeksi."""
     with state.lock:
         curr_status = state.status
+        if curr_status == "COMPLETED" or (curr_status in ["RUNNING", "OK"] and state.qty <= 0 and state.target_qty > 0):
+            raise HTTPException(status_code=400, detail="Batch inspeksi sudah selesai (100% OK). Klik [Selesai] atau mulai transaksi baru!")
         if curr_status not in ["RUNNING", "OK"]:
             raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Mulai transaksi SISON terlebih dahulu!")
         
@@ -289,24 +293,25 @@ def mock_detect():
             state.current_side = "F"
             state.flip_part_popup = False
             
+            rear_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("r-")]
+            found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rear_rules] if rear_rules else [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rules if r.get("nama_komponen")]
+            if not found_labels_list:
+                found_labels_list = ["- KOMPONEN TERVERIFIKASI : 95%"]
+
+            state.last_inspection_details = {
+                "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100%)",
+                "avg_confidence": "95%",
+                "found_labels": "\n".join(found_labels_list)
+            }
+
             if rem_qty <= 0:
-                state.part_ok_popup = False
+                state.status = "COMPLETED"
+                state.part_ok_popup = True
                 state.flip_part_popup = False
                 state.completed_time = time.time()
-                stream_worker.last_pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
-                state.reset_to_standby()
+                stream_worker.last_pesan_ui = "BATCH SELESAI (100% OK)! SILAKAN MULAI TRANSAKSI BARU."
             else:
                 state.part_ok_popup = True
-                rear_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("r-")]
-                found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rear_rules] if rear_rules else [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rules if r.get("nama_komponen")]
-                if not found_labels_list:
-                    found_labels_list = ["- KOMPONEN TERVERIFIKASI : 95%"]
-
-                state.last_inspection_details = {
-                    "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100%)",
-                    "avg_confidence": "95%",
-                    "found_labels": "\n".join(found_labels_list)
-                }
                 stream_worker.last_pesan_ui = f"Part OK! Sisa: {rem_qty} PCS. Lanjut part berikutnya."
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 0.95, "AI", op_name), daemon=True).start()
@@ -316,7 +321,7 @@ def mock_detect():
     return {
         "success": True, 
         "action": "completed" if rem_qty <= 0 else "part_ok", 
-        "message": f"Mock detect berhasil! Sisa: {max(0, rem_qty)} PCS"
+        "message": "Batch inspeksi selesai (100% OK)!" if rem_qty <= 0 else f"Mock detect berhasil! Sisa: {max(0, rem_qty)} PCS"
     }
 
 @router.api_route("/operator/resolve-ng", methods=["GET", "POST"])

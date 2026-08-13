@@ -181,6 +181,7 @@ export default function OperatorInspection() {
 
   // Modal States
   const [showPartOkModal, setShowPartOkModal] = useState(false);
+  const [showCompletedModal, setShowCompletedModal] = useState(false);
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -276,16 +277,27 @@ export default function OperatorInspection() {
   // 2. Tangani Perubahan Popups & NG Alarm
   useEffect(() => {
     if (telemetry.popups) {
-      if (telemetry.popups.part_ok && telemetry.qty_remaining > 0 && telemetry.status !== 'COMPLETED' && telemetry.status !== 'STANDBY') {
-        setShowPartOkModal(true);
-      } else {
+      const isBatchCompleted = telemetry.status === 'COMPLETED' || (telemetry.popups.part_ok && telemetry.qty_remaining === 0 && telemetry.target_qty > 0);
+      
+      if (isBatchCompleted) {
+        setShowCompletedModal(true);
         setShowPartOkModal(false);
-      }
-      if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
-        setShowFlipModal(true);
-      } else {
         setShowFlipModal(false);
+      } else {
+        setShowCompletedModal(false);
+        
+        if (telemetry.popups.part_ok && telemetry.qty_remaining > 0 && telemetry.status !== 'STANDBY') {
+          setShowPartOkModal(true);
+        } else {
+          setShowPartOkModal(false);
+        }
+        if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
+          setShowFlipModal(true);
+        } else {
+          setShowFlipModal(false);
+        }
       }
+
       if (telemetry.popups.ng_active || telemetry.status === 'NG') {
         setShowNgModal(true);
         startSirenAlert();
@@ -294,7 +306,7 @@ export default function OperatorInspection() {
         stopSirenAlert();
       }
     }
-  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining]);
+  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining, telemetry.target_qty]);
 
   // Audio Sirene Synth Web Audio
   const startSirenAlert = () => {
@@ -390,6 +402,15 @@ export default function OperatorInspection() {
     setShowPartOkModal(false);
     try {
       await api.post('/api/operator/clear-popup', { popup_type: 'part_ok' });
+    } catch {}
+  };
+
+  const handleFinishBatch = async () => {
+    setShowCompletedModal(false);
+    try {
+      await api.post('/api/operator/clear-popup', { popup_type: 'ALL' });
+      const stateRes = await api.get('/api/operator/state');
+      if (stateRes.data) setTelemetry(stateRes.data);
     } catch {}
   };
 
@@ -744,6 +765,75 @@ export default function OperatorInspection() {
             >
               ✅ LANJUTKAN KE PART BERIKUTNYA ({(telemetry.qty_completed || 0) + 1}/{telemetry.target_qty}) →
             </button>
+          </div>
+        </DraggableFloatingCard>
+      )}
+
+      {/* 4.5 DRAGGABLE FLOATING POPUP: BATCH INSPEKSI SELESAI (100% OK) */}
+      {showCompletedModal && (
+        <DraggableFloatingCard
+          title="BATCH INSPEKSI SELESAI"
+          badge="100% OK"
+          color="emerald"
+          icon={CheckCircle2}
+          onClose={handleFinishBatch}
+        >
+          <div className="space-y-4 text-left">
+            <div className="flex items-center gap-3.5 pb-0.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-bounce">
+                <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  🎉 Seluruh Part Selesai Diinspeksi!
+                </h3>
+                <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
+                  Semua sisi part ({telemetry.target_qty || 2} PCS) lolos verifikasi AI dengan status OK.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 bg-slate-900/90 p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
+              <div className="text-center">
+                <span className="text-slate-400 block text-[11px] uppercase font-extrabold mb-0.5">Target QTY:</span>
+                <span className="font-black text-white text-base">{telemetry.target_qty || 2} PCS</span>
+              </div>
+              <div className="text-center border-x border-white/15">
+                <span className="text-slate-400 block text-[11px] uppercase font-extrabold mb-0.5">Selesai OK:</span>
+                <span className="font-black text-emerald-400 text-base">{telemetry.target_qty || 2} PCS</span>
+              </div>
+              <div className="text-center">
+                <span className="text-slate-400 block text-[11px] uppercase font-extrabold mb-0.5">Yield Rate:</span>
+                <span className="font-black text-teal-400 text-base">100% OK</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-emerald-950/60 rounded-2xl border border-emerald-500/30 text-xs sm:text-sm text-emerald-200 font-semibold flex items-center justify-between">
+              <span>Part No: <strong className="text-white font-mono">{telemetry.p_no || '74231-0K550-00'}</strong></span>
+              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">Callback SISON Terkirim</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  handleFinishBatch();
+                  setShowDemoModal(true);
+                }}
+                className="py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+              >
+                <Send className="w-4 h-4" />
+                <span>🚀 Tes Demo Lagi</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleFinishBatch}
+                className="py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer text-center hover:scale-105 active:scale-95"
+              >
+                <span>✅ Selesai & Standby</span>
+              </button>
+            </div>
           </div>
         </DraggableFloatingCard>
       )}
