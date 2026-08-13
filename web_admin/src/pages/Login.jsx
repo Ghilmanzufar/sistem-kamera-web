@@ -70,7 +70,7 @@ export default function Login() {
             className="h-16 w-auto mx-auto mb-3 object-contain drop-shadow-md"
           />
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
-            Sistem <span className="text-blue-400">Kamera Inspeksi AI</span>
+            Sistem <span className="text-blue-400">Kamera Inspeksi</span>
           </h1>
         </div>
 

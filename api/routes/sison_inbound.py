@@ -99,7 +99,7 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
     # Load Aturan Sisi Part dari Database
     db_rules = db.query(PartRule).filter(PartRule.p_no == p_no).order_by(PartRule.id.asc()).all()
     daftar_sisi = [r.sisi for r in db_rules] if db_rules else ["F"]
-    curr_side = daftar_sisi[0] if daftar_sisi else "F"
+    curr_side = "F"  # Transaksi inspeksi part selalu dimulai dari Sisi Depan (Front)
 
     # Konversi ORM object ke plain dict agar aman diakses lintas-thread dengan .get()
     rules_as_dict = [
@@ -124,7 +124,7 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
         state.daftar_sisi = daftar_sisi
         state.aturan_sisi = rules_as_dict
         state.progress_sisi = 0
-        state.current_side = curr_side
+        state.current_side = "F"
         state.part_ok_popup = False
         state.flip_part_popup = False
 

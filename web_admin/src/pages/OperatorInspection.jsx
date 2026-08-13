@@ -3,10 +3,149 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
-  Layers, User, Clock, Eye
+  Layers, User, Clock, Eye, GripHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
+
+// Komponen Popup Melayang yang Dapat Digeser (Draggable Floating Popup)
+function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', onClose, children }) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('pre')) return;
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: position.x,
+      initialY: position.y,
+    };
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('pre')) return;
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      dragRef.current = {
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        initialX: position.x,
+        initialY: position.y,
+      };
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      setPosition({
+        x: dragRef.current.initialX + dx,
+        y: dragRef.current.initialY + dy,
+      });
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - dragRef.current.startX;
+      const dy = e.touches[0].clientY - dragRef.current.startY;
+      setPosition({
+        x: dragRef.current.initialX + dx,
+        y: dragRef.current.initialY + dy,
+      });
+    };
+
+    const handleMouseUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  const colorStyles = {
+    emerald: {
+      border: 'border-emerald-500',
+      glow: 'shadow-emerald-950/80',
+      headerBg: 'bg-emerald-950/95 border-emerald-500/40 text-emerald-300',
+      badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
+    },
+    amber: {
+      border: 'border-amber-500',
+      glow: 'shadow-amber-950/80',
+      headerBg: 'bg-amber-950/95 border-amber-500/40 text-amber-300',
+      badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
+    },
+    rose: {
+      border: 'border-rose-500',
+      glow: 'shadow-rose-950/80',
+      headerBg: 'bg-rose-950/95 border-rose-500/40 text-rose-300',
+      badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
+    }
+  }[color] || {
+    border: 'border-slate-700',
+    glow: 'shadow-black/80',
+    headerBg: 'bg-slate-900 border-slate-700 text-slate-200',
+    badgeBg: 'bg-slate-800 text-slate-300 border-slate-600',
+  };
+
+  return (
+    <div
+      style={{
+        transform: `translate(calc(-50% + ${position.x}px), ${position.y}px)`,
+      }}
+      className={`fixed z-40 top-20 left-1/2 w-[92vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-3xl border-4 ${colorStyles.border} shadow-2xl ${colorStyles.glow} transition-shadow select-none animate-fadeIn`}
+    >
+      {/* Draggable Header Handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        className={`px-4 py-3 rounded-t-[22px] border-b flex items-center justify-between cursor-grab active:cursor-grabbing ${colorStyles.headerBg}`}
+      >
+        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider">
+          {Icon && <Icon className="w-5 h-5 shrink-0" />}
+          <span className="truncate">{title}</span>
+          {badge && (
+            <span className={`text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border font-black ${colorStyles.badgeBg} shrink-0`}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] sm:text-xs font-bold text-slate-300 bg-black/50 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-white/10">
+            <GripHorizontal className="w-4 h-4 text-amber-400" /> <span>✥ Geser</span>
+          </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Popup Body */}
+      <div className="p-5 sm:p-7 max-h-[75vh] overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function OperatorInspection() {
   const navigate = useNavigate();
@@ -51,7 +190,7 @@ export default function OperatorInspection() {
   const [ngResolving, setNgResolving] = useState(false);
   const [ngError, setNgError] = useState('');
 
-  // Demo SISON JSON Form
+  // Demo SISON JSON Form (Default: 2 PCS Multi-Sisi Front & Rear)
   const [demoJson, setDemoJson] = useState(() => {
     const timestamp = Math.floor(Date.now() / 1000);
     return JSON.stringify({
@@ -59,11 +198,21 @@ export default function OperatorInspection() {
       lot: `LOT-${Math.floor(1000 + Math.random() * 9000)}`,
       p_no: '74231-0K550-00',
       unique_no: `UNQ-${Math.floor(1000 + Math.random() * 9000)}`,
-      p_name: 'Demo Part Component',
-      qty: 1
+      p_name: 'Demo Part Multi-Sisi',
+      qty: 2
     }, null, 2);
   });
   const [sendingDemo, setSendingDemo] = useState(false);
+
+  // Quick helper to change demo QTY
+  const setDemoQtyPreset = (qtyNum) => {
+    try {
+      const parsed = JSON.parse(demoJson);
+      parsed.qty = qtyNum;
+      parsed.id_trans = `DEMO-${Math.floor(Date.now() / 1000)}`;
+      setDemoJson(JSON.stringify(parsed, null, 2));
+    } catch {}
+  };
 
   // Web Audio Synth Siren reference
   const sirenOscillatorRef = useRef(null);
@@ -500,33 +649,44 @@ export default function OperatorInspection() {
         )}
       </main>
 
-      {/* 4. MODAL POPUP: PART OK (UKURAN BESAR & JELAS UNTUK OPERATOR) */}
+      {/* 4. DRAGGABLE FLOATING POPUP: PART OK / BATCH SELESAI */}
       {showPartOkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-lg animate-fadeIn">
-          <div className="w-full max-w-2xl bg-slate-900 border-4 border-emerald-500 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-emerald-950/60 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-emerald-500/20 border-4 border-emerald-400 flex items-center justify-center mx-auto mb-4 text-emerald-400 shadow-xl shadow-emerald-500/30 animate-pulse">
-              <Check className="w-12 h-12 stroke-[3]" />
+        <DraggableFloatingCard
+          title={telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0 ? "BATCH SELESAI" : `PART #${telemetry.qty_completed || 1} SELESAI`}
+          badge={telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0 ? "COMPLETED" : `SISA ${telemetry.qty_remaining} PCS`}
+          color="emerald"
+          icon={Check}
+          onClose={handleClosePartOkModal}
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-emerald-500/20 border-4 border-emerald-400 flex items-center justify-center mx-auto mb-3 text-emerald-400 shadow-xl shadow-emerald-500/30 animate-pulse">
+              <Check className="w-10 h-10 sm:w-12 sm:h-12 stroke-[3]" />
             </div>
             
-            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wide">
-              ✅ PART OK (DIVERIFIKASI)!
+            <h3 className="text-2xl sm:text-4xl font-black text-white tracking-wide">
+              {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
+                ? "🎉 SELURUH BATCH SELESAI (OK)!"
+                : "✅ PART OK (DIVERIFIKASI)!"}
             </h3>
-            <p className="text-base sm:text-lg text-emerald-300 font-extrabold mt-2">
-              Semua label komponen terdeteksi lengkap & memenuhi standar AI Quality Control.
+            
+            <p className="text-sm sm:text-lg text-emerald-300 font-extrabold mt-1.5">
+              {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
+                ? `Seluruh target ${telemetry.target_qty}/${telemetry.target_qty} PCS telah berhasil diverifikasi lengkap dan dilaporkan ke SISON.`
+                : `Kedua sisi (Front & Rear) telah lolos Quality Control. Sisa: ${telemetry.qty_remaining} PCS.`}
             </p>
 
-            <div className="mt-6 p-5 sm:p-6 rounded-2xl bg-slate-950/90 border-2 border-white/10 text-left space-y-3.5 shadow-inner">
-              <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                <span className="text-slate-300 text-sm sm:text-base font-bold">Kelengkapan Label:</span>
-                <span className="text-lg sm:text-xl font-black text-white">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
+            <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-white/10 text-left space-y-2.5 shadow-inner">
+              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+                <span className="text-slate-300 text-xs sm:text-sm font-bold">Kelengkapan Komponen:</span>
+                <span className="text-base sm:text-lg font-black text-white">{telemetry.popups?.details?.label_terdeteksi || '100%'}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                <span className="text-slate-300 text-sm sm:text-base font-bold">Rata-rata Akurasi AI:</span>
-                <span className="text-lg sm:text-xl font-black text-emerald-400">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
+              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+                <span className="text-slate-300 text-xs sm:text-sm font-bold">Rata-rata Akurasi AI:</span>
+                <span className="text-base sm:text-lg font-black text-emerald-400">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
               </div>
               <div>
-                <span className="text-slate-300 text-sm sm:text-base font-bold block mb-2">Detail Komponen Terdeteksi:</span>
-                <pre className="text-sm sm:text-base text-emerald-300 font-mono font-bold bg-black/70 p-3 sm:p-4 rounded-xl whitespace-pre-wrap border border-emerald-500/20 leading-relaxed">
+                <span className="text-slate-300 text-xs sm:text-sm font-bold block mb-1.5">Komponen Terverifikasi:</span>
+                <pre className="text-xs sm:text-sm text-emerald-300 font-mono font-bold bg-black/70 p-3 rounded-xl whitespace-pre-wrap border border-emerald-500/20 leading-relaxed">
                   {telemetry.popups?.details?.found_labels || '- INSPEKSI VISUAL : OK'}
                 </pre>
               </div>
@@ -535,137 +695,154 @@ export default function OperatorInspection() {
             <button
               type="button"
               onClick={handleClosePartOkModal}
-              className="mt-6 w-full py-4 sm:py-5 px-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-lg sm:text-2xl font-black rounded-2xl shadow-xl shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              className="mt-5 w-full py-3.5 sm:py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-base sm:text-xl font-black rounded-2xl shadow-xl shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
-              LANJUTKAN INSPEKSI →
+              {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
+                ? "✅ SELESAI (KEMBALI KE STANDBY)"
+                : `✅ LANJUTKAN KE PART BERIKUTNYA (${(telemetry.qty_completed || 0) + 1}/${telemetry.target_qty}) →`}
             </button>
           </div>
-        </div>
+        </DraggableFloatingCard>
       )}
 
-      {/* 5. MODAL POPUP: BALIK PART (UKURAN BESAR & WARNA TEGAS) */}
+      {/* 5. DRAGGABLE FLOATING POPUP: BALIK PART (SISI DEPAN OK) */}
       {showFlipModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-lg animate-fadeIn">
-          <div className="w-full max-w-2xl bg-slate-900 border-4 border-amber-500 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-amber-950/60 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mx-auto mb-4 text-amber-400 shadow-xl shadow-amber-500/30 animate-spin-slow">
-              <RotateCcw className="w-12 h-12 stroke-[3]" />
+        <DraggableFloatingCard
+          title="BALIK PART (SISI DEPAN OK)"
+          badge="SISI BELAKANG (REAR)"
+          color="amber"
+          icon={RotateCcw}
+          onClose={handleCloseFlipModal}
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mx-auto mb-3 text-amber-400 shadow-xl shadow-amber-500/30 animate-spin-slow">
+              <RotateCcw className="w-10 h-10 sm:w-12 sm:h-12 stroke-[3]" />
             </div>
             
-            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wide">
+            <h3 className="text-2xl sm:text-4xl font-black text-white tracking-wide">
               🔄 SISI DEPAN (FRONT) OK!
             </h3>
-            <p className="text-lg sm:text-2xl text-amber-300 font-black mt-2">
-              BALIK PART KE <span className="underline decoration-amber-400 decoration-4 text-white">SISI BELAKANG (REAR)</span>
+            <p className="text-base sm:text-xl text-amber-300 font-black mt-1.5">
+              Silakan Balik Part ke <span className="underline decoration-amber-400 decoration-4 text-white">SISI BELAKANG (REAR)</span>
             </p>
 
-            <div className="mt-6 p-5 sm:p-6 rounded-2xl bg-slate-950/90 border-2 border-white/10 text-left space-y-3 shadow-inner">
-              <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                <span className="text-slate-300 text-sm sm:text-base font-bold">Status Sisi Depan:</span>
-                <span className="text-lg sm:text-xl font-black text-emerald-400">OK (Lengkap)</span>
+            <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-white/10 text-left space-y-2.5 shadow-inner">
+              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+                <span className="text-slate-300 text-xs sm:text-sm font-bold">Status Sisi Depan:</span>
+                <span className="text-base sm:text-lg font-black text-emerald-400">OK (Lengkap & Lolos AI)</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-300 text-sm sm:text-base font-bold">Target Selanjutnya:</span>
-                <span className="text-lg sm:text-xl font-black text-amber-400">Inspeksi Sisi Belakang</span>
+              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+                <span className="text-slate-300 text-xs sm:text-sm font-bold">Akurasi Sisi Depan:</span>
+                <span className="text-base sm:text-lg font-black text-emerald-400">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
+              </div>
+              <div>
+                <span className="text-slate-300 text-xs sm:text-sm font-bold block mb-1.5">Komponen Sisi Depan Terdeteksi:</span>
+                <pre className="text-xs sm:text-sm text-emerald-300 font-mono font-bold bg-black/70 p-3 rounded-xl whitespace-pre-wrap border border-emerald-500/20 leading-relaxed">
+                  {telemetry.popups?.details?.found_labels || '- SISI DEPAN (FRONT) : OK'}
+                </pre>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleCloseFlipModal}
-              className="mt-6 w-full py-4 sm:py-5 px-8 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-lg sm:text-2xl font-black rounded-2xl shadow-xl shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              className="mt-5 w-full py-3.5 sm:py-4 px-6 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-base sm:text-xl font-black rounded-2xl shadow-xl shadow-amber-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
             >
-              PART SUDAH DIBALIK (LANJUTKAN) →
+              🔄 PART SUDAH DIBALIK (LANJUT KE REAR) →
             </button>
           </div>
-        </div>
+        </DraggableFloatingCard>
       )}
 
-      {/* 6. MODAL POPUP: NG ABNORMALITY & VALIDASI PENGAWAS (UKURAN SANGAT BESAR & JELAS) */}
+      {/* 6. DRAGGABLE FLOATING POPUP: NG ABNORMALITY & VALIDASI PENGAWAS */}
       {showNgModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-rose-950/95 backdrop-blur-xl animate-fadeIn">
-          <div className="w-full max-w-2xl bg-slate-950 border-4 border-rose-500 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-rose-900/80">
-            <div className="text-center mb-4">
-              <div className="inline-flex items-center gap-2 bg-rose-500/30 border-2 border-rose-400 px-5 py-1.5 rounded-full text-rose-200 font-black text-sm uppercase tracking-widest animate-pulse mb-3">
-                <ShieldAlert className="w-5 h-5" />
-                <span>SIRENE & ALARM NG AKTIF!</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-wide">
-                ⚠️ CACAT / NG TERDETEKSI! ⚠️
-              </h2>
-              <p className="text-sm sm:text-base text-rose-300 font-bold mt-1.5">
-                Panggil Pengawas / QC Leader untuk verifikasi dan input PIN validasi.
-              </p>
+        <DraggableFloatingCard
+          title="ALARM CACAT (NG) AKTIF"
+          badge="VALIDASI PENGAWAS"
+          color="rose"
+          icon={ShieldAlert}
+        >
+          <div className="text-center mb-3">
+            <div className="inline-flex items-center gap-2 bg-rose-500/30 border-2 border-rose-400 px-4 py-1 rounded-full text-rose-200 font-black text-xs sm:text-sm uppercase tracking-widest animate-pulse mb-2">
+              <ShieldAlert className="w-4 h-4" />
+              <span>SIRENE & ALARM NG AKTIF!</span>
             </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
+              ⚠️ CACAT / NG TERDETEKSI! ⚠️
+            </h2>
+            <p className="text-xs sm:text-sm text-rose-300 font-bold mt-1">
+              Panggil Pengawas / QC Leader untuk verifikasi dan input PIN validasi.
+            </p>
+          </div>
 
-            {/* Foto Bukti Cacat Snapshot */}
-            {telemetry.popups?.ng_image_url && (
-              <div className="mb-5 rounded-2xl overflow-hidden border-3 border-rose-500 bg-black max-h-60 flex items-center justify-center shadow-lg">
-                <img
-                  src={telemetry.popups.ng_image_url}
-                  alt="Snapshot Cacat NG"
-                  className="w-full h-full object-contain"
+          {/* Foto Bukti Cacat Snapshot */}
+          {telemetry.popups?.ng_image_url && (
+            <div className="mb-4 rounded-2xl overflow-hidden border-2 border-rose-500 bg-black max-h-52 flex items-center justify-center shadow-lg">
+              <img
+                src={telemetry.popups.ng_image_url}
+                alt="Snapshot Cacat NG"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+
+          {ngError && (
+            <div className="mb-3 p-3 rounded-xl bg-rose-500/30 border border-rose-500 text-rose-200 text-xs sm:text-sm font-black text-center">
+              {ngError}
+            </div>
+          )}
+
+          {/* Form PIN Pengawas */}
+          <form onSubmit={handleResolveNg} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-200 mb-1">
+                  Username Pengawas
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={ngSupervisorUsername}
+                  onChange={(e) => setNgSupervisorUsername(e.target.value)}
+                  placeholder="Username Pengawas"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-sm font-bold placeholder:text-slate-500"
                 />
               </div>
-            )}
 
-            {ngError && (
-              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/30 border-2 border-rose-500 text-rose-200 text-sm sm:text-base font-black text-center">
-                {ngError}
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-200 mb-1">
+                  PIN Pengawas (Default: 1234)
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={ngSupervisorPin}
+                  onChange={(e) => setNgSupervisorPin(e.target.value)}
+                  placeholder="Masukkan PIN"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-sm font-bold placeholder:text-slate-500"
+                />
               </div>
-            )}
+            </div>
 
-            {/* Form PIN Pengawas */}
-            <form onSubmit={handleResolveNg} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs sm:text-sm font-black uppercase text-slate-200 mb-1.5">
-                    Username Pengawas / Admin
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={ngSupervisorUsername}
-                    onChange={(e) => setNgSupervisorUsername(e.target.value)}
-                    placeholder="Username Pengawas"
-                    className="w-full px-4 py-3 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-base font-bold placeholder:text-slate-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs sm:text-sm font-black uppercase text-slate-200 mb-1.5">
-                    PIN Pengawas / Admin
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={ngSupervisorPin}
-                    onChange={(e) => setNgSupervisorPin(e.target.value)}
-                    placeholder="Masukkan PIN"
-                    className="w-full px-4 py-3 bg-slate-900 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:border-rose-400 text-base font-bold placeholder:text-slate-500"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={ngResolving}
-                className="w-full py-4 px-6 bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-rose-600/50 text-base sm:text-xl uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {ngResolving ? 'Memvalidasi PIN...' : '🔔 VALIDASI PIN & MATIKAN SIRENE'}
-              </button>
-            </form>
-          </div>
-        </div>
+            <button
+              type="submit"
+              disabled={ngResolving}
+              className="w-full py-3.5 px-6 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-rose-600/50 text-sm sm:text-base uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+            >
+              {ngResolving ? 'Memvalidasi PIN...' : '🔔 VALIDASI PIN & MATIKAN SIRENE'}
+            </button>
+          </form>
+        </DraggableFloatingCard>
       )}
 
-      {/* 7. MODAL POPUP: SIMULATOR DEMO SISON */}
+      {/* 7. MODAL POPUP: SIMULATOR DEMO SISON DENGAN PRESET QTY */}
       {showDemoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-xl bg-slate-900 border-2 border-indigo-500/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
               <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5">
                 <Send className="w-5 h-5 text-indigo-400" />
-                <span>Simulator JSON Transaksi SISON</span>
+                <span>Simulator Transaksi SISON (Demo Multi-Sisi)</span>
               </h3>
               <button
                 type="button"
@@ -676,22 +853,41 @@ export default function OperatorInspection() {
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 mb-3 font-medium">
-              Edit payload JSON di bawah ini untuk mengirim trigger transaksi inspeksi baru:
+            {/* Quick Preset Buttons */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase">
+                Pilih Target QTY Cepat:
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 5, 10].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setDemoQtyPreset(num)}
+                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-indigo-600 border border-white/15 text-white font-black text-xs sm:text-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  >
+                    {num} PCS
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 mb-2 font-medium">
+              Payload JSON Transaksi SISON:
             </p>
 
             <textarea
-              rows={8}
+              rows={7}
               value={demoJson}
               onChange={(e) => setDemoJson(e.target.value)}
-              className="w-full p-4 bg-slate-950 border-2 border-white/15 rounded-xl font-mono text-xs sm:text-sm text-emerald-300 focus:outline-none focus:border-indigo-400 leading-relaxed"
+              className="w-full p-3.5 bg-slate-950 border-2 border-white/15 rounded-xl font-mono text-xs text-emerald-300 focus:outline-none focus:border-indigo-400 leading-relaxed"
             />
 
-            <div className="mt-5 flex items-center justify-end gap-3">
+            <div className="mt-4 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowDemoModal(false)}
-                className="py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm cursor-pointer"
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm cursor-pointer"
               >
                 Batal
               </button>
@@ -699,10 +895,10 @@ export default function OperatorInspection() {
                 type="button"
                 onClick={handleSendDemoSison}
                 disabled={sendingDemo}
-                className="py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
+                className="py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
-                <span>{sendingDemo ? 'Mengirim...' : 'Kirim Simulasi SISON'}</span>
+                <span>{sendingDemo ? 'Mengirim...' : '🚀 Kirim Simulasi SISON'}</span>
               </button>
             </div>
           </div>

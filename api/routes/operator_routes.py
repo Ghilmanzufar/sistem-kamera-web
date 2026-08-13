@@ -268,6 +268,14 @@ def mock_detect():
         if cur_side == "F" and has_rear:
             state.current_side = "R"
             state.flip_part_popup = True
+            
+            front_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("f-")]
+            found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 96%" for r in front_rules] if front_rules else ["- SISI DEPAN (FRONT) : 95%"]
+            state.last_inspection_details = {
+                "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100% Sisi Depan)",
+                "avg_confidence": "96%",
+                "found_labels": "\n".join(found_labels_list)
+            }
             stream_worker.last_pesan_ui = "Sisi Depan OK! Balik Part ke sisi Belakang."
             return {"success": True, "action": "flip_part", "message": "Sisi Depan OK! Balik Part ke sisi Belakang."}
         else:
@@ -276,13 +284,10 @@ def mock_detect():
             state.current_side = "F"
             state.part_ok_popup = True
             
-            found_labels_list = []
-            target_rules = [r for r in rules if r.get("nama_komponen")]
-            if target_rules:
-                for r in target_rules:
-                    found_labels_list.append(f"- {r.get('nama_komponen', '').upper()} : 95%")
-            else:
-                found_labels_list.append("- KOMPONEN TERVERIFIKASI : 95%")
+            rear_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("r-")]
+            found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rear_rules] if rear_rules else [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rules if r.get("nama_komponen")]
+            if not found_labels_list:
+                found_labels_list = ["- KOMPONEN TERVERIFIKASI : 95%"]
 
             state.last_inspection_details = {
                 "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100%)",
@@ -295,7 +300,7 @@ def mock_detect():
                 state.completed_time = time.time()
                 stream_worker.last_pesan_ui = "INSPEKSI SELESAI (OK)!"
             else:
-                stream_worker.last_pesan_ui = f"Part Mock OK! Sisa: {rem_qty} PCS"
+                stream_worker.last_pesan_ui = f"Part OK! Sisa: {rem_qty} PCS. Lanjut part berikutnya."
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 0.95, "AI", op_name), daemon=True).start()
     if rem_qty <= 0:
@@ -349,9 +354,9 @@ def operator_demo_start(req: dict, db: Session = Depends(get_db)):
     start_req = StartRequest(
         id_trans=req.get("id_trans", f"DEMO-{int(time.time())}"),
         p_no=req.get("p_no", "74231-0K550-00"),
-        lot=req.get("lot", "-"),
-        unique_no=req.get("unique_no", "-"),
-        p_name=req.get("p_name", "Demo Part Component"),
-        qty=req.get("qty", 1)
+        lot=req.get("lot", "LOT-DEMO-01"),
+        unique_no=req.get("unique_no", f"UNQ-{int(time.time()) % 10000:04d}"),
+        p_name=req.get("p_name", "Demo Part Multi-Sisi"),
+        qty=max(1, int(req.get("qty", 2)))
     )
     return execute_sison_start(start_req, db)

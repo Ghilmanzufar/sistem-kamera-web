@@ -163,9 +163,26 @@ class KameraProses:
             target_qty = state.target_qty
             aturan_sisi = state.aturan_sisi
             current_side = state.current_side
+            flip_active = state.flip_part_popup
+            part_ok_active = state.part_ok_popup
             
         pesan_ui = f"Status: {status}"
         color_status = (255, 255, 0)
+
+        # Jika popup sedang terbuka, beri jeda interaksi kepada operator
+        if flip_active:
+            pesan_ui = "SISI DEPAN OK! Balik part ke Sisi Belakang (REAR) lalu klik Lanjutkan."
+            color_status = (0, 255, 165)
+            pesan_ui_cv2 = pesan_ui
+            cv2.putText(frame, pesan_ui_cv2, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color_status, 2)
+            return frame, pesan_ui
+
+        if part_ok_active:
+            pesan_ui = f"PART OK! Sisa: {qty} PCS. Masukkan part berikutnya ke jig inspeksi."
+            color_status = (0, 255, 0)
+            pesan_ui_cv2 = pesan_ui
+            cv2.putText(frame, pesan_ui_cv2, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color_status, 2)
+            return frame, pesan_ui
 
         if status == "RUNNING" and qty > 0:
             label_counts = {}
