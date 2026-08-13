@@ -104,9 +104,9 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
   return (
     <div
       style={{
-        transform: `translate(calc(-50% + ${position.x}px), ${position.y}px)`,
+        transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
       }}
-      className={`fixed z-40 top-14 left-1/2 w-[94vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
+      className={`fixed z-40 top-1/2 left-1/2 w-[94vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
     >
       {/* Draggable Header Handle */}
       <div
