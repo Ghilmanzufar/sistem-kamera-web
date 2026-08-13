@@ -297,16 +297,18 @@ class KameraProses:
                         else:
                             state.qty -= 1
                             state.current_side = "F"
-                            state.part_ok_popup = True
                             threading.Thread(target=log_inspeksi_db, args=(state.id_trans, state.p_no, "OK", current_avg_conf, "AI", state.operator_name)).start()
                             
                             if state.qty <= 0:
-                                state.status = "COMPLETED"
+                                state.part_ok_popup = False
+                                state.flip_part_popup = False
                                 state.completed_time = time.time()
                                 threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
-                                pesan_ui = "INSPEKSI SELESAI!"
+                                pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
                                 color_status = (0, 255, 0)
+                                state.reset_to_standby()
                             else:
+                                state.part_ok_popup = True
                                 pesan_ui = "Part OK! Lanjut part berikutnya."
                                 color_status = (0, 255, 0)
 
@@ -319,15 +321,14 @@ class KameraProses:
             
         elif status == "RUNNING" and qty <= 0 and target_qty > 0:
             with state.lock:
-                state.status = "COMPLETED"
                 state.completed_time = time.time()
-            status = "COMPLETED"
-            SisonSender.send_callback(state.id_trans, 1)
-            pesan_ui = "INSPEKSI SELESAI. MENGHUBUNGI SISON..."
+                threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
+                state.reset_to_standby()
+            pesan_ui = "STANDBY"
             color_status = (0, 255, 0)
             
-        elif status == "COMPLETED":
-            pesan_ui = "SELESAI. TUNGGU INSTRUKSI SISON."
+        elif status in ["COMPLETED", "STANDBY"]:
+            pesan_ui = "STANDBY"
             color_status = (0, 255, 0)
 
         # Render overlay teks

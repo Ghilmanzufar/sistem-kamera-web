@@ -276,11 +276,15 @@ export default function OperatorInspection() {
   // 2. Tangani Perubahan Popups & NG Alarm
   useEffect(() => {
     if (telemetry.popups) {
-      if (telemetry.popups.part_ok) {
+      if (telemetry.popups.part_ok && telemetry.qty_remaining > 0 && telemetry.status !== 'COMPLETED' && telemetry.status !== 'STANDBY') {
         setShowPartOkModal(true);
+      } else {
+        setShowPartOkModal(false);
       }
-      if (telemetry.popups.flip_part) {
+      if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
         setShowFlipModal(true);
+      } else {
+        setShowFlipModal(false);
       }
       if (telemetry.popups.ng_active || telemetry.status === 'NG') {
         setShowNgModal(true);
@@ -290,7 +294,7 @@ export default function OperatorInspection() {
         stopSirenAlert();
       }
     }
-  }, [telemetry.popups, telemetry.status]);
+  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining]);
 
   // Audio Sirene Synth Web Audio
   const startSirenAlert = () => {
@@ -660,11 +664,11 @@ export default function OperatorInspection() {
         )}
       </main>
 
-      {/* 4. DRAGGABLE FLOATING POPUP: PART OK / BATCH SELESAI */}
-      {showPartOkModal && (
+      {/* 4. DRAGGABLE FLOATING POPUP: PART OK (Hanya Muncul Antar-Part) */}
+      {showPartOkModal && telemetry.qty_remaining > 0 && (
         <DraggableFloatingCard
-          title={telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0 ? "BATCH SELESAI" : `PART #${telemetry.qty_completed || 1} SELESAI`}
-          badge={telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0 ? "COMPLETED" : `SISA ${telemetry.qty_remaining} PCS`}
+          title={`PART #${telemetry.qty_completed || 1} SELESAI`}
+          badge={`SISA ${telemetry.qty_remaining} PCS`}
           color="emerald"
           icon={Check}
           onClose={handleClosePartOkModal}
@@ -680,9 +684,7 @@ export default function OperatorInspection() {
                   Part berhasil terdeteksi!
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
-                  {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
-                    ? `Semua target ${telemetry.target_qty} PCS selesai diverifikasi.`
-                    : `Sisi Depan & Belakang OK. Sisa: ${telemetry.qty_remaining} PCS.`}
+                  Sisi Depan & Belakang OK. Sisa: {telemetry.qty_remaining} PCS.
                 </p>
               </div>
             </div>
@@ -734,9 +736,7 @@ export default function OperatorInspection() {
               onClick={handleClosePartOkModal}
               className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-1"
             >
-              {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
-                ? "✅ SELESAI (KEMBALI KE STANDBY)"
-                : `✅ LANJUTKAN KE PART BERIKUTNYA (${(telemetry.qty_completed || 0) + 1}/${telemetry.target_qty}) →`}
+              ✅ LANJUTKAN KE PART BERIKUTNYA ({(telemetry.qty_completed || 0) + 1}/{telemetry.target_qty}) →
             </button>
           </div>
         </DraggableFloatingCard>
