@@ -108,7 +108,7 @@ export default function LineMonitoring() {
         </div>
 
         {stations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
             {stations.map((st) => {
               const isStationNg = st.ng_active || st.status === 'NG';
               const isStationRunning = st.status === 'RUNNING' || st.status === 'OK';
@@ -125,22 +125,24 @@ export default function LineMonitoring() {
               return (
                 <div
                   key={st.id}
-                  className={`glass-card p-6 rounded-3xl border-2 shadow-2xl space-y-4 transition-all duration-300 flex flex-col justify-between ${cardBorder}`}
+                  className={`glass-card p-4 sm:p-5 rounded-3xl border-2 shadow-2xl space-y-4 transition-all duration-300 flex flex-col justify-between overflow-hidden ${cardBorder}`}
                 >
-                  <div>
+                  <div className="min-w-0">
                     {/* Card Header: Line Name & Live Status Badge */}
-                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3.5 mb-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400">
-                          <Tv className="w-5 h-5" />
+                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3 mb-3.5 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400 shrink-0">
+                          <Tv className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h4 className="font-black text-white text-base sm:text-lg tracking-wide">{st.id}</h4>
-                          <p className="text-xs text-slate-400 truncate max-w-[130px]">{st.camera_name}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-black text-white text-sm sm:text-base tracking-wide truncate">{st.id}</h4>
+                          <p className="text-[11px] text-slate-400 truncate">{st.camera_name}</p>
                         </div>
                       </div>
 
-                      <StatusBadge status={st.status} />
+                      <div className="shrink-0">
+                        <StatusBadge status={st.status} />
+                      </div>
                     </div>
 
                     {/* Video Live Preview Stream */}
