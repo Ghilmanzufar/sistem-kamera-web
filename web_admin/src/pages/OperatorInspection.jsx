@@ -394,7 +394,7 @@ export default function OperatorInspection() {
   };
 
   const handleFinishBatch = async () => {
-    setShowCompletedModal(false);
+    setShowPartOkModal(false);
     try {
       await api.post('/api/operator/clear-popup', { popup_type: 'ALL' });
       const stateRes = await api.get('/api/operator/state');
