@@ -106,25 +106,25 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
       style={{
         transform: `translate(calc(-50% + ${position.x}px), ${position.y}px)`,
       }}
-      className={`fixed z-40 top-16 left-1/2 w-[90vw] max-w-lg sm:max-w-xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
+      className={`fixed z-40 top-14 left-1/2 w-[94vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
     >
       {/* Draggable Header Handle */}
       <div
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className={`px-3.5 py-2 rounded-t-[14px] border-b flex items-center justify-between cursor-grab active:cursor-grabbing ${colorStyles.headerBg}`}
+        className={`px-4 py-2.5 rounded-t-[14px] border-b flex items-center justify-between cursor-grab active:cursor-grabbing ${colorStyles.headerBg}`}
       >
-        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider">
+        <div className="flex items-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider">
           {Icon && <Icon className="w-4 h-4 shrink-0" />}
           <span className="truncate">{title}</span>
           {badge && (
-            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-black ${colorStyles.badgeBg} shrink-0`}>
+            <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-black ${colorStyles.badgeBg} shrink-0`}>
               {badge}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-bold text-slate-300 bg-black/50 px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/10">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className="text-[10px] sm:text-xs font-bold text-slate-300 bg-black/50 px-2.5 py-1 rounded-lg flex items-center gap-1 border border-white/10">
             <GripHorizontal className="w-3.5 h-3.5 text-emerald-400" /> <span>✥ Geser</span>
           </span>
           {onClose && (
@@ -139,8 +139,8 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
         </div>
       </div>
 
-      {/* Popup Body (Compact, Zero-Scroll) */}
-      <div className="p-4 sm:p-5 overflow-hidden">
+      {/* Popup Body (Spacious & Readable) */}
+      <div className="p-5 sm:p-6 overflow-hidden">
         {children}
       </div>
     </div>
@@ -669,17 +669,17 @@ export default function OperatorInspection() {
           icon={Check}
           onClose={handleClosePartOkModal}
         >
-          <div className="space-y-2.5 text-left">
+          <div className="space-y-4 text-left">
             {/* Judul Rata Kiri */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
-                <Check className="w-5 h-5 stroke-[3]" />
+            <div className="flex items-center gap-3.5 pb-0.5">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
+                <Check className="w-6 h-6 stroke-[3]" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
                   Part berhasil terdeteksi!
                 </h3>
-                <p className="text-[11px] sm:text-xs text-emerald-300 font-bold truncate">
+                <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
                   {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
                     ? `Semua target ${telemetry.target_qty} PCS selesai diverifikasi.`
                     : `Sisi Depan & Belakang OK. Sisa: ${telemetry.qty_remaining} PCS.`}
@@ -688,42 +688,42 @@ export default function OperatorInspection() {
             </div>
 
             {/* 1. Metrik Kelengkapan Label & Rata-rata Akurasi (Di atas) */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10 text-xs">
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Label Terdeteksi:</span>
-                <span className="font-extrabold text-white text-xs sm:text-sm">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
+            <div className="grid grid-cols-2 gap-3 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
+              <div className="px-1">
+                <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Label Terdeteksi:</span>
+                <span className="font-black text-white text-sm sm:text-base">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
               </div>
-              <div className="border-l border-white/10 pl-2.5">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Rata-rata Akurasi:</span>
-                <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
+              <div className="border-l border-white/15 pl-3.5">
+                <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Rata-rata Akurasi:</span>
+                <span className="font-black text-emerald-400 text-sm sm:text-base">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
               </div>
             </div>
 
             {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah & tinggi dinamis tanpa scroll) */}
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                Nama Label:
+              <span className="text-xs uppercase font-extrabold text-slate-300 block mb-2 tracking-wide">
+                Nama Label Terverifikasi:
               </span>
-              <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10">
+              <div className="flex flex-col gap-2 p-2.5 sm:p-3 bg-slate-900/90 rounded-2xl border border-white/15 shadow-inner">
                 {telemetry.popups?.details?.found_labels ? (
                   telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300 shadow-sm"
+                      className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs sm:text-sm font-mono font-bold text-emerald-200 shadow-sm"
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span className="truncate">{lbl.replace(/^-\s*/, '').split(':')[0]?.trim() || lbl.replace(/^-\s*/, '')}</span>
                       </div>
                       {lbl.includes(':') && (
-                        <span className="text-emerald-400 font-extrabold text-[11px] shrink-0">
+                        <span className="text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shrink-0 border border-emerald-500/30">
                           {lbl.split(':')[1]?.trim()}
                         </span>
                       )}
                     </div>
                   ))
                 ) : (
-                  <span className="text-xs text-slate-400 font-bold">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
+                  <span className="text-xs text-slate-400 font-bold p-1">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
                 )}
               </div>
             </div>
@@ -732,7 +732,7 @@ export default function OperatorInspection() {
             <button
               type="button"
               onClick={handleClosePartOkModal}
-              className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center"
+              className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-1"
             >
               {telemetry.status === 'COMPLETED' || telemetry.qty_remaining <= 0
                 ? "✅ SELESAI (KEMBALI KE STANDBY)"
@@ -751,59 +751,59 @@ export default function OperatorInspection() {
           icon={Check}
           onClose={handleCloseFlipModal}
         >
-          <div className="space-y-2.5 text-left">
+          <div className="space-y-4 text-left">
             {/* Judul Rata Kiri */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
-                <Check className="w-5 h-5 stroke-[3]" />
+            <div className="flex items-center gap-3.5 pb-0.5">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
+                <Check className="w-6 h-6 stroke-[3]" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
                   Part berhasil terdeteksi!
                 </h3>
-                <p className="text-[11px] sm:text-xs text-emerald-300 font-bold truncate">
+                <p className="text-xs sm:text-sm text-emerald-300 font-bold mt-0.5 truncate">
                   Silakan balik part ke <span className="underline decoration-emerald-400 decoration-2 font-black">SISI BELAKANG (REAR)</span>.
                 </p>
               </div>
             </div>
 
             {/* 1. Metrik Kelengkapan Label & Rata-rata Akurasi (Di atas) */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10 text-xs">
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Label Terdeteksi:</span>
-                <span className="font-extrabold text-white text-xs sm:text-sm">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
+            <div className="grid grid-cols-2 gap-3 bg-slate-900/90 p-3 sm:p-3.5 rounded-2xl border border-white/15 text-xs shadow-inner">
+              <div className="px-1">
+                <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Label Terdeteksi:</span>
+                <span className="font-black text-white text-sm sm:text-base">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
               </div>
-              <div className="border-l border-white/10 pl-2.5">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Rata-rata Akurasi:</span>
-                <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
+              <div className="border-l border-white/15 pl-3.5">
+                <span className="text-slate-400 block text-xs uppercase font-extrabold tracking-wide mb-0.5">Rata-rata Akurasi:</span>
+                <span className="font-black text-emerald-400 text-sm sm:text-base">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
               </div>
             </div>
 
             {/* 2. Nama Label (Di bawah rata-rata akurasi, berjejer ke bawah & tinggi dinamis tanpa scroll) */}
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                Nama Label:
+              <span className="text-xs uppercase font-extrabold text-slate-300 block mb-2 tracking-wide">
+                Nama Label Terverifikasi:
               </span>
-              <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-white/10">
+              <div className="flex flex-col gap-2 p-2.5 sm:p-3 bg-slate-900/90 rounded-2xl border border-white/15 shadow-inner">
                 {telemetry.popups?.details?.found_labels ? (
                   telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300 shadow-sm"
+                      className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs sm:text-sm font-mono font-bold text-emerald-200 shadow-sm"
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span className="truncate">{lbl.replace(/^-\s*/, '').split(':')[0]?.trim() || lbl.replace(/^-\s*/, '')}</span>
                       </div>
                       {lbl.includes(':') && (
-                        <span className="text-emerald-400 font-extrabold text-[11px] shrink-0">
+                        <span className="text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shrink-0 border border-emerald-500/30">
                           {lbl.split(':')[1]?.trim()}
                         </span>
                       )}
                     </div>
                   ))
                 ) : (
-                  <span className="text-xs text-slate-400 font-bold">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
+                  <span className="text-xs text-slate-400 font-bold p-1">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
                 )}
               </div>
             </div>
@@ -812,7 +812,7 @@ export default function OperatorInspection() {
             <button
               type="button"
               onClick={handleCloseFlipModal}
-              className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center"
+              className="w-full py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm sm:text-base font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-1"
             >
               LANJUTKAN KE SISI BELAKANG →
             </button>
