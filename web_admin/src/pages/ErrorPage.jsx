@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   AlertTriangle, 
   RefreshCw, 
@@ -23,12 +22,11 @@ export default function ErrorPage({
   errorInfo = null, 
   resetErrorBoundary = null 
 }) {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-
   const [copied, setCopied] = useState(false);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+
+  // Safely parse search params from browser window
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
 
   // Error Code & Message from query params or props
   const codeParam = searchParams.get('code') || (type !== 'auto' ? type : '500');
@@ -99,20 +97,24 @@ export default function ErrorPage({
     timeStyle: 'medium',
   });
 
+  const urlPath = typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '';
+
   const diagnosticText = `[SISTEM KAMERA INSPEKSI - DIAGNOSTIC LOG]
 Timestamp : ${timestamp}
-URL Path  : ${location.pathname}${location.search}
+URL Path  : ${urlPath}
 Error Code: ${meta.errorCode} (${codeParam})
 Message   : ${msgParam || 'Tidak ada pesan error spesifik'}
-User Agent: ${navigator.userAgent}
+User Agent: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'}
 Technical Details:
 ${error?.stack || errorInfo?.componentStack || 'No stack trace recorded'}`;
 
   const handleCopyDiagnostics = () => {
-    navigator.clipboard.writeText(diagnosticText);
-    setCopied(true);
-    toast.success('Kode & log diagnostik berhasil disalin ke clipboard!');
-    setTimeout(() => setCopied(false), 2500);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(diagnosticText);
+      setCopied(true);
+      toast.success('Kode & log diagnostik berhasil disalin ke clipboard!');
+      setTimeout(() => setCopied(false), 2500);
+    }
   };
 
   const handleRetry = () => {
@@ -126,9 +128,9 @@ ${error?.stack || errorInfo?.componentStack || 'No stack trace recorded'}`;
   const handleGoHome = () => {
     const role = (localStorage.getItem('user_role') || '').toLowerCase();
     if (role === 'operator') {
-      navigate('/history');
+      window.location.href = '/operator';
     } else {
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     }
   };
 

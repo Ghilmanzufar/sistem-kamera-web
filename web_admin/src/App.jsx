@@ -158,8 +158,8 @@ export default function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
+    <BrowserRouter>
+      <ErrorBoundary>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -208,7 +208,7 @@ export default function App() {
           {/* Global Fallback Route */}
           <Route path="*" element={<ErrorPage type="404" />} />
         </Routes>
-      </BrowserRouter>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </BrowserRouter>
   );
 }
