@@ -73,7 +73,7 @@ html.light .min-h-screen {
   color: #0f172a !important;
 }
 
-/* Light Mode Glassmorphism & Containers */
+/* Light Mode Glassmorphism, Containers & Popups */
 html.light .glass-container {
   background: #ffffff !important;
   border: 1.5px solid #e2e8f0 !important;
@@ -88,7 +88,7 @@ html.light .glass-card {
   color: #0f172a !important;
 }
 
-/* Background Layers in Light Mode */
+/* Background Layers & HUD Containers in Light Mode */
 html.light .bg-slate-900\/90,
 html.light .bg-slate-900\/80,
 html.light .bg-slate-900\/60,
@@ -105,9 +105,12 @@ html.light .bg-black\/20 {
 }
 
 html.light .bg-slate-950,
+html.light .bg-slate-950\/95,
+html.light .bg-slate-950\/90,
+html.light .bg-slate-950\/85,
 html.light .bg-slate-950\/80,
 html.light .bg-slate-950\/60 {
-  background-color: #f8fafc !important;
+  background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
   color: #0f172a !important;
 }
@@ -118,7 +121,9 @@ html.light .border-white\/15,
 html.light .border-white\/10,
 html.light .border-white\/5,
 html.light .border-2.border-white\/10,
-html.light .border-2.border-white\/15 {
+html.light .border-2.border-white\/15,
+html.light .border-slate-800,
+html.light .border-slate-700 {
   border-color: #e2e8f0 !important;
 }
 
@@ -148,15 +153,16 @@ html.light .text-slate-300 {
 }
 
 html.light .text-slate-400 {
-  color: #475569 !important;
-}
-
-html.light .text-slate-500 {
   color: #64748b !important;
 }
 
+html.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
 /* Accent Text Colors in Light Mode */
-html.light .text-blue-400 {
+html.light .text-blue-400,
+html.light .text-blue-300 {
   color: #2563eb !important;
 }
 
@@ -175,9 +181,121 @@ html.light .text-amber-300 {
   color: #d97706 !important;
 }
 
+html.light .text-teal-400,
+html.light .text-teal-300 {
+  color: #0d9488 !important;
+}
+
 html.light .text-sky-400,
 html.light .text-sky-300 {
   color: #0284c7 !important;
+}
+
+/* ==============================================================
+   📹 CAMERA HUD & STATUS BANNER IN LIGHT MODE
+============================================================== */
+html.light header.bg-slate-900\/90,
+html.light header.bg-slate-900 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06) !important;
+}
+
+html.light header.bg-emerald-950\/80,
+html.light header.bg-emerald-900\/90,
+html.light .bg-emerald-950\/80 {
+  background-color: #f0fdf4 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+}
+
+html.light header.bg-rose-950\/80,
+html.light header.bg-rose-900\/90,
+html.light .bg-rose-950\/80 {
+  background-color: #fff1f2 !important;
+  border-color: #fca5a5 !important;
+  color: #9f1239 !important;
+}
+
+html.light header.bg-amber-950\/80,
+html.light .bg-amber-950\/80 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+html.light header.bg-teal-950\/90,
+html.light .bg-teal-950\/90 {
+  background-color: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  color: #115e59 !important;
+}
+
+html.light header.bg-sky-950\/80,
+html.light .bg-sky-950\/80 {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #075985 !important;
+}
+
+/* Inspection Side Badge */
+html.light .bg-emerald-950\/60 {
+  background-color: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #15803d !important;
+}
+
+/* ==============================================================
+   📦 DRAGGABLE POPUPS IN LIGHT MODE (Part OK, Flip Side, NG Alarm)
+============================================================== */
+html.light .fixed.z-40.bg-slate-950\/95,
+html.light .fixed.z-40 {
+  background-color: #ffffff !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.2) !important;
+  color: #0f172a !important;
+}
+
+/* Draggable Header Handles */
+html.light .bg-emerald-950\/95 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+
+html.light .bg-rose-950\/95 {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #881337 !important;
+}
+
+html.light .bg-amber-950\/95 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #78350f !important;
+}
+
+/* Draggable Handle Badge ("✥ Geser") */
+html.light .bg-black\/50 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+/* Popup Inner Detail Grid */
+html.light .grid.bg-slate-900\/90,
+html.light .p-4.bg-slate-900\/90,
+html.light .p-2\.5.bg-slate-900\/90,
+html.light .p-3.bg-slate-900\/90 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Verified Labels in Popups */
+html.light .bg-emerald-950\/80.text-emerald-200 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
 }
 
 /* Inputs, Textareas & Selects in Light Mode */
@@ -310,14 +428,14 @@ html.light .video-badge * {
   color: #ffffff !important;
 }
 
-/* Secondary Action Buttons & Ghost Buttons in Light Mode */
+/* Secondary Action Buttons in Light Mode */
 html.light button.bg-slate-800,
 html.light button.bg-slate-800 *,
 html.light button.bg-black\/20,
 html.light button.bg-black\/20 * {
   background-color: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
-  color: #334155 !important;
+  color: #0f172a !important;
 }
 
 html.light button.bg-slate-800:hover,
@@ -393,118 +511,4 @@ html.light .fixed.inset-0 .bg-black\/40 {
   border: 1px solid #e2e8f0 !important;
 }
 
-/* ==============================================================
-   📹 OPERATOR CAMERA LIVE INSPECTION CANVAS (Always Dark Sci-Fi HUD)
-   Ensures 100% crisp visibility of live camera HUD & Popups
-============================================================== */
-.operator-dark-canvas,
-html.light .operator-dark-canvas {
-  background: #020617 !important;
-  color: #f8fafc !important;
-}
-
-.operator-dark-canvas header,
-html.light .operator-dark-canvas header {
-  border-color: rgba(255, 255, 255, 0.15) !important;
-}
-
-.operator-dark-canvas .text-white,
-html.light .operator-dark-canvas .text-white {
-  color: #ffffff !important;
-}
-
-.operator-dark-canvas h1,
-.operator-dark-canvas h2,
-.operator-dark-canvas h3,
-.operator-dark-canvas h4,
-html.light .operator-dark-canvas h1,
-html.light .operator-dark-canvas h2,
-html.light .operator-dark-canvas h3,
-html.light .operator-dark-canvas h4 {
-  color: #ffffff !important;
-}
-
-.operator-dark-canvas p,
-.operator-dark-canvas label,
-html.light .operator-dark-canvas p,
-html.light .operator-dark-canvas label {
-  color: #e2e8f0 !important;
-}
-
-.operator-dark-canvas .text-slate-200,
-.operator-dark-canvas .text-slate-300,
-html.light .operator-dark-canvas .text-slate-200,
-html.light .operator-dark-canvas .text-slate-300 {
-  color: #cbd5e1 !important;
-}
-
-.operator-dark-canvas .text-slate-400,
-html.light .operator-dark-canvas .text-slate-400 {
-  color: #94a3b8 !important;
-}
-
-.operator-dark-canvas .text-slate-100,
-html.light .operator-dark-canvas .text-slate-100 {
-  color: #f1f5f9 !important;
-}
-
-.operator-dark-canvas .bg-slate-900,
-.operator-dark-canvas .bg-slate-900\/90,
-.operator-dark-canvas .bg-slate-900\/80,
-.operator-dark-canvas .bg-slate-900\/60,
-html.light .operator-dark-canvas .bg-slate-900,
-html.light .operator-dark-canvas .bg-slate-900\/90,
-html.light .operator-dark-canvas .bg-slate-900\/80,
-html.light .operator-dark-canvas .bg-slate-900\/60 {
-  background-color: rgba(15, 23, 42, 0.9) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  color: #ffffff !important;
-}
-
-.operator-dark-canvas .bg-slate-950,
-.operator-dark-canvas .bg-slate-950\/95,
-.operator-dark-canvas .bg-slate-950\/85,
-.operator-dark-canvas .bg-slate-950\/80,
-html.light .operator-dark-canvas .bg-slate-950,
-html.light .operator-dark-canvas .bg-slate-950\/95,
-html.light .operator-dark-canvas .bg-slate-950\/85,
-html.light .operator-dark-canvas .bg-slate-950\/80 {
-  background-color: rgba(2, 6, 23, 0.95) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-}
-
-.operator-dark-canvas .bg-slate-800,
-html.light .operator-dark-canvas .bg-slate-800 {
-  background-color: #1e293b !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-}
-
-.operator-dark-canvas .bg-emerald-950\/80,
-.operator-dark-canvas .bg-emerald-950\/95,
-html.light .operator-dark-canvas .bg-emerald-950\/80,
-html.light .operator-dark-canvas .bg-emerald-950\/95 {
-  background-color: rgba(2, 44, 34, 0.9) !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
-  color: #a7f3d0 !important;
-}
-
-.operator-dark-canvas .bg-rose-950\/95,
-.operator-dark-canvas .bg-rose-950\/80,
-html.light .operator-dark-canvas .bg-rose-950\/95,
-html.light .operator-dark-canvas .bg-rose-950\/80 {
-  background-color: rgba(76, 5, 25, 0.9) !important;
-  border-color: rgba(244, 63, 94, 0.4) !important;
-  color: #fecdd3 !important;
-}
-
-.operator-dark-canvas .bg-amber-950\/95,
-.operator-dark-canvas .bg-amber-950\/80,
-html.light .operator-dark-canvas .bg-amber-950\/95,
-html.light .operator-dark-canvas .bg-amber-950\/80 {
-  background-color: rgba(69, 26, 3, 0.9) !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-  color: #fde68a !important;
-}
 
