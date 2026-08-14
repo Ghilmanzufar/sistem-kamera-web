@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Video, RefreshCw, Power, X, User, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import History from './History';
-import { getStoredTheme, toggleTheme } from '../utils/theme';
+import { getStoredTheme, toggleTheme, applyTheme } from '../utils/theme';
 
 export default function OperatorHistory() {
   const navigate = useNavigate();
@@ -12,6 +12,13 @@ export default function OperatorHistory() {
 
   // Theme State
   const [themeMode, setThemeMode] = useState(getStoredTheme());
+
+  useEffect(() => {
+    const current = getStoredTheme();
+    applyTheme(current);
+    setThemeMode(current);
+  }, []);
+
   const handleThemeToggle = () => {
     const next = toggleTheme();
     setThemeMode(next);

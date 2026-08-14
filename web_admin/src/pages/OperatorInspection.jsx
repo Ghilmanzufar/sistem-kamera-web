@@ -188,11 +188,6 @@ export default function OperatorInspection() {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Enforce dark theme on camera inspection view for optimal stream visibility
-  useEffect(() => {
-    applyTheme('dark');
-  }, []);
-
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
 
