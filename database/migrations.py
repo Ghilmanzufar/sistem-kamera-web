@@ -15,6 +15,10 @@ def auto_migrate_schema():
                 cols = [c["name"] for c in inspector.get_columns("users")]
                 if "nik" not in cols:
                     conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nik VARCHAR;"))
+                try:
+                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_nik ON users (nik) WHERE nik IS NOT NULL;"))
+                except Exception:
+                    pass
 
             if "part_rules" in tables:
                 cols = [c["name"] for c in inspector.get_columns("part_rules")]

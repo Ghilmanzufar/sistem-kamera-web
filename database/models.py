@@ -10,7 +10,7 @@ class User(Base):
     password = Column(String)
     role = Column(String)  # 'operator', 'pengawas', 'admin'
     fullname = Column(String)
-    nik = Column(String, nullable=True, index=True)  # Nomor Induk Karyawan
+    nik = Column(String, unique=True, nullable=True, index=True)  # Nomor Induk Karyawan (Unik)
     is_active = Column(Boolean, default=True)
 
 class Transaction(Base):

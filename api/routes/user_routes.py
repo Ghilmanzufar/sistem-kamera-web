@@ -41,21 +41,28 @@ def get_users(db: Session = Depends(get_db)):
 
 @router.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
-    existing = db.query(User).filter(User.username == user.username).first()
+    existing = db.query(User).filter(User.username == user.username.strip()).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Username sudah digunakan")
+        raise HTTPException(status_code=400, detail="Username sudah digunakan oleh akun lain")
+    
+    clean_nik = user.nik.strip() if (user.nik and user.nik.strip()) else None
+    if clean_nik:
+        existing_nik = db.query(User).filter(User.nik == clean_nik).first()
+        if existing_nik:
+            raise HTTPException(status_code=400, detail=f"NIK '{clean_nik}' sudah digunakan oleh user lain ({existing_nik.username})")
+
     db_user = User(
-        username=user.username,
+        username=user.username.strip(),
         password=hash_password(user.password),
         role=user.role,
-        fullname=user.fullname,
-        nik=user.nik.strip() if (user.nik and user.nik.strip()) else None,
+        fullname=user.fullname.strip(),
+        nik=clean_nik,
         is_active=user.is_active
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    log_audit_event(db, uname, "CREATE_USER", f"Membuat user baru: {user.username} ({user.fullname}, NIK: {user.nik or '-'}, Role: {user.role.upper()})")
+    log_audit_event(db, uname, "CREATE_USER", f"Membuat user baru: {user.username} ({user.fullname}, NIK: {clean_nik or '-'}, Role: {user.role.upper()})")
     return db_user
 
 @router.put("/users/{user_id}", response_model=UserResponse)
@@ -63,16 +70,29 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db), u
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    db_user.username = user.username
+    
+    # Validasi username unik
+    existing = db.query(User).filter(User.username == user.username.strip(), User.id != user_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username sudah digunakan oleh akun lain")
+
+    # Validasi NIK unik
+    clean_nik = user.nik.strip() if (user.nik and user.nik.strip()) else None
+    if clean_nik:
+        existing_nik = db.query(User).filter(User.nik == clean_nik, User.id != user_id).first()
+        if existing_nik:
+            raise HTTPException(status_code=400, detail=f"NIK '{clean_nik}' sudah digunakan oleh user lain ({existing_nik.username})")
+
+    db_user.username = user.username.strip()
     if user.password:
         db_user.password = hash_password(user.password)
     db_user.role = user.role
-    db_user.fullname = user.fullname
-    db_user.nik = user.nik.strip() if (user.nik and user.nik.strip()) else None
+    db_user.fullname = user.fullname.strip()
+    db_user.nik = clean_nik
     db_user.is_active = user.is_active
     db.commit()
     db.refresh(db_user)
-    log_audit_event(db, uname, "UPDATE_USER", f"Mengubah data user {user.username} (NIK: {user.nik or '-'}, Role: {user.role.upper()})")
+    log_audit_event(db, uname, "UPDATE_USER", f"Mengubah data user {user.username} (NIK: {clean_nik or '-'}, Role: {user.role.upper()})")
     return db_user
 
 @router.delete("/users/{user_id}")
