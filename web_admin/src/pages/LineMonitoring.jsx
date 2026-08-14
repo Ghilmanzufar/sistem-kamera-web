@@ -3,7 +3,7 @@ import {
   Tv, User, Layers, CheckCircle, AlertOctagon, Activity, 
   RefreshCw, Clock, Radio, ShieldAlert, Cpu, Eye, UserCheck, 
   Calendar, Award, CheckCircle2, XCircle, BarChart3, Laptop, Camera,
-  Maximize2, X, Play
+  Maximize2, X, Play, Video
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -15,7 +15,6 @@ export default function LineMonitoring() {
   const [monitoringData, setMonitoringData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedStation, setSelectedStation] = useState(null);
-  const [snapshotTick, setSnapshotTick] = useState(Date.now());
 
   // Polling data telemetry stasiun tiap 1.5 detik
   const fetchMonitoring = async (isSilent = false) => {
@@ -36,14 +35,6 @@ export default function LineMonitoring() {
       fetchMonitoring(true);
     }, 1500);
     return () => clearInterval(interval);
-  }, []);
-
-  // Tick 1 FPS (1000ms) untuk refresh preview snapshot thumbnail (hemat bandwidth)
-  useEffect(() => {
-    const tickInterval = setInterval(() => {
-      setSnapshotTick(Date.now());
-    }, 1000);
-    return () => clearInterval(tickInterval);
   }, []);
 
   // Tutup modal Live View dengan tombol Escape
@@ -125,9 +116,8 @@ export default function LineMonitoring() {
             <Radio className="w-5 h-5 text-emerald-400 animate-pulse" />
             <span>Stasiun Line Produksi Aktif ({stations.length} Stasiun)</span>
           </h3>
-          <span className="text-xs sm:text-sm font-semibold text-slate-400 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Snapshot 1 FPS &bull; Klik kartu untuk Live Stream 30 FPS
+          <span className="text-xs sm:text-sm font-semibold text-slate-400">
+            Klik tombol Buka Live Stream untuk melihat video 30 FPS
           </span>
         </div>
 
@@ -138,7 +128,7 @@ export default function LineMonitoring() {
               const isStationRunning = st.status === 'RUNNING' || st.status === 'OK';
               const percent = st.target_qty > 0 ? Math.min(100, Math.round((st.qty_completed / st.target_qty) * 100)) : 0;
 
-              let cardBorder = 'border-white/10 hover:border-blue-500/50';
+              let cardBorder = 'border-white/10 hover:border-blue-500/40';
               if (isStationNg) cardBorder = 'border-rose-500 ring-2 ring-rose-500/50 animate-pulse';
               else if (isStationRunning) cardBorder = 'border-emerald-500/50 shadow-emerald-950/20';
 
@@ -151,9 +141,9 @@ export default function LineMonitoring() {
                   key={st.id}
                   className={`glass-card p-4 sm:p-5 rounded-3xl border-2 shadow-2xl space-y-4 transition-all duration-300 flex flex-col justify-between overflow-hidden ${cardBorder}`}
                 >
-                  <div className="min-w-0">
+                  <div className="space-y-3.5 min-w-0">
                     {/* Card Header: Line Name & Live Status Badge */}
-                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3 mb-3.5 min-w-0">
+                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3 min-w-0">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400 shrink-0">
                           <Tv className="w-4 h-4" />
@@ -169,47 +159,41 @@ export default function LineMonitoring() {
                       </div>
                     </div>
 
-                    {/* Video Preview Snapshot (1 FPS Mode - Ringan & Hemat Bandwidth) */}
-                    <div 
+                    {/* Tombol Utama Buka Live Stream 30 FPS */}
+                    <button
+                      type="button"
                       onClick={() => setSelectedStation(st)}
-                      className="group relative rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-700/60 aspect-video flex items-center justify-center shadow-lg mb-4 cursor-pointer hover:border-blue-400 transition-all"
-                      title="Klik untuk membuka Live Stream 30 FPS"
+                      className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-blue-400/30 shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30 transition-all cursor-pointer group active:scale-98"
                     >
-                      {st.is_camera_active ? (
-                        <img
-                          src={`${st.snapshot_url || '/api/camera_snapshot'}?t=${snapshotTick}`}
-                          alt={`Preview ${st.line_name}`}
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <div className="text-center p-4 text-slate-400 text-xs">
-                          <Camera className="w-8 h-8 mx-auto mb-1.5 text-slate-500 animate-pulse" />
-                          <span className="font-bold text-slate-300">Kamera Standby</span>
-                        </div>
-                      )}
+                      <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Play className="w-3 h-3 fill-white text-white" />
+                      </div>
+                      <span>Buka Live Stream (30 FPS)</span>
+                    </button>
 
-                      {st.is_camera_active && (
-                        <div className="video-badge absolute top-3 left-3 bg-black/85 px-2.5 py-1 rounded-xl border border-white/25 text-[10px] font-extrabold flex items-center gap-1.5 shadow-2xl backdrop-blur-md">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-slate-200 tracking-wider">
-                            1 FPS PREVIEW
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Hover Overlay Button to Open 30 FPS Stream */}
-                      {st.is_camera_active && (
-                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-xs">
-                          <div className="bg-blue-600/90 hover:bg-blue-500 text-white text-xs font-black px-4 py-2 rounded-xl flex items-center gap-2 shadow-xl transform scale-95 group-hover:scale-100 transition-transform">
-                            <Maximize2 className="w-4 h-4" />
-                            <span>Buka Live Stream (30 FPS)</span>
-                          </div>
-                        </div>
-                      )}
+                    {/* Status Perangkat & Kamera Info Box (Teks Bersih & Informatif) */}
+                    <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-white/5 space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold uppercase text-slate-400 flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5 text-sky-400" />
+                          <span>Status Kamera:</span>
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                          st.is_camera_active 
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                            : 'bg-slate-800 text-slate-400 border border-slate-700'
+                        }`}>
+                          {st.is_camera_active ? 'ONLINE (READY)' : 'STANDBY'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-400">Pesan AI / Line:</span>
+                        <span className="font-bold text-white truncate max-w-[170px]">{st.last_pesan_ui || 'Standby'}</span>
+                      </div>
                     </div>
 
                     {/* Operator Info Box */}
-                    <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-white/5 space-y-1.5 mb-3">
+                    <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-white/5 space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-extrabold uppercase text-slate-400 flex items-center gap-1.5">
                           <User className="w-4 h-4 text-sky-400" />
@@ -224,8 +208,11 @@ export default function LineMonitoring() {
                       <div className="text-sm sm:text-base font-black text-white truncate">
                         {st.operator?.name || 'Tidak Ada Operator'}
                       </div>
-                      <div className="text-xs text-slate-400">
-                        Login: <strong className="font-mono text-slate-300">{loginDateStr}</strong>
+                      <div className="text-xs text-slate-400 flex items-center justify-between">
+                        <span>Login: <strong className="font-mono text-slate-300">{loginDateStr}</strong></span>
+                        {st.operator?.client_ip && st.operator.client_ip !== '-' && (
+                          <span className="text-[11px] font-mono text-slate-400">IP: {st.operator.client_ip}</span>
+                        )}
                       </div>
                     </div>
 
@@ -248,7 +235,7 @@ export default function LineMonitoring() {
 
                   {/* Progress Bar */}
                   {st.target_qty > 0 && (
-                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5 mt-3">
+                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5 mt-2">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-500 rounded-full"
                         style={{ width: `${percent}%` }}
@@ -270,7 +257,7 @@ export default function LineMonitoring() {
         )}
       </div>
 
-      {/* MODAL ON-DEMAND LIVE STREAM 30 FPS (Hanya aktif saat dibuka) */}
+      {/* MODAL ON-DEMAND LIVE STREAM 30 FPS (Hanya aktif & streaming saat modal dibuka) */}
       {selectedStation && (
         <div 
           className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn select-none"
