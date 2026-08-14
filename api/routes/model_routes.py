@@ -135,12 +135,23 @@ def get_model_detail(part_no: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Model file not found")
     
     rules = db.query(PartRule).filter(PartRule.p_no == safe_part_no).all()
-    components = [{
-        "sisi": r.sisi or "-",
-        "nama_komponen": r.nama_komponen,
-        "qty": r.qty or 1,
-        "min_confidence": r.min_confidence or 0.70
-    } for r in rules]
+    components = []
+    for r in rules:
+        sisi_val = str(r.sisi).strip().upper() if r.sisi and str(r.sisi).strip() not in ["", "-"] else ""
+        if not sisi_val:
+            raw_lbl = str(r.nama_komponen or "").strip()
+            first_tok = raw_lbl.split('-')[0].strip().upper() if '-' in raw_lbl else (raw_lbl.split('_')[0].strip().upper() if '_' in raw_lbl else raw_lbl.split()[0].strip().upper() if ' ' in raw_lbl else raw_lbl[:1].upper())
+            sisi_val = first_tok or "-"
+
+        display_sisi = "FRONT (F)" if sisi_val in ["F", "FRONT"] else ("REAR (R)" if sisi_val in ["R", "REAR"] else sisi_val)
+
+        components.append({
+            "sisi": display_sisi,
+            "raw_sisi": sisi_val,
+            "nama_komponen": r.nama_komponen,
+            "qty": r.qty or 1,
+            "min_confidence": r.min_confidence or 0.70
+        })
 
     mtime = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
     size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 2)
@@ -195,9 +206,12 @@ def upload_model(
                     db.query(PartRule).filter(PartRule.p_no == safe_part_no).delete()
                     db.flush()
                     for label in names:
+                        raw_lbl = str(label).strip()
+                        first_tok = raw_lbl.split('-')[0].strip().upper() if '-' in raw_lbl else (raw_lbl.split('_')[0].strip().upper() if '_' in raw_lbl else raw_lbl[:1].upper())
+                        detected_sisi = first_tok if first_tok in ['F', 'R', 'FRONT', 'REAR'] else (first_tok or "-")
                         db.add(PartRule(
                             p_no=safe_part_no,
-                            sisi="-",
+                            sisi=detected_sisi,
                             nama_komponen=label,
                             qty=1,
                             min_confidence=gs.default_min_conf,

@@ -336,19 +336,37 @@ export default function Models() {
 
                 <div className="max-h-64 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
                   {selectedDetail.komponen.length > 0 ? (
-                    selectedDetail.komponen.map((c, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl text-slate-300">
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-0.5 rounded-md bg-black/40 text-xs font-mono font-bold text-blue-300 uppercase">
-                            Sisi: {c.sisi}
-                          </span>
-                          <span className="font-semibold text-white text-base">{c.nama_komponen}</span>
+                    selectedDetail.komponen.map((c, i) => {
+                      let rawSisi = c.sisi && c.sisi !== '-' ? c.sisi : '';
+                      if (!rawSisi && c.nama_komponen) {
+                        const parts = c.nama_komponen.split(/[-_\s]/);
+                        rawSisi = parts[0] || '-';
+                      }
+                      rawSisi = String(rawSisi || '-').toUpperCase();
+                      const displaySisi = rawSisi === 'F' ? 'FRONT (F)' : rawSisi === 'R' ? 'REAR (R)' : rawSisi;
+                      const isFront = rawSisi === 'F' || rawSisi.startsWith('FRONT');
+                      const isRear = rawSisi === 'R' || rawSisi.startsWith('REAR');
+
+                      return (
+                        <div key={i} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl text-slate-300">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2.5 py-0.5 rounded-md text-xs font-mono font-bold uppercase shadow-sm border ${
+                              isFront
+                                ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+                                : isRear
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                                : 'bg-slate-800 text-slate-300 border-white/10'
+                            }`}>
+                              Sisi: {displaySisi}
+                            </span>
+                            <span className="font-semibold text-white text-base">{c.nama_komponen}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs text-slate-400 block font-semibold">Min Conf: {(c.min_confidence * 100).toFixed(0)}%</span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-xs text-slate-400 block font-semibold">Min Conf: {(c.min_confidence * 100).toFixed(0)}%</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="p-4 text-center text-slate-500 italic text-sm">Belum ada rule khusus terdaftar di DB untuk part ini.</div>
                   )}
