@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AlertTriangle } from 'lucide-react';
+import LinkedinIcon from './components/LinkedinIcon';
 import api from './api/client';
 
 import Sidebar from './components/Sidebar';
@@ -136,7 +137,28 @@ function MainLayout() {
               </Link>
             </div>
           )}
-          <Outlet />
+          <div className="flex-1">
+            <Outlet />
+          </div>
+
+          {/* Admin Page Footer Watermark (Option 2) */}
+          <footer className="mt-8 pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-300">Sistem Kamera Inspeksi AI</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400 font-mono text-[11px]">v2.0 Web Edition</span>
+            </div>
+            <a
+              href="https://www.linkedin.com/in/ghilman-zufar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] hover:bg-sky-500/10 border border-white/5 hover:border-sky-500/30 text-slate-400 hover:text-sky-300 transition-all font-medium group"
+              title="Kunjungi Profil LinkedIn Ghilman Zufar"
+            >
+              <span>Crafted with ❤️ by <strong className="font-semibold text-slate-200 group-hover:text-white transition-colors">Ghilman Zufar</strong></span>
+              <LinkedinIcon className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
+            </a>
+          </footer>
         </main>
       </div>
     </div>
