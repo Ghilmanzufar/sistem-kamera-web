@@ -121,7 +121,9 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
   const rawRole = (localStorage.getItem('user_role') || 'pengawas').toLowerCase();
   const isAdminOrPengawas = rawRole === 'admin' || rawRole === 'pengawas';
 
-  const headers = ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Metode", "Confidence", "Operator", "Aksi"];
+  const headers = operatorOnly
+    ? ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Confidence", "Operator", "Aksi"]
+    : ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Metode", "Confidence", "Operator", "Aksi"];
 
   return (
     <div className="space-y-6 font-sans">
@@ -268,13 +270,13 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
             </select>
           </div>
 
-          <div className={`flex items-end gap-2 ${operatorOnly ? '' : 'sm:col-span-2 lg:col-span-1'}`}>
+          <div className="flex items-end gap-2">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-2.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Search className="w-4 h-4" />
-              <span>Terapkan</span>
+              <span>Terapkan Filter</span>
             </button>
             <button
               type="button"
@@ -312,17 +314,19 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
             <td className="p-4">
               <StatusBadge status={log.detection_status || 'OK'} />
             </td>
-            <td className="p-4">
-              {log.method === 'MANUAL' ? (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  Manual
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  AI YOLO
-                </span>
-              )}
-            </td>
+            {!operatorOnly && (
+              <td className="p-4">
+                {log.method === 'MANUAL' ? (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    Manual
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    AI YOLO
+                  </span>
+                )}
+              </td>
+            )}
             <td className="p-4 text-xs sm:text-sm font-mono font-bold text-slate-200">
               {log.confidence_score !== undefined ? `${(log.confidence_score * 100).toFixed(0)}%` : '100%'}
             </td>
