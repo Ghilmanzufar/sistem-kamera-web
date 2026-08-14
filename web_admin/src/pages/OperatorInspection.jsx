@@ -549,7 +549,7 @@ export default function OperatorInspection() {
                 Target: <span className="text-white font-extrabold">{telemetry.target_qty} PCS</span> | Selesai: <span className="text-white font-extrabold">{telemetry.qty_completed} PCS</span>
               </div>
             ) : (
-              <div className="text-xs sm:text-sm text-slate-400 mt-0.5">Siap menerima trigger transaksi inspeksi</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-400 mt-0.5">Siap menerima trigger transaksi inspeksi</div>
             )}
           </div>
 

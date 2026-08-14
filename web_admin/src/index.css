@@ -153,11 +153,18 @@ html.light .text-slate-300 {
 }
 
 html.light .text-slate-400 {
-  color: #64748b !important;
+  color: #475569 !important;
+  font-weight: 600;
 }
 
 html.light .text-slate-500 {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+}
+
+html.light header .text-slate-400,
+html.light header div.text-slate-400 {
+  color: #475569 !important;
+  font-weight: 700 !important;
 }
 
 /* Accent Text Colors in Light Mode */
