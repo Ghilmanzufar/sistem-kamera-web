@@ -125,8 +125,8 @@ class SystemState:
         try:
             from database import SessionLocal, Transaction, InspectionLog, PartRule
             with SessionLocal() as db:
-                # Cari transaksi status = 0 (IN_PROGRESS) yang paling baru
-                pending_trans = db.query(Transaction).filter(Transaction.status == 0).order_by(Transaction.id.desc()).first()
+                # Cari transaksi status in [0, 2] (IN_PROGRESS / RUNNING) yang paling baru
+                pending_trans = db.query(Transaction).filter(Transaction.status.in_([0, 2])).order_by(Transaction.id.desc()).first()
                 if not pending_trans:
                     return
 
