@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Komponen Popup Melayang yang Dapat Digeser (Draggable Floating Popup - Compact Zero-Scroll)
 function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', onClose, children }) {
@@ -184,6 +185,7 @@ export default function OperatorInspection() {
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
@@ -622,7 +624,7 @@ export default function OperatorInspection() {
 
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="group relative overflow-hidden py-2 px-3.5 rounded-2xl bg-gradient-to-r from-rose-600/90 via-red-600/90 to-rose-700/90 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 shadow-lg shadow-rose-600/25 hover:shadow-rose-500/40 backdrop-blur-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
               >
                 <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-rose-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
@@ -1033,6 +1035,18 @@ export default function OperatorInspection() {
           </div>
         </div>
       )}
+
+      {/* 8. MODAL KONFIRMASI LOGOUT OPERATOR */}
+      <ConfirmModal
+        isOpen={showLogoutModal}
+        title="Konfirmasi Keluar Sesi"
+        message="Apakah Anda yakin ingin keluar dari layar Inspeksi Operator? Sesi aktif operator Anda akan diakhiri."
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        isDanger={true}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }
