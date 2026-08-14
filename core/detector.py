@@ -69,6 +69,25 @@ def log_ng_db(id_trans: str, part_no: str, image_path: str = None, operator_name
             "operator_name": operator_name
         })
 
+DEFECT_KEYWORDS = {"ng", "defect", "cacat", "reject", "broken", "patah", "scratch", "dent", "missing", "crack"}
+
+def is_defect_label(lbl: str, required_labels_set: set) -> bool:
+    """
+    Pengecekan apakah label terdeteksi merupakan label cacat/defect.
+    Aman dari kata normal seperti 'kuning', 'spring', 'ring', 'tongue', dll.
+    """
+    lbl_clean = lbl.strip().lower()
+    
+    # 1. Jika label ini terdaftar sebagai komponen normal wajib inspeksi, BUKAN NG
+    if lbl_clean in required_labels_set:
+        return False
+        
+    # 2. Tokenisasi berdasarkan pemisah '-' atau '_' atau spasi
+    tokens = re.split(r'[-_\s]+', lbl_clean)
+    
+    # 3. Cek apakah ada token kata utuh yang cocok persis dengan kata kunci defect
+    return any(token in DEFECT_KEYWORDS for token in tokens)
+
 class ModelCache:
     """In-Memory LRU Model Cache dengan hot-reload otomatis jika file bobot .pt/.onnx diupdate."""
     def __init__(self, max_models: int = 5):
@@ -248,9 +267,11 @@ class KameraProses:
                     "min_coverage": round(target_coverage * 100, 0),
                 }
 
-            # Mentrigger NG jika terdeteksi label "ng", berakhiran "-ng", berawalan "ng-", atau mengandung "-ng-" / "_ng"
+            # Lapis 1 & 2: Deteksi label NG dengan token exact-match & Whitelist komponen normal terdaftar
+            # Menghindari false positive pada nama normal seperti 'R-KLIP-KUNING-01', 'SPRING', dll.
+            required_set = {r.strip().lower() for r in required_labels}
             has_ng = any(
-                lbl == "ng" or lbl.endswith("-ng") or lbl.startswith("ng-") or "-ng-" in lbl or "_ng" in lbl or "ng_" in lbl
+                is_defect_label(lbl, required_set)
                 for lbl in label_counts.keys()
             )
             if has_ng:
