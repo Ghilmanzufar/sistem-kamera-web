@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
-  Layers, User, Clock, Eye, GripHorizontal, Sun, Moon
+  Layers, User, Clock, Eye, GripHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
-import { getStoredTheme, toggleTheme } from '../utils/theme';
+import { applyTheme } from '../utils/theme';
 
 // Komponen Popup Melayang yang Dapat Digeser (Draggable Floating Popup - Compact Zero-Scroll)
 function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', onClose, children }) {
@@ -188,12 +188,10 @@ export default function OperatorInspection() {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Theme State
-  const [themeMode, setThemeMode] = useState(getStoredTheme());
-  const handleThemeToggle = () => {
-    const next = toggleTheme();
-    setThemeMode(next);
-  };
+  // Enforce dark theme on camera inspection view for optimal stream visibility
+  useEffect(() => {
+    applyTheme('dark');
+  }, []);
 
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
@@ -617,23 +615,8 @@ export default function OperatorInspection() {
               <span className="font-mono text-slate-300">{loginTimeStr}</span>
             </div>
 
-            {/* Sub-Actions: Theme Switcher, Riwayat Inspeksi & Keluar Shift */}
+            {/* Sub-Actions: Riwayat Inspeksi & Keluar Shift */}
             <div className="flex items-center gap-2.5">
-              {/* Tombol Ganti Tema Light / Dark Mode */}
-              <button
-                type="button"
-                onClick={handleThemeToggle}
-                className="group relative overflow-hidden py-2 px-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 text-amber-400 hover:text-amber-300 border border-white/10 shadow-lg backdrop-blur-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
-                title={themeMode === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
-              >
-                <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform duration-200 shrink-0">
-                  {themeMode === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                </div>
-                <span className="hidden sm:inline text-xs font-black text-slate-200 tracking-wide">
-                  {themeMode === 'light' ? 'Mode Gelap' : 'Mode Terang'}
-                </span>
-              </button>
-
               <button
                 type="button"
                 onClick={() => navigate('/operator/history')}
