@@ -17,7 +17,6 @@ import Users from './pages/Users';
 import SisonConfig from './pages/SisonConfig';
 import Logs from './pages/Logs';
 import SystemHealth from './pages/SystemHealth';
-import NgGallery from './pages/NgGallery';
 import ErrorBoundary from './components/ErrorBoundary';
 import ErrorPage from './pages/ErrorPage';
 import ForgotPassword from './pages/ForgotPassword';
@@ -200,7 +199,6 @@ export default function App() {
               <Route path="/models" element={<Models />} />
               <Route path="/users" element={<Users />} />
               <Route path="/system-health" element={<SystemHealth />} />
-              <Route path="/ng-gallery" element={<NgGallery />} />
             </Route>
 
             {/* 404 Inside Layout */}
