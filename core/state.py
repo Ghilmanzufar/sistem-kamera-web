@@ -116,4 +116,75 @@ class SystemState:
             self.live_metrics = {}
             self.ok_start_time = 0.0
 
+    def recover_pending_inspection_state(self):
+        """
+        Auto Crash Recovery & State Persistence:
+        Memeriksa apakah ada transaksi inspeksi yang masih aktif / belum selesai (status == 0)
+        sebelum server mati/restart, lalu memulihkan state inspeksi secara otomatis tanpa mengulang dari awal.
+        """
+        try:
+            from database import SessionLocal, Transaction, InspectionLog, PartRule
+            with SessionLocal() as db:
+                # Cari transaksi status = 0 (IN_PROGRESS) yang paling baru
+                pending_trans = db.query(Transaction).filter(Transaction.status == 0).order_by(Transaction.id.desc()).first()
+                if not pending_trans:
+                    return
+
+                id_trans = pending_trans.id_trans
+                p_no = pending_trans.p_no
+                target_qty = pending_trans.target_qty or 1
+
+                # Hitung jumlah part yang sudah lolos OK
+                completed_count = db.query(InspectionLog).filter(
+                    InspectionLog.id_trans == id_trans,
+                    InspectionLog.detection_status == "OK"
+                ).count()
+
+                # Ambil operator terakhir yang bertugas
+                last_log = db.query(InspectionLog).filter(InspectionLog.id_trans == id_trans).order_by(InspectionLog.id.desc()).first()
+                last_op = last_log.operator_name if last_log and last_log.operator_name else "Operator"
+
+                # Ambil aturan sisi part
+                db_rules = db.query(PartRule).filter(PartRule.p_no == p_no).order_by(PartRule.id.asc()).all()
+                aturan_sisi = [{
+                    "sisi": r.sisi,
+                    "nama_komponen": r.nama_komponen,
+                    "qty": r.qty or 1,
+                    "min_confidence": r.min_confidence,
+                    "avg_confidence": r.avg_confidence,
+                    "min_coverage": r.min_coverage
+                } for r in db_rules]
+
+                if completed_count >= target_qty:
+                    # Transaksi sebenarnya sudah terpenuhi sebelum crash, tandai selesai
+                    pending_trans.status = 1
+                    db.commit()
+                    print(f"[CRASH RECOVERY] Transaksi {id_trans} (Part {p_no}) sudah selesai ({completed_count}/{target_qty} PCS).")
+                    return
+
+                remaining_qty = target_qty - completed_count
+
+                with self.lock:
+                    self.status = "RUNNING"
+                    self.id_trans = id_trans
+                    self.p_no = p_no
+                    self.target_qty = target_qty
+                    self.qty = remaining_qty
+                    self.current_side = "F"
+                    self.aturan_sisi = aturan_sisi
+                    self.operator_name = last_op
+                    self.part_ok_popup = False
+                    self.flip_part_popup = False
+                    self.ok_start_time = 0.0
+
+                print("=" * 65)
+                print(f"[CRASH RECOVERY] 🛡️ MEMULIHKAN PROGRESS INSPEKSI SEBELUM SERVER CRASH / RESTART")
+                print(f"  • ID Transaksi : {id_trans}")
+                print(f"  • Part Number  : {p_no}")
+                print(f"  • Progress     : Melanjutkan dari Part ke-{completed_count + 1} (Sisa: {remaining_qty}/{target_qty} PCS)")
+                print(f"  • Operator     : {last_op}")
+                print("=" * 65)
+        except Exception as e:
+            print(f"[CRASH RECOVERY WARN] Gagal menjalankan crash recovery: {e}")
+
 state = SystemState()

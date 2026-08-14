@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
-  Layers, User, Clock, Eye, GripHorizontal
+  Layers, User, Clock, Eye, GripHorizontal, WifiOff, Wifi
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -228,45 +228,84 @@ export default function OperatorInspection() {
   // Reference to pause SSE updates briefly after actions to prevent state flicker
   const ignoreSseRef = useRef(0);
 
-  // 1. Sinkronisasi Real-Time via SSE (Server-Sent Events) dengan Fallback Polling
+  // State Jaringan & Auto-Reconnect
+  const [isNetworkOffline, setIsNetworkOffline] = useState(false);
+  const offlineErrorsRef = useRef(0);
+
+  // 1. Sinkronisasi Real-Time via SSE (Server-Sent Events) dengan Fallback Polling & Network Recovery
   useEffect(() => {
     let eventSource = null;
     let fallbackInterval = null;
 
-    try {
-      eventSource = new EventSource('/api/operator/events');
-      eventSource.onmessage = (e) => {
-        try {
-          if (Date.now() < ignoreSseRef.current) return; // Abaikan event basi setelah tombol ditekan
-          const data = JSON.parse(e.data);
-          setTelemetry(data);
-        } catch (err) {
-          console.error('Error parsing SSE event data', err);
+    const handleOnline = () => {
+      setIsNetworkOffline(false);
+      offlineErrorsRef.current = 0;
+      toast.success('Koneksi Jaringan Pulih!', { icon: '🟢' });
+    };
+
+    const handleOffline = () => {
+      setIsNetworkOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const connectSSE = () => {
+      try {
+        eventSource = new EventSource('/api/operator/events');
+        eventSource.onmessage = (e) => {
+          try {
+            if (offlineErrorsRef.current > 0 || isNetworkOffline) {
+              setIsNetworkOffline(false);
+              offlineErrorsRef.current = 0;
+            }
+            if (Date.now() < ignoreSseRef.current) return;
+            const data = JSON.parse(e.data);
+            setTelemetry(data);
+          } catch (err) {
+            console.error('Error parsing SSE event data', err);
+          }
+        };
+        eventSource.onerror = () => {
+          if (eventSource) eventSource.close();
+          offlineErrorsRef.current += 1;
+          if (offlineErrorsRef.current >= 3) {
+            setIsNetworkOffline(true);
+          }
+          if (!fallbackInterval) {
+            fallbackInterval = setInterval(async () => {
+              try {
+                if (Date.now() < ignoreSseRef.current) return;
+                const res = await api.get('/api/operator/state');
+                if (res.data) {
+                  setTelemetry(res.data);
+                  if (offlineErrorsRef.current > 0) {
+                    setIsNetworkOffline(false);
+                    offlineErrorsRef.current = 0;
+                  }
+                }
+              } catch {
+                offlineErrorsRef.current += 1;
+                if (offlineErrorsRef.current >= 3) {
+                  setIsNetworkOffline(true);
+                }
+              }
+            }, 500);
+          }
+        };
+      } catch {
+        offlineErrorsRef.current += 1;
+        if (offlineErrorsRef.current >= 3) {
+          setIsNetworkOffline(true);
         }
-      };
-      eventSource.onerror = () => {
-        if (eventSource) eventSource.close();
-        if (!fallbackInterval) {
-          fallbackInterval = setInterval(async () => {
-            try {
-              if (Date.now() < ignoreSseRef.current) return;
-              const res = await api.get('/api/operator/state');
-              if (res.data) setTelemetry(res.data);
-            } catch {}
-          }, 300);
-        }
-      };
-    } catch {
-      fallbackInterval = setInterval(async () => {
-        try {
-          if (Date.now() < ignoreSseRef.current) return;
-          const res = await api.get('/api/operator/state');
-          if (res.data) setTelemetry(res.data);
-        } catch {}
-      }, 300);
-    }
+      }
+    };
+
+    connectSSE();
 
     return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       if (eventSource) eventSource.close();
       if (fallbackInterval) clearInterval(fallbackInterval);
     };
@@ -569,6 +608,17 @@ export default function OperatorInspection() {
   return (
     <div className={`h-screen max-h-screen w-screen overflow-hidden flex flex-col p-2.5 sm:p-3 gap-2 font-sans select-none app-bg-gradient box-border ${isNg ? 'ring-8 ring-rose-600 animate-pulse' : ''}`}>
       
+      {/* Offline Network Warning Banner */}
+      {isNetworkOffline && (
+        <div className="bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700 text-white px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-between shadow-2xl animate-pulse border border-white/30 z-50 shrink-0">
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-4 h-4 animate-bounce shrink-0" />
+            <span>⚠️ Jaringan Terputus dari Server. Menghubungkan kembali secara otomatis... Progress inspeksi tetap aman tersimpan.</span>
+          </div>
+          <span className="bg-black/40 px-2 py-0.5 rounded-md text-[11px] font-mono shrink-0">Auto-Reconnecting</span>
+        </div>
+      )}
+
       {/* 1. TOP HUD (HEADS-UP DISPLAY) HEADER */}
       <header className={`rounded-2xl p-3 sm:p-4 border-2 shadow-xl backdrop-blur-xl transition-all duration-300 shrink-0 ${statusBg}`}>
         <div className="flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4">

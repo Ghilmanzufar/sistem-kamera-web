@@ -10,7 +10,7 @@ from starlette.responses import FileResponse, RedirectResponse
 import uvicorn
 
 from .routes import sison_inbound_router, public_router, admin_protected_router
-from core import stream_worker
+from core import stream_worker, state
 from integrations import start_buffer_sync_worker
 
 class SPAStaticFiles(StaticFiles):
@@ -27,7 +27,8 @@ class SPAStaticFiles(StaticFiles):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Mulai workers background
+    # Startup: Auto Crash Recovery & Mulai workers background
+    state.recover_pending_inspection_state()
     stream_worker.start()
     start_buffer_sync_worker()
     print("[SYSTEM] ✅ Seluruh background service inspeksi kamera & SISON aktif!")
