@@ -181,7 +181,6 @@ export default function Users() {
               <option value="ALL">Semua Role</option>
               <option value="pengawas">Pengawas</option>
               <option value="operator">Operator</option>
-              <option value="admin">Admin</option>
             </select>
           </div>
 
