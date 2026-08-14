@@ -122,7 +122,7 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
   const isAdminOrPengawas = rawRole === 'admin' || rawRole === 'pengawas';
 
   const headers = operatorOnly
-    ? ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Confidence", "Operator", "Aksi"]
+    ? ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Confidence", "Aksi"]
     : ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Metode", "Confidence", "Operator", "Aksi"];
 
   return (
@@ -330,7 +330,9 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
             <td className="p-4 text-xs sm:text-sm font-mono font-bold text-slate-200">
               {log.confidence_score !== undefined ? `${(log.confidence_score * 100).toFixed(0)}%` : '100%'}
             </td>
-            <td className="p-4 text-xs sm:text-sm text-sky-400 font-extrabold">{log.operator_name || '-'}</td>
+            {!operatorOnly && (
+              <td className="p-4 text-xs sm:text-sm text-sky-400 font-extrabold">{log.operator_name || '-'}</td>
+            )}
             <td className="p-4 text-center">
               <button
                 type="button"
