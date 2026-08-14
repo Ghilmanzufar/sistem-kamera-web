@@ -188,9 +188,9 @@ export default function Models() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Model"
-        highlightTitle="AI (.pt & .onnx)"
-        subtitle="Manajemen berkas bobot model deteksi YOLOv8 dengan akselerasi ONNX Engine"
+        title="Masterdata"
+        highlightTitle="Model"
+        subtitle="Manajemen berkas bobot model deteksi YOLOv8 (.pt & .onnx)"
         actionButton={
           <button
             onClick={openUploadModal}

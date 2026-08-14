@@ -39,7 +39,7 @@ export default function Navbar() {
     { to: "/dashboard", label: "Live Dashboard", icon: LayoutDashboard, roles: ['pengawas', 'admin'] },
     { to: "/history", label: "History Inspeksi", icon: History, roles: ['pengawas', 'admin', 'operator'] },
     { to: "/rules", label: "Setting Rule", icon: Sliders, roles: ['pengawas', 'admin'] },
-    { to: "/models", label: "Model AI", icon: BrainCircuit, roles: ['pengawas', 'admin'] },
+    { to: "/models", label: "Masterdata Model", icon: BrainCircuit, roles: ['pengawas', 'admin'] },
     { to: "/users", label: "User & PIN", icon: Users, roles: ['pengawas', 'admin'] },
     { to: "/camera", label: "Kamera", icon: Camera, roles: ['pengawas', 'admin'] },
     { to: "/sison-config", label: "Config Sison", icon: Settings, roles: ['pengawas', 'admin'] },
