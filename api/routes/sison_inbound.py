@@ -7,17 +7,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from core import state
-from database import get_db, PartRule, Transaction, SessionLocal, SisonConfig
+from database import get_db, PartRule, Transaction, SessionLocal, SisonConfig, User, verify_password, log_audit_event
 from api.auth import decode_admin_token
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Validasi Bearer token dari Sison terhadap api_key di tabel SisonConfig ATAU JWT Token UI internal."""
+    """Validasi Bearer token dari Sison terhadap api_key di tabel SisonConfig ATAU JWT Token valid dari UI."""
     if not credentials or not credentials.credentials:
-        # Izinkan jika dipanggil secara internal tanpa auth header
-        return True
+        raise HTTPException(
+            status_code=401, 
+            detail="Header Authorization: Bearer <API_KEY_SISON / JWT_TOKEN> diperlukan!"
+        )
 
     token = credentials.credentials.strip()
     db = SessionLocal()
@@ -25,27 +27,22 @@ def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends
         cfg = db.query(SisonConfig).first()
         valid_key = cfg.api_key if (cfg and cfg.api_key) else os.getenv("API_KEY_SISON", "kamera-secret-key")
         
-        # 1. Validasi API Key SISON
+        # 1. Validasi API Key SISON eksak
         if token == valid_key:
             return True
         
-        # 2. Validasi jika token adalah JWT token dari operator/admin yang sedang login
+        # 2. Validasi jika token adalah JWT token dari operator/pengawas/admin yang terotentikasi
         try:
             payload = decode_admin_token(token)
-            if payload and payload.get("u"):
+            if payload and payload.get("u") and payload.get("r") in ["operator", "pengawas", "admin"]:
                 return True
         except Exception:
             pass
-            
-        # 3. Izinkan jika token memiliki format token internal UI (memiliki dot JWT)
-        if "." in token or token.startswith("DEMO_"):
-            return True
 
-        # Jika kunci Sison default belum diubah, izinkan simulasi webhook
-        if valid_key in ["kamera-secret-key", "secret_sison_key", ""]:
-            return True
-
-        return True
+        raise HTTPException(
+            status_code=401, 
+            detail="API Key SISON atau Token otentikasi tidak valid atau telah kedaluwarsa!"
+        )
     finally:
         db.close()
 
@@ -142,8 +139,25 @@ def api_start(req: StartRequest, db: Session = Depends(get_db), _: bool = Depend
     return execute_sison_start(req, db)
 
 @router.post("/override")
-def api_override(req: OverrideRequest):
+def api_override(req: OverrideRequest, db: Session = Depends(get_db)):
+    """Verifikasi PIN Override secara dinamis terhadap akun Pengawas / Admin di database."""
     pin = (req.pin or "").strip()
-    if pin != "1234":
-        raise HTTPException(status_code=403, detail="PIN Salah")
-    return {"status": "SUCCESS"}
+    if not pin:
+        raise HTTPException(status_code=400, detail="PIN tidak boleh kosong!")
+    
+    supervisors = db.query(User).filter(
+        User.role.in_(["pengawas", "admin"]), 
+        User.is_active == True
+    ).all()
+
+    for sup in supervisors:
+        if verify_password(pin, sup.password):
+            log_audit_event(db, sup.username, "PIN_OVERRIDE", f"Otorisasi override sistem berhasil diverifikasi ({sup.fullname or sup.username})")
+            return {
+                "status": "SUCCESS", 
+                "message": f"Otorisasi override berhasil ({sup.fullname or sup.username})",
+                "authorized_by": sup.username
+            }
+
+    log_audit_event(db, "UNKNOWN", "PIN_OVERRIDE_FAILED", "Percobaan otorisasi override sistem gagal (PIN salah)")
+    raise HTTPException(status_code=403, detail="PIN Pengawas salah atau akun tidak memiliki hak akses override!")

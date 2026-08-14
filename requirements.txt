@@ -7,3 +7,4 @@ opencv-python>=4.8.0
 ultralytics>=8.0.0
 requests>=2.31.0
 python-multipart>=0.0.9
+psutil>=5.9.0

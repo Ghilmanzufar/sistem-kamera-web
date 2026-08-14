@@ -19,7 +19,7 @@ export default function OperatorHistory() {
   const fetchCameras = async (silent = false) => {
     if (!silent) setLoadingCameras(true);
     try {
-      const res = await api.get('/api/cameras');
+      const res = await api.get('/api/admin/cameras');
       setCameraList(res.data || []);
     } catch (err) {
       if (!silent) toast.error('Gagal mengambil daftar kamera');
@@ -31,7 +31,7 @@ export default function OperatorHistory() {
   const handleScanCameras = async () => {
     setScanningCameras(true);
     try {
-      const res = await api.post('/api/cameras/scan');
+      const res = await api.post('/api/admin/cameras/scan');
       setCameraList(res.data || []);
       toast.success(`Pindai selesai! Ditemukan ${res.data?.length || 0} kamera hardware.`);
     } catch (err) {
@@ -44,7 +44,7 @@ export default function OperatorHistory() {
   const handleToggleCamera = async (c) => {
     setSwitchingCameraId(c.id);
     try {
-      const res = await api.put(`/api/cameras/${c.id}/toggle`);
+      const res = await api.put(`/api/admin/cameras/${c.id}/toggle`);
       if (res.data?.is_active) {
         toast.success(`Kamera "${c.name || 'Kamera'}" dinyalakan (ON / Aktif)!`, { icon: '🟢' });
       } else {

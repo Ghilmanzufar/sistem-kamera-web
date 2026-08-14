@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db, User, hash_password, log_audit_event
-from api.auth import get_current_user_name
+from api.auth import get_current_user_name, verify_supervisor_only
 
 router = APIRouter()
 
@@ -21,11 +21,22 @@ class UserUpdate(BaseModel):
     fullname: str
     is_active: bool = True
 
-@router.get("/users")
-def get_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    role: str
+    fullname: Optional[str] = None
+    is_active: bool = True
 
-@router.post("/users")
+    class Config:
+        from_attributes = True
+
+@router.get("/users", response_model=list[UserResponse])
+def get_users(db: Session = Depends(get_db)):
+    """Mengambil daftar seluruh user (tanpa mengekspos hash password)."""
+    return db.query(User).order_by(User.id.asc()).all()
+
+@router.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     existing = db.query(User).filter(User.username == user.username).first()
     if existing:
@@ -43,7 +54,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), uname: str = De
     log_audit_event(db, uname, "CREATE_USER", f"Membuat user baru: {user.username} ({user.fullname}, Role: {user.role.upper()})")
     return db_user
 
-@router.put("/users/{user_id}")
+@router.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:

@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import tempfile
 from datetime import datetime
@@ -17,6 +18,15 @@ WEIGHTS_DIR = os.path.join(os.getcwd(), "weights")
 
 class RenameModelSchema(BaseModel):
     new_part_no: str
+
+def sanitize_part_no(part_no: str) -> str:
+    """Sanitasi part_no untuk mencegah serangan Path Traversal (CWE-22 / OWASP Top 10)."""
+    if not part_no:
+        raise HTTPException(status_code=400, detail="Part number tidak boleh kosong")
+    cleaned = re.sub(r'[^a-zA-Z0-9_\-\.]', '', os.path.basename(part_no.strip()))
+    if not cleaned or cleaned.startswith("..") or cleaned.startswith("."):
+        raise HTTPException(status_code=400, detail="Format part number tidak valid atau mengandung karakter terlarang!")
+    return cleaned
 
 @router.get("/models")
 def get_models(db: Session = Depends(get_db)):
@@ -68,9 +78,10 @@ def get_models(db: Session = Depends(get_db)):
 @router.post("/models/{part_no}/convert-onnx")
 def convert_model_to_onnx(part_no: str, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     """Export model PyTorch (.pt) ke format ONNX ultra-ringan dengan 1-click."""
-    pt_path = os.path.join(WEIGHTS_DIR, f"{part_no}.pt")
+    safe_part_no = sanitize_part_no(part_no)
+    pt_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}.pt")
     if not os.path.exists(pt_path):
-        raise HTTPException(status_code=404, detail=f"Berkas model {part_no}.pt tidak ditemukan!")
+        raise HTTPException(status_code=404, detail=f"Berkas model {safe_part_no}.pt tidak ditemukan!")
 
     try:
         from ultralytics import YOLO
@@ -84,14 +95,14 @@ def convert_model_to_onnx(part_no: str, db: Session = Depends(get_db), uname: st
         
         model_cache.clear()
 
-        onnx_file = f"{part_no}.onnx"
+        onnx_file = f"{safe_part_no}.onnx"
         onnx_path = os.path.join(WEIGHTS_DIR, onnx_file)
         onnx_size = round(os.path.getsize(onnx_path) / (1024 * 1024), 2) if os.path.exists(onnx_path) else 0
 
-        log_audit_event(db, uname, "CONVERT_ONNX", f"Export model {part_no}.pt ke format ONNX ({onnx_size} MB dalam {duration_s}s)")
+        log_audit_event(db, uname, "CONVERT_ONNX", f"Export model {safe_part_no}.pt ke format ONNX ({onnx_size} MB dalam {duration_s}s)")
         return {
             "success": True, 
-            "message": f"Model {part_no} berhasil dikonversi ke format ONNX ({onnx_size} MB) dalam {duration_s} detik!",
+            "message": f"Model {safe_part_no} berhasil dikonversi ke format ONNX ({onnx_size} MB) dalam {duration_s} detik!",
             "onnx_size_mb": onnx_size,
             "duration_seconds": duration_s
         }
@@ -101,12 +112,13 @@ def convert_model_to_onnx(part_no: str, db: Session = Depends(get_db), uname: st
 
 @router.get("/models/{part_no}/download")
 def download_model(part_no: str, fmt: Optional[str] = None):
-    if fmt == "onnx" or (fmt is None and os.path.exists(os.path.join(WEIGHTS_DIR, f"{part_no}.onnx"))):
-        file_path = os.path.join(WEIGHTS_DIR, f"{part_no}.onnx")
-        filename = f"{part_no}.onnx"
+    safe_part_no = sanitize_part_no(part_no)
+    if fmt == "onnx" or (fmt is None and os.path.exists(os.path.join(WEIGHTS_DIR, f"{safe_part_no}.onnx"))):
+        file_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}.onnx")
+        filename = f"{safe_part_no}.onnx"
     else:
-        file_path = os.path.join(WEIGHTS_DIR, f"{part_no}.pt")
-        filename = f"{part_no}.pt"
+        file_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}.pt")
+        filename = f"{safe_part_no}.pt"
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Model file not found")
@@ -114,14 +126,15 @@ def download_model(part_no: str, fmt: Optional[str] = None):
 
 @router.get("/models/{part_no}/detail")
 def get_model_detail(part_no: str, db: Session = Depends(get_db)):
-    pt_path = os.path.join(WEIGHTS_DIR, f"{part_no}.pt")
-    onnx_path = os.path.join(WEIGHTS_DIR, f"{part_no}.onnx")
+    safe_part_no = sanitize_part_no(part_no)
+    pt_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}.pt")
+    onnx_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}.onnx")
     
     file_path = onnx_path if os.path.exists(onnx_path) else pt_path
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Model file not found")
     
-    rules = db.query(PartRule).filter(PartRule.p_no == part_no).all()
+    rules = db.query(PartRule).filter(PartRule.p_no == safe_part_no).all()
     components = [{
         "sisi": r.sisi or "-",
         "nama_komponen": r.nama_komponen,
@@ -133,7 +146,7 @@ def get_model_detail(part_no: str, db: Session = Depends(get_db)):
     size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 2)
 
     return {
-        "part_no": part_no,
+        "part_no": safe_part_no,
         "filename": os.path.basename(file_path),
         "format": "ONNX" if os.path.exists(onnx_path) else "PT",
         "has_pt": os.path.exists(pt_path),
@@ -151,6 +164,7 @@ def upload_model(
     db: Session = Depends(get_db), 
     uname: str = Depends(get_current_user_name)
 ):
+    safe_part_no = sanitize_part_no(part_no)
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ['.pt', '.onnx']:
         raise HTTPException(status_code=400, detail="Hanya file berekstensi .pt atau .onnx yang diizinkan")
@@ -158,7 +172,7 @@ def upload_model(
     if not os.path.exists(WEIGHTS_DIR):
         os.makedirs(WEIGHTS_DIR)
         
-    file_path = os.path.join(WEIGHTS_DIR, f"{part_no}{ext}")
+    file_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}{ext}")
     
     try:
         with open(file_path, "wb") as buffer:
@@ -178,11 +192,11 @@ def upload_model(
                         names = [str(v) for k, v in sorted(raw.items(), key=lambda x: int(x[0]))]
                 if names:
                     gs = get_or_create_global_settings(db)
-                    db.query(PartRule).filter(PartRule.p_no == part_no).delete()
+                    db.query(PartRule).filter(PartRule.p_no == safe_part_no).delete()
                     db.flush()
                     for label in names:
                         db.add(PartRule(
-                            p_no=part_no,
+                            p_no=safe_part_no,
                             sisi="-",
                             nama_komponen=label,
                             qty=1,
@@ -194,8 +208,8 @@ def upload_model(
             except Exception as e_lbl:
                 print(f"Notice auto-generate rule: {e_lbl}")
 
-        log_audit_event(db, uname, "UPLOAD_MODEL", f"Mengunggah model AI {part_no}{ext}")
-        return {"success": True, "message": f"Model for {part_no}{ext} uploaded successfully!"}
+        log_audit_event(db, uname, "UPLOAD_MODEL", f"Mengunggah model AI {safe_part_no}{ext}")
+        return {"success": True, "message": f"Model for {safe_part_no}{ext} uploaded successfully!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -236,10 +250,13 @@ async def preview_model_labels(file: UploadFile = File(...)):
 
 @router.put("/models/{part_no}")
 def rename_model(part_no: str, data: RenameModelSchema, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
+    safe_old_pno = sanitize_part_no(part_no)
+    safe_new_pno = sanitize_part_no(data.new_part_no)
+    
     renamed = False
     for ext in [".pt", ".onnx"]:
-        old_path = os.path.join(WEIGHTS_DIR, f"{part_no}{ext}")
-        new_path = os.path.join(WEIGHTS_DIR, f"{data.new_part_no}{ext}")
+        old_path = os.path.join(WEIGHTS_DIR, f"{safe_old_pno}{ext}")
+        new_path = os.path.join(WEIGHTS_DIR, f"{safe_new_pno}{ext}")
         if os.path.exists(old_path):
             os.rename(old_path, new_path)
             renamed = True
@@ -248,20 +265,21 @@ def rename_model(part_no: str, data: RenameModelSchema, db: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Model not found")
         
     model_cache.clear()
-    log_audit_event(db, uname, "RENAME_MODEL", f"Mengubah nama model {part_no} menjadi {data.new_part_no}")
+    log_audit_event(db, uname, "RENAME_MODEL", f"Mengubah nama model {safe_old_pno} menjadi {safe_new_pno}")
     return {"success": True, "message": "Model renamed successfully"}
 
 @router.delete("/models/{part_no}")
 def delete_model(part_no: str, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
+    safe_part_no = sanitize_part_no(part_no)
     deleted = False
     for ext in [".pt", ".onnx"]:
-        file_path = os.path.join(WEIGHTS_DIR, f"{part_no}{ext}")
+        file_path = os.path.join(WEIGHTS_DIR, f"{safe_part_no}{ext}")
         if os.path.exists(file_path):
             os.remove(file_path)
             deleted = True
 
     if deleted:
         model_cache.clear()
-        log_audit_event(db, uname, "DELETE_MODEL", f"Menghapus file model {part_no}")
+        log_audit_event(db, uname, "DELETE_MODEL", f"Menghapus file model {safe_part_no}")
         return {"success": True, "message": "Model deleted"}
     raise HTTPException(status_code=404, detail="Model not found")

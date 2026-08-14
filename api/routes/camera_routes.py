@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db, CameraConfig, log_audit_event
-from api.auth import get_current_user_name_optional
+from api.auth import get_current_user_name, verify_supervisor_only
 
 router = APIRouter()
 
@@ -62,13 +62,13 @@ def get_cameras(db: Session = Depends(get_db)):
     return [_camera_to_dict(c) for c in cams]
 
 @router.post("/cameras/scan")
-def scan_cameras(db: Session = Depends(get_db), uname: str = Depends(get_current_user_name_optional)):
+def scan_cameras(db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     cams = _scan_hardware_cameras(db)
     log_audit_event(db, uname, "SCAN_CAMERAS", f"Memindai ulang kamera hardware. Total {len(cams)} kamera terdaftar.")
     return cams
 
 @router.post("/cameras")
-def create_camera(cam: CameraConfigCreate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name_optional)):
+def create_camera(cam: CameraConfigCreate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name), _auth: dict = Depends(verify_supervisor_only)):
     is_first = (db.query(CameraConfig).count() == 0)
     db_cam = CameraConfig(name=cam.name, source=cam.source, is_active=is_first)
     db.add(db_cam)
@@ -78,7 +78,7 @@ def create_camera(cam: CameraConfigCreate, db: Session = Depends(get_db), uname:
     return _camera_to_dict(db_cam)
 
 @router.put("/cameras/{cam_id}")
-def update_camera(cam_id: int, cam: CameraConfigUpdate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name_optional)):
+def update_camera(cam_id: int, cam: CameraConfigUpdate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name), _auth: dict = Depends(verify_supervisor_only)):
     db_cam = db.query(CameraConfig).filter(CameraConfig.id == cam_id).first()
     if not db_cam:
         raise HTTPException(status_code=404, detail="Camera not found")
@@ -91,7 +91,7 @@ def update_camera(cam_id: int, cam: CameraConfigUpdate, db: Session = Depends(ge
     return _camera_to_dict(db_cam)
 
 @router.put("/cameras/{cam_id}/toggle")
-def toggle_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name_optional)):
+def toggle_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     db_cam = db.query(CameraConfig).filter(CameraConfig.id == cam_id).first()
     if not db_cam:
         raise HTTPException(status_code=404, detail="Camera not found")
@@ -109,7 +109,7 @@ def toggle_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depen
     return {"status": "ok", "is_active": db_cam.is_active, "message": f"Kamera {db_cam.name} disetel {status_text}"}
 
 @router.put("/cameras/{cam_id}/activate")
-def activate_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name_optional)):
+def activate_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     db.query(CameraConfig).update({CameraConfig.is_active: False})
     db_cam = db.query(CameraConfig).filter(CameraConfig.id == cam_id).first()
     if not db_cam:
@@ -120,7 +120,7 @@ def activate_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Dep
     return {"status": "ok", "message": f"Camera {db_cam.name} activated"}
 
 @router.delete("/cameras/{cam_id}")
-def delete_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name_optional)):
+def delete_camera(cam_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name), _auth: dict = Depends(verify_supervisor_only)):
     db_cam = db.query(CameraConfig).filter(CameraConfig.id == cam_id).first()
     if not db_cam:
         raise HTTPException(status_code=404, detail="Camera not found")

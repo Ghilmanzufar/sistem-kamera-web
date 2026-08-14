@@ -85,17 +85,31 @@ def decode_and_verify_token(token: str) -> dict:
 # Alias untuk kompatibilitas
 decode_admin_token = decode_and_verify_token
 
+def verify_authenticated_user(credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> dict:
+    """Proteksi endpoint untuk seluruh pengguna terotentikasi (Operator, Pengawas, Admin)."""
+    return decode_and_verify_token(credentials.credentials)
+
 def verify_admin_auth(request: Request, credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> dict:
     """Proteksi endpoint admin dengan verifikasi token & hak akses role."""
     payload = decode_and_verify_token(credentials.credentials)
     role = payload.get("r", "pengawas")
     
-    # Operator hanya diizinkan mengakses /inspection-logs dan /logout
+    # Operator hanya diizinkan mengakses /inspection-logs, /logout, dan /cameras
     if role == "operator":
         path = request.url.path
-        if not (path.endswith("/inspection-logs") or path.endswith("/logout")):
-            raise HTTPException(status_code=403, detail="Akses ditolak. Peran Operator hanya diizinkan melihat History Inspeksi.")
+        allowed_operator_paths = ("/inspection-logs", "/logout", "/cameras", "/cameras/scan")
+        is_allowed = any(path.endswith(p) or "/cameras/" in path for p in allowed_operator_paths)
+        if not is_allowed:
+            raise HTTPException(status_code=403, detail="Akses ditolak. Peran Operator tidak memiliki izin untuk fitur administratif ini.")
             
+    return payload
+
+def verify_supervisor_only(credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> dict:
+    """Proteksi endpoint ketat khusus peran Pengawas / Admin."""
+    payload = decode_and_verify_token(credentials.credentials)
+    role = payload.get("r", "operator")
+    if role not in ["pengawas", "admin"]:
+        raise HTTPException(status_code=403, detail="Akses ditolak. Fitur ini hanya dapat diakses oleh Pengawas / Admin.")
     return payload
 
 def get_current_user_name(credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> str:
