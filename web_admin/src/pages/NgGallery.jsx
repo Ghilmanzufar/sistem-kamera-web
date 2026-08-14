@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { AlertOctagon, Search, Calendar, ChevronLeft, ChevronRight, X, Image as ImageIcon, User, Clock, Eye } from 'lucide-react';
+import { 
+  AlertOctagon, 
+  Search, 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight, 
+  X, 
+  User, 
+  Clock, 
+  Eye, 
+  FileText, 
+  Layers, 
+  Activity,
+  Cpu,
+  Hash
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import PageHeader from '../components/PageHeader';
@@ -13,7 +28,7 @@ export default function NgGallery() {
   const [partFilter, setPartFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState(null);
-  const itemsPerPage = 12;
+  const itemsPerPage = 10;
 
   const fetchNgLogs = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -42,41 +57,60 @@ export default function NgGallery() {
     fetchNgLogs();
   };
 
+  const handleReset = () => {
+    setDateFilter('');
+    setPartFilter('');
+    setTimeout(() => fetchNgLogs(), 50);
+  };
+
   const totalPages = Math.max(1, Math.ceil(logs.length / itemsPerPage));
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginated = logs.slice(startIdx, startIdx + itemsPerPage);
 
+  const topPart = (() => {
+    if (logs.length === 0) return '-';
+    const counts = {};
+    logs.forEach(l => { 
+      const p = l.part_no || '-';
+      counts[p] = (counts[p] || 0) + 1; 
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+  })();
+
+  const manualCount = logs.filter(l => l.method === 'MANUAL').length;
+  const aiCount = logs.length - manualCount;
+
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6 font-sans pb-12">
       <PageHeader
-        title="Galeri"
+        title="Rekap Data"
         highlightTitle="Hasil NG"
-        subtitle="Riwayat hasil inspeksi cacat (NG) beserta foto bukti dari kamera AI"
+        subtitle="Riwayat pencatatan hasil inspeksi cacat (NG) part produksi dari kamera AI dan konfirmasi operator"
       />
 
-      {/* Summary Cards */}
+      {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Total NG Tercatat" value={logs.length} icon={AlertOctagon} color="rose" />
+        <StatCard 
+          title="Total NG Tercatat" 
+          value={logs.length} 
+          icon={AlertOctagon} 
+          color="rose" 
+        />
         <StatCard
           title="Part NG Terbanyak"
-          value={(() => {
-            if (logs.length === 0) return '-';
-            const counts = {};
-            logs.forEach(l => { counts[l.part_no] = (counts[l.part_no] || 0) + 1; });
-            return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
-          })()}
+          value={topPart}
           icon={Search}
           color="amber"
         />
         <StatCard
-          title="NG Dengan Foto"
-          value={logs.filter(l => l.image_path).length}
-          icon={ImageIcon}
+          title="Deteksi AI vs Manual"
+          value={`${aiCount} AI / ${manualCount} Manual`}
+          icon={Cpu}
           color="blue"
         />
       </div>
 
-      {/* Filter Bar */}
+      {/* Filter & Search Bar */}
       <form onSubmit={handleSearch} className="glass-card p-4 rounded-2xl border border-white/10 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-slate-400" />
@@ -84,103 +118,129 @@ export default function NgGallery() {
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-blue-500"
+            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-rose-500"
           />
         </div>
-        <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <Search className="w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari Part Number..."
+            placeholder="Cari Part Number atau ID Transaksi..."
             value={partFilter}
             onChange={(e) => setPartFilter(e.target.value)}
-            className="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-bold placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+            className="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-bold placeholder:text-slate-500 focus:outline-none focus:border-rose-500"
           />
         </div>
         <button
           type="submit"
-          className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl transition-all cursor-pointer"
+          className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl transition-all cursor-pointer shadow-md shadow-rose-600/30"
         >
-          Cari NG
+          Cari Data
         </button>
+        {(dateFilter || partFilter) && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+          >
+            Reset
+          </button>
+        )}
       </form>
 
-      {/* NG Gallery Grid */}
+      {/* Main Data Table */}
       {loading ? (
         <div className="text-center py-16 text-slate-400 text-sm font-bold animate-pulse">
-          Memuat data NG...
+          Memuat data rekap NG...
         </div>
       ) : paginated.length === 0 ? (
-        <div className="glass-card p-12 rounded-3xl border-2 border-white/10 text-center space-y-3">
+        <div className="glass-card p-12 rounded-3xl border border-white/10 text-center space-y-3">
           <AlertOctagon className="w-14 h-14 text-slate-600 mx-auto" />
           <h4 className="text-lg font-black text-slate-300">Tidak Ada Data NG Ditemukan</h4>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Belum ada hasil inspeksi NG yang tercatat untuk filter yang dipilih.
+            Belum ada data part cacat (NG) yang tercatat sesuai filter yang dipilih.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {paginated.map((log) => {
-            const hasImage = !!log.image_path;
-            return (
-              <div
-                key={log.id}
-                className="glass-card rounded-2xl border border-rose-500/30 overflow-hidden shadow-lg hover:shadow-rose-950/30 transition-all group cursor-pointer"
-                onClick={() => setSelectedLog(log)}
-              >
-                {/* Image Preview */}
-                <div className="relative aspect-video bg-slate-950 flex items-center justify-center overflow-hidden">
-                  {hasImage ? (
-                    <img
-                      src={log.image_path}
-                      alt={`NG ${log.part_no}`}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="text-center text-slate-500">
-                      <ImageIcon className="w-10 h-10 mx-auto mb-1" />
-                      <span className="text-xs font-bold">Tidak Ada Foto</span>
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2">
-                    <StatusBadge status="NG" />
-                  </div>
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
-                      <Eye className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Info */}
-                <div className="p-3.5 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-black text-white text-sm truncate">{log.part_no || '-'}</span>
-                    <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-white/10 shrink-0">
+        <div className="glass-card rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-950/80 border-b border-white/10 text-slate-400 font-extrabold uppercase tracking-wider">
+                  <th className="py-3.5 px-4"># ID Log</th>
+                  <th className="py-3.5 px-4">ID Transaksi</th>
+                  <th className="py-3.5 px-4">Part Number</th>
+                  <th className="py-3.5 px-4">Nama Part</th>
+                  <th className="py-3.5 px-4">Lot / Unique</th>
+                  <th className="py-3.5 px-4">Operator</th>
+                  <th className="py-3.5 px-4">Metode</th>
+                  <th className="py-3.5 px-4">Waktu Inspeksi</th>
+                  <th className="py-3.5 px-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-slate-300">
+                {paginated.map((log) => (
+                  <tr 
+                    key={log.id} 
+                    className="hover:bg-rose-500/5 transition-colors cursor-pointer"
+                    onClick={() => setSelectedLog(log)}
+                  >
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-400">
                       #{log.id}
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-400 truncate">{log.part_name || '-'}</div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      <span className="font-bold truncate max-w-[80px]">{log.operator_name || '-'}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span className="font-mono">
-                        {log.created_at ? new Date(log.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono font-bold text-rose-300">
+                      {log.id_trans || '-'}
+                    </td>
+                    <td className="py-3.5 px-4 font-black text-white">
+                      {log.part_no || '-'}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-300 max-w-[150px] truncate">
+                      {log.part_name || '-'}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
+                      <div>LOT: <span className="text-white font-bold">{log.lot_no || '-'}</span></div>
+                      <div>UNQ: <span className="text-white font-bold">{log.unique_no || '-'}</span></div>
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-200">
+                      <div className="flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{log.operator_name || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${
+                        log.method === 'MANUAL'
+                          ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                          : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                      }`}>
+                        {log.method === 'MANUAL' ? 'Manual Reject' : 'AI Detector'}
                       </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
+                      {log.created_at ? new Date(log.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLog(log);
+                        }}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
+                        title="Lihat Detail Log"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Pagination Controls */}
       {logs.length > itemsPerPage && (
         <div className="flex items-center justify-between pt-2">
           <span className="text-xs font-bold text-slate-400">
@@ -211,14 +271,15 @@ export default function NgGallery() {
       {/* Detail Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-2xl bg-slate-900 border-2 border-rose-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-xl bg-slate-900 border-2 border-rose-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
-                <h3 className="text-xl font-black text-white">
-                  Detail <span className="text-rose-400">Cacat NG</span>
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <AlertOctagon className="w-5 h-5 text-rose-400" />
+                  <span>Detail Rekap <span className="text-rose-400">Cacat (NG)</span></span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Log #{selectedLog.id} | Operator: <strong className="text-white">{selectedLog.operator_name || '-'}</strong>
+                  Log ID: <strong className="text-white">#{selectedLog.id}</strong> | Status: <strong className="text-rose-400">NG / REJECT</strong>
                 </p>
               </div>
               <button
@@ -229,23 +290,16 @@ export default function NgGallery() {
               </button>
             </div>
 
-            {/* Foto NG */}
-            {selectedLog.image_path && (
-              <div className="rounded-2xl border-2 border-rose-500/50 overflow-hidden bg-black">
-                <div className="w-full bg-rose-950/80 px-4 py-2 flex items-center gap-2 text-rose-300 font-black text-xs border-b border-rose-500/30">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>Foto Bukti Cacat (NG Record)</span>
-                </div>
-                <img
-                  src={selectedLog.image_path}
-                  alt="Foto Cacat NG"
-                  className="w-full max-h-80 object-contain"
-                />
-              </div>
-            )}
-
             {/* Detail Grid */}
             <div className="grid grid-cols-2 gap-3">
+              <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1">
+                <span className="block text-[11px] font-bold uppercase text-slate-400">ID Transaksi</span>
+                <span className="text-sm font-mono font-black text-rose-300 truncate block">{selectedLog.id_trans || '-'}</span>
+              </div>
+              <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1">
+                <span className="block text-[11px] font-bold uppercase text-slate-400">Operator</span>
+                <span className="text-sm font-bold text-white truncate block">{selectedLog.operator_name || '-'}</span>
+              </div>
               <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1">
                 <span className="block text-[11px] font-bold uppercase text-slate-400">Part Number</span>
                 <span className="text-base font-black text-white">{selectedLog.part_no || '-'}</span>
@@ -263,17 +317,17 @@ export default function NgGallery() {
                 <span className="text-sm font-mono font-bold text-white">{selectedLog.unique_no || '-'}</span>
               </div>
               <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1">
-                <span className="block text-[11px] font-bold uppercase text-slate-400">Confidence</span>
+                <span className="block text-[11px] font-bold uppercase text-slate-400">Metode Deteksi</span>
+                <span className="text-sm font-bold text-white">{selectedLog.method === 'MANUAL' ? 'Manual Operator' : 'AI YOLOv8'}</span>
+              </div>
+              <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1">
+                <span className="block text-[11px] font-bold uppercase text-slate-400">Confidence Score</span>
                 <span className="text-base font-mono font-black text-rose-400">
                   {selectedLog.confidence_score !== undefined ? `${(selectedLog.confidence_score * 100).toFixed(0)}%` : '-'}
                 </span>
               </div>
-              <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1">
-                <span className="block text-[11px] font-bold uppercase text-slate-400">Metode</span>
-                <span className="text-sm font-bold text-white">{selectedLog.method === 'MANUAL' ? 'Manual' : 'AI YOLO'}</span>
-              </div>
               <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 space-y-1 col-span-2">
-                <span className="block text-[11px] font-bold uppercase text-slate-400">Waktu Inspeksi</span>
+                <span className="block text-[11px] font-bold uppercase text-slate-400">Waktu Lengkap Inspeksi</span>
                 <span className="text-sm font-semibold text-slate-200">
                   {selectedLog.created_at ? new Date(selectedLog.created_at).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' }) : '-'}
                 </span>
@@ -283,7 +337,7 @@ export default function NgGallery() {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-6 py-3 text-sm font-extrabold text-white bg-rose-600 hover:bg-rose-500 rounded-2xl shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
+                className="px-6 py-2.5 text-sm font-extrabold text-white bg-rose-600 hover:bg-rose-500 rounded-2xl shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
               >
                 Tutup
               </button>

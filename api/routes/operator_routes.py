@@ -77,9 +77,6 @@ def _get_operator_state_dict() -> dict:
         live_metrics = dict(state.live_metrics) if hasattr(state, 'live_metrics') else {}
 
     ng_active = bool(stream_worker.ng_active or cur_status == "NG")
-    ng_img_path = stream_worker.last_ng_image_path.replace("\\", "/") if stream_worker.last_ng_image_path else ""
-    if ng_img_path and not ng_img_path.startswith("/"):
-        ng_img_path = "/" + ng_img_path
 
     return {
         "status": cur_status,
@@ -104,7 +101,7 @@ def _get_operator_state_dict() -> dict:
             "part_ok": part_ok,
             "flip_part": flip_part,
             "ng_active": ng_active,
-            "ng_image_url": ng_img_path,
+            "ng_image_url": "",
             "details": details
         }
     }

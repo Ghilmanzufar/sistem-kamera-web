@@ -918,27 +918,27 @@ export default function OperatorInspection() {
                 ⚠️ CACAT / NG TERDETEKSI! ⚠️
               </h2>
               <p className="text-xs text-rose-300 font-medium mt-0.5">
-                Periksa bukti foto cacat di bawah, lalu tentukan konfirmasi.
+                Periksa fisik part pada line inspeksi, lalu tentukan konfirmasi di bawah.
               </p>
             </div>
 
-            {/* Foto Bukti Cacat Snapshot */}
-            {telemetry.popups?.ng_image_url ? (
-              <div className="rounded-xl overflow-hidden border-2 border-rose-500 bg-black max-h-56 flex items-center justify-center shadow-lg relative group">
-                <img
-                  src={telemetry.popups.ng_image_url}
-                  alt="Snapshot Cacat NG"
-                  className="w-full h-full object-contain max-h-56"
-                />
-                <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-rose-300 font-mono border border-rose-500/50">
-                  BUKTI SNAPSHOT AI
+            {/* Kotak Informasi Cacat NG */}
+            <div className="p-4 rounded-2xl bg-slate-900/90 border-2 border-rose-500/40 text-left space-y-2.5 shadow-inner">
+              <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2">
+                <span className="text-slate-400 font-bold uppercase">Part Number:</span>
+                <span className="font-mono font-black text-white text-sm">{telemetry.p_no || 'STANDBY'}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2">
+                <span className="text-slate-400 font-bold uppercase">Sisi Terdeteksi:</span>
+                <span className="font-bold text-amber-300">{telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : 'REAR (BELAKANG)'}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-bold uppercase">Pesan Sistem / AI:</span>
+                <span className="font-bold text-rose-300 truncate max-w-[200px]">
+                  {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : 'Abnormalitas / Cacat terdeteksi'}
                 </span>
               </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-slate-900 border border-rose-500/40 text-center text-xs text-rose-300">
-                Memproses snapshot foto cacat...
-              </div>
-            )}
+            </div>
 
             {/* Tombol Konfirmasi NG / False Alarm */}
             <div className="grid grid-cols-2 gap-2.5 pt-1">

@@ -13,34 +13,6 @@ from .routes import sison_inbound_router, public_router, admin_protected_router
 from core import stream_worker
 from integrations import start_buffer_sync_worker
 
-def cleanup_old_ng_records(days: int = 30):
-    """Otomatis hapus file foto NG yang berumur > 30 hari untuk menghemat ruang harddisk."""
-    folder = "ng_records"
-    if not os.path.exists(folder):
-        return
-    now = time.time()
-    cutoff = now - (days * 86400)
-    deleted_count = 0
-    try:
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            if os.path.isfile(file_path) and filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-                if os.path.getmtime(file_path) < cutoff:
-                    os.remove(file_path)
-                    deleted_count += 1
-        if deleted_count > 0:
-            print(f"[CLEANUP] Otomatis menghapus {deleted_count} foto NG lama (> {days} hari).")
-    except Exception as e:
-        print(f"[CLEANUP WARN] Gagal menjalankan pembersihan foto NG: {e}")
-
-def start_periodic_cleanup():
-    def loop():
-        while True:
-            cleanup_old_ng_records(days=30)
-            time.sleep(86400)  # Cek setiap 24 jam
-    t = threading.Thread(target=loop, daemon=True, name="NGCleanupWorker")
-    t.start()
-
 class SPAStaticFiles(StaticFiles):
     """Custom StaticFiles yang mengalihkan 404 Not Found ke index.html (SPA Fallback)."""
     async def get_response(self, path: str, scope):
@@ -57,7 +29,6 @@ class SPAStaticFiles(StaticFiles):
 async def lifespan(app: FastAPI):
     # Startup: Mulai workers background
     stream_worker.start()
-    start_periodic_cleanup()
     start_buffer_sync_worker()
     print("[SYSTEM] ✅ Seluruh background service inspeksi kamera & SISON aktif!")
     yield
@@ -100,9 +71,6 @@ def create_app() -> FastAPI:
 
     # 4. Mount Static Files
     os.makedirs("web_admin/dist", exist_ok=True)
-    os.makedirs("ng_records", exist_ok=True)
-    
-    app.mount("/ng_records", StaticFiles(directory="ng_records"), name="ng_records")
     
     # Mount SPA Static Files di Root ('/')
     app.mount("/", SPAStaticFiles(directory="web_admin/dist", html=True), name="spa")

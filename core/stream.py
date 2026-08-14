@@ -259,7 +259,7 @@ class CameraStreamWorker:
             except Exception as e:
                 print(f"[STREAM PROCESS WARN] Error saat memproses frame AI: {e}")
 
-            # 8. Tangani Event NG Abnormality (Snapshot & Database Logging)
+            # 8. Tangani Event NG Abnormality (Database Logging tanpa simpan file gambar)
             with state.lock:
                 status_kamera = state.status
                 cur_id = state.id_trans
@@ -269,17 +269,8 @@ class CameraStreamWorker:
             if status_kamera == "NG" and not self.ng_active:
                 self.ng_active = True
                 self.ng_event_id += 1
-                os.makedirs("ng_records", exist_ok=True)
-                cleanup_old_ng_records(directory="ng_records", days=30)
-                timestamp = int(time.time())
-                filename = f"ng_records/NG_{cur_id}_{timestamp}.jpg"
-                try:
-                    cv2.imwrite(filename, frame)
-                    self.last_ng_image_path = filename
-                    print(f"[STREAM SYSTEM] ⚠️ NG Terdeteksi! Foto bukti disimpan di: {filename}")
-                    threading.Thread(target=log_ng_db, args=(cur_id, cur_pno, filename, op_name), daemon=True).start()
-                except Exception as e:
-                    print(f"[STREAM SYSTEM WARN] Gagal menyimpan snapshot foto NG: {e}")
+                print(f"[STREAM SYSTEM] ⚠️ Part Cacat (NG) Terdeteksi! Trans: {cur_id}, Part: {cur_pno}")
+                threading.Thread(target=log_ng_db, args=(cur_id, cur_pno, None, op_name), daemon=True).start()
             elif status_kamera != "NG" and self.ng_active:
                 self.ng_active = False
 

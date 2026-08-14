@@ -46,15 +46,15 @@ def log_inspeksi_db(id_trans: str, part_no: str, status_deteksi: str, conf_score
             "operator_name": operator_name
         })
 
-def log_ng_db(id_trans: str, part_no: str, image_path: str, operator_name: str = ""):
-    """Mencatat riwayat part cacat (NG) beserta file snapshot ke DB/Buffer."""
+def log_ng_db(id_trans: str, part_no: str, image_path: str = None, operator_name: str = ""):
+    """Mencatat riwayat part cacat (NG) ke DB/Buffer tanpa menyimpan file foto."""
     try:
         with SessionLocal() as db:
             log = InspectionLog(
                 id_trans=id_trans,
                 part_no=part_no,
                 detection_status="NG",
-                image_path=image_path,
+                image_path=None,
                 confidence_score=1.0,
                 operator_name=operator_name or None
             )
@@ -65,7 +65,7 @@ def log_ng_db(id_trans: str, part_no: str, image_path: str, operator_name: str =
         save_to_offline_buffer("NG_LOG", {
             "id_trans": id_trans,
             "part_no": part_no,
-            "image_path": image_path,
+            "image_path": None,
             "operator_name": operator_name
         })
 
