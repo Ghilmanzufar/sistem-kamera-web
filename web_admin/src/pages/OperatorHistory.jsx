@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Video, RefreshCw, Power, X, User } from 'lucide-react';
+import { ArrowLeft, Video, RefreshCw, Power, X, User, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import History from './History';
+import { getStoredTheme, toggleTheme } from '../utils/theme';
 
 export default function OperatorHistory() {
   const navigate = useNavigate();
   const operatorName = localStorage.getItem('operator_name') || localStorage.getItem('username') || 'Operator';
+
+  // Theme State
+  const [themeMode, setThemeMode] = useState(getStoredTheme());
+  const handleThemeToggle = () => {
+    const next = toggleTheme();
+    setThemeMode(next);
+  };
 
   // Camera Management States for Operator
   const [showCameraModal, setShowCameraModal] = useState(false);
@@ -83,6 +91,21 @@ export default function OperatorHistory() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Tombol Ganti Tema Light / Dark Mode */}
+          <button
+            type="button"
+            onClick={handleThemeToggle}
+            className="group py-2.5 px-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 text-amber-400 hover:text-amber-300 border border-white/10 shadow-lg backdrop-blur-md transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
+            title={themeMode === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
+          >
+            <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform duration-200 shrink-0">
+              {themeMode === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+            </div>
+            <span className="hidden sm:inline text-xs font-black text-slate-200">
+              {themeMode === 'light' ? 'Mode Gelap' : 'Mode Terang'}
+            </span>
+          </button>
+
           {/* Tombol Pilih & Atur Kamera di Samping Nama Operator */}
           <button
             type="button"
