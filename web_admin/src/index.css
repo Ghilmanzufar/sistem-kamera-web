@@ -393,3 +393,118 @@ html.light .fixed.inset-0 .bg-black\/40 {
   border: 1px solid #e2e8f0 !important;
 }
 
+/* ==============================================================
+   📹 OPERATOR CAMERA LIVE INSPECTION CANVAS (Always Dark Sci-Fi HUD)
+   Ensures 100% crisp visibility of live camera HUD & Popups
+============================================================== */
+.operator-dark-canvas,
+html.light .operator-dark-canvas {
+  background: #020617 !important;
+  color: #f8fafc !important;
+}
+
+.operator-dark-canvas header,
+html.light .operator-dark-canvas header {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.operator-dark-canvas .text-white,
+html.light .operator-dark-canvas .text-white {
+  color: #ffffff !important;
+}
+
+.operator-dark-canvas h1,
+.operator-dark-canvas h2,
+.operator-dark-canvas h3,
+.operator-dark-canvas h4,
+html.light .operator-dark-canvas h1,
+html.light .operator-dark-canvas h2,
+html.light .operator-dark-canvas h3,
+html.light .operator-dark-canvas h4 {
+  color: #ffffff !important;
+}
+
+.operator-dark-canvas p,
+.operator-dark-canvas label,
+html.light .operator-dark-canvas p,
+html.light .operator-dark-canvas label {
+  color: #e2e8f0 !important;
+}
+
+.operator-dark-canvas .text-slate-200,
+.operator-dark-canvas .text-slate-300,
+html.light .operator-dark-canvas .text-slate-200,
+html.light .operator-dark-canvas .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.operator-dark-canvas .text-slate-400,
+html.light .operator-dark-canvas .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.operator-dark-canvas .text-slate-100,
+html.light .operator-dark-canvas .text-slate-100 {
+  color: #f1f5f9 !important;
+}
+
+.operator-dark-canvas .bg-slate-900,
+.operator-dark-canvas .bg-slate-900\/90,
+.operator-dark-canvas .bg-slate-900\/80,
+.operator-dark-canvas .bg-slate-900\/60,
+html.light .operator-dark-canvas .bg-slate-900,
+html.light .operator-dark-canvas .bg-slate-900\/90,
+html.light .operator-dark-canvas .bg-slate-900\/80,
+html.light .operator-dark-canvas .bg-slate-900\/60 {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.operator-dark-canvas .bg-slate-950,
+.operator-dark-canvas .bg-slate-950\/95,
+.operator-dark-canvas .bg-slate-950\/85,
+.operator-dark-canvas .bg-slate-950\/80,
+html.light .operator-dark-canvas .bg-slate-950,
+html.light .operator-dark-canvas .bg-slate-950\/95,
+html.light .operator-dark-canvas .bg-slate-950\/85,
+html.light .operator-dark-canvas .bg-slate-950\/80 {
+  background-color: rgba(2, 6, 23, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.operator-dark-canvas .bg-slate-800,
+html.light .operator-dark-canvas .bg-slate-800 {
+  background-color: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.operator-dark-canvas .bg-emerald-950\/80,
+.operator-dark-canvas .bg-emerald-950\/95,
+html.light .operator-dark-canvas .bg-emerald-950\/80,
+html.light .operator-dark-canvas .bg-emerald-950\/95 {
+  background-color: rgba(2, 44, 34, 0.9) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #a7f3d0 !important;
+}
+
+.operator-dark-canvas .bg-rose-950\/95,
+.operator-dark-canvas .bg-rose-950\/80,
+html.light .operator-dark-canvas .bg-rose-950\/95,
+html.light .operator-dark-canvas .bg-rose-950\/80 {
+  background-color: rgba(76, 5, 25, 0.9) !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+  color: #fecdd3 !important;
+}
+
+.operator-dark-canvas .bg-amber-950\/95,
+.operator-dark-canvas .bg-amber-950\/80,
+html.light .operator-dark-canvas .bg-amber-950\/95,
+html.light .operator-dark-canvas .bg-amber-950\/80 {
+  background-color: rgba(69, 26, 3, 0.9) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  color: #fde68a !important;
+}
+

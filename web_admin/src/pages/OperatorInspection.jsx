@@ -108,7 +108,7 @@ function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', on
       style={{
         transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
       }}
-      className={`fixed z-40 top-1/2 left-1/2 w-[94vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
+      className={`fixed z-40 top-1/2 left-1/2 w-[94vw] max-w-xl sm:max-w-2xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn operator-dark-canvas`}
     >
       {/* Draggable Header Handle */}
       <div
@@ -529,7 +529,7 @@ export default function OperatorInspection() {
   const loginTimeStr = opLoginDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className={`h-screen max-h-screen w-screen overflow-hidden flex flex-col p-2.5 sm:p-3 gap-2 font-sans select-none app-bg-gradient box-border ${isNg ? 'ring-8 ring-rose-600 animate-pulse' : ''}`}>
+    <div className={`h-screen max-h-screen w-screen overflow-hidden flex flex-col p-2.5 sm:p-3 gap-2 font-sans select-none operator-dark-canvas bg-slate-950 text-slate-100 box-border ${isNg ? 'ring-8 ring-rose-600 animate-pulse' : ''}`}>
       
       {/* 1. TOP HUD (HEADS-UP DISPLAY) HEADER */}
       <header className={`rounded-2xl p-3 sm:p-4 border-2 shadow-xl backdrop-blur-xl transition-all duration-300 shrink-0 ${statusBg}`}>
@@ -969,7 +969,7 @@ export default function OperatorInspection() {
 
       {/* 7. MODAL POPUP: SIMULATOR DEMO SISON DENGAN PRESET QTY */}
       {showDemoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn operator-dark-canvas">
           <div className="w-full max-w-xl bg-slate-900 border-2 border-indigo-500/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
               <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5">
