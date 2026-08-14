@@ -348,29 +348,41 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
         ))}
       </DataTable>
 
-      {/* Pagination Controls */}
-      {logs.length > itemsPerPage && (
-        <div className="flex items-center justify-between pt-2">
-          <span className="text-xs sm:text-sm font-bold text-slate-400">
-            Menampilkan {startIdx + 1} - {Math.min(startIdx + itemsPerPage, logs.length)} dari {logs.length} data
-          </span>
-          <div className="flex items-center gap-1.5">
+      {/* Pagination Controls Bar */}
+      {logs.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-slate-900/60 rounded-2xl border-2 border-white/10 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-300">
+            <span className="px-3 py-1 bg-blue-500/20 border border-blue-400/30 text-blue-300 rounded-xl font-extrabold">
+              Max 15 Data / Halaman
+            </span>
+            <span className="text-slate-400">
+              Menampilkan <strong>{startIdx + 1}</strong> - <strong>{Math.min(startIdx + itemsPerPage, logs.length)}</strong> dari <strong>{logs.length}</strong> riwayat
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-2.5 rounded-2xl bg-slate-800 border-2 border-white/10 text-slate-300 hover:text-white disabled:opacity-30 cursor-pointer shadow-md"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border-2 border-white/15 text-white font-extrabold text-xs sm:text-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
+              <span>Sebelumnya</span>
             </button>
-            <span className="px-4 py-2 text-xs sm:text-sm font-black text-white bg-slate-900 border border-white/10 rounded-2xl">
-              {currentPage} / {totalPages}
-            </span>
+
+            <div className="px-4 py-2 text-xs sm:text-sm font-black text-white bg-slate-950 border-2 border-blue-500/40 rounded-xl shadow-inner">
+              <span className="text-blue-400">{currentPage}</span> / <span>{totalPages}</span>
+            </div>
+
             <button
+              type="button"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="p-2.5 rounded-2xl bg-slate-800 border-2 border-white/10 text-slate-300 hover:text-white disabled:opacity-30 cursor-pointer shadow-md"
+              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-blue-600/30 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
             >
-              <ChevronRight className="w-5 h-5" />
+              <span>Selanjutnya</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
