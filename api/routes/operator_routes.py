@@ -5,7 +5,7 @@ import json
 import threading
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -34,9 +34,26 @@ class NGResolveRequest(BaseModel):
 class ClearPopupRequest(BaseModel):
     popup_type: Optional[str] = "ALL"
 
+@router.get("/camera_snapshot")
+@router.get("/snapshot")
+def camera_snapshot():
+    """Snapshot 1 frame JPEG terkini untuk thumbnail grid monitoring yang hemat bandwidth & CPU."""
+    frame_bytes = stream_worker.get_latest_jpeg()
+    if frame_bytes is None:
+        raise HTTPException(status_code=503, detail="Frame kamera belum tersedia")
+    return Response(
+        content=frame_bytes,
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
 @router.get("/video_feed")
 def video_feed():
-    """Streaming video MJPEG real-time dengan anotasi AI YOLOv8."""
+    """Streaming video MJPEG real-time 30 FPS on-demand."""
     def gen_frames():
         while True:
             frame_bytes = stream_worker.get_latest_jpeg()
