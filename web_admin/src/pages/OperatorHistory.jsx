@@ -37,7 +37,7 @@ export default function OperatorHistory() {
       const res = await api.get('/api/admin/cameras');
       setCameraList(res.data || []);
     } catch (err) {
-      if (!silent) toast.error('Gagal mengambil daftar kamera');
+      if (!silent) toast.error(err.response?.data?.detail || 'Gagal mengambil daftar kamera');
     } finally {
       if (!silent) setLoadingCameras(false);
     }
@@ -50,7 +50,7 @@ export default function OperatorHistory() {
       setCameraList(res.data || []);
       toast.success(`Pindai selesai! Ditemukan ${res.data?.length || 0} kamera hardware.`);
     } catch (err) {
-      toast.error('Gagal memindai perangkat kamera hardware');
+      toast.error(err.response?.data?.detail || 'Gagal memindai perangkat kamera hardware');
     } finally {
       setScanningCameras(false);
     }
@@ -67,7 +67,7 @@ export default function OperatorHistory() {
       }
       await fetchCameras(true);
     } catch (err) {
-      toast.error('Gagal mengubah saklar kamera');
+      toast.error(err.response?.data?.detail || 'Gagal mengubah saklar kamera');
     } finally {
       setSwitchingCameraId(null);
     }
