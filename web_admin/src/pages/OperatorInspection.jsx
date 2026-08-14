@@ -186,6 +186,8 @@ export default function OperatorInspection() {
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   // Theme State
   const [themeMode, setThemeMode] = useState(getStoredTheme());
   const handleThemeToggle = () => {
