@@ -255,6 +255,9 @@ class KameraProses:
             )
             if has_ng:
                 with state.lock:
+                    state.ok_start_time = 0.0
+                    state.live_metrics["hold_progress"] = 0.0
+                    state.live_metrics["is_stabilizing"] = False
                     state.status = "NG"
                     state.current_side = "F"
                     state.flip_part_popup = False
@@ -276,41 +279,84 @@ class KameraProses:
                 ]
 
                 if labels_complete and avg_conf_ok and not min_conf_failed:
+                    now = time.time()
                     with state.lock:
-                        found_labels = []
-                        for req_lbl in required_labels:
-                            if label_counts.get(req_lbl, 0) > 0:
-                                c = label_max_conf.get(req_lbl, 0.0)
-                                found_labels.append(f"- {req_lbl.upper()} : {c*100:.0f}%")
-                                
-                        state.last_inspection_details = {
-                            "label_terdeteksi": f"{detected_required_count}/{total_required_count} ({detected_ratio*100:.0f}%)",
-                            "avg_confidence": f"{current_avg_conf*100:.0f}% / {target_avg_conf*100:.0f}%",
-                            "found_labels": "\n".join(found_labels)
-                        }
-                        
-                        if current_side == "F" and has_rear:
-                            state.current_side = "R"
-                            state.flip_part_popup = True
-                            pesan_ui = "Sisi Depan OK! Balik Part ke sisi Belakang."
-                            color_status = (0, 255, 0)
-                        else:
-                            state.qty -= 1
-                            state.current_side = "F"
-                            threading.Thread(target=log_inspeksi_db, args=(state.id_trans, state.p_no, "OK", current_avg_conf, "AI", state.operator_name)).start()
+                        if state.ok_start_time == 0.0:
+                            state.ok_start_time = now
+                        elapsed = now - state.ok_start_time
+                        hold_duration = getattr(state, 'hold_duration', 1.2)
+                        progress_ratio = min(1.0, elapsed / hold_duration) if hold_duration > 0 else 1.0
+                        hold_pct = round(progress_ratio * 100, 0)
+                        is_stabilizing = elapsed < hold_duration
+
+                        state.live_metrics["hold_progress"] = hold_pct
+                        state.live_metrics["is_stabilizing"] = is_stabilizing
+                        state.live_metrics["hold_duration"] = hold_duration
+                        state.live_metrics["hold_elapsed"] = round(elapsed, 1)
+
+                    if is_stabilizing:
+                        cyan_bgr = (255, 200, 0)
+                        green_bgr = (0, 255, 0)
+                        pesan_ui = f"MEMVERIFIKASI PART ({hold_pct:.0f}%)... TAHAN POSISI"
+                        color_status = cyan_bgr
+                        cv2_text_parts = [
+                            (f"VERIFIKASI STABIL: ", cyan_bgr),
+                            (f"{hold_pct:.0f}%", green_bgr),
+                            (f" ({elapsed:.1f}s / {hold_duration:.1f}s)", cyan_bgr)
+                        ]
+                        # Progress Bar visual on OpenCV frame
+                        bar_x, bar_y, bar_w, bar_h = 20, 70, 260, 14
+                        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (30, 30, 30), -1)
+                        fill_w = int(bar_w * progress_ratio)
+                        if fill_w > 0:
+                            cv2.rectangle(frame, (bar_x, bar_y), (bar_x + fill_w, bar_y + bar_h), (0, 255, 128), -1)
+                        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (180, 180, 180), 1)
+                    else:
+                        # Durasi stabil terpenuhi -> Eksekusi Part OK
+                        with state.lock:
+                            state.ok_start_time = 0.0
+                            state.live_metrics["hold_progress"] = 100.0
+                            state.live_metrics["is_stabilizing"] = False
+                            found_labels = []
+                            for req_lbl in required_labels:
+                                if label_counts.get(req_lbl, 0) > 0:
+                                    c = label_max_conf.get(req_lbl, 0.0)
+                                    found_labels.append(f"- {req_lbl.upper()} : {c*100:.0f}%")
+                                    
+                            state.last_inspection_details = {
+                                "label_terdeteksi": f"{detected_required_count}/{total_required_count} ({detected_ratio*100:.0f}%)",
+                                "avg_confidence": f"{current_avg_conf*100:.0f}% / {target_avg_conf*100:.0f}%",
+                                "found_labels": "\n".join(found_labels)
+                            }
                             
-                            if state.qty <= 0:
-                                state.part_ok_popup = False
-                                state.flip_part_popup = False
-                                state.completed_time = time.time()
-                                threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
-                                pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
+                            if current_side == "F" and has_rear:
+                                state.current_side = "R"
+                                state.flip_part_popup = True
+                                pesan_ui = "Sisi Depan OK! Balik Part ke sisi Belakang."
                                 color_status = (0, 255, 0)
-                                state.reset_to_standby()
                             else:
-                                state.part_ok_popup = True
-                                pesan_ui = "Part OK! Lanjut part berikutnya."
-                                color_status = (0, 255, 0)
+                                state.qty -= 1
+                                state.current_side = "F"
+                                threading.Thread(target=log_inspeksi_db, args=(state.id_trans, state.p_no, "OK", current_avg_conf, "AI", state.operator_name)).start()
+                                
+                                if state.qty <= 0:
+                                    state.part_ok_popup = False
+                                    state.flip_part_popup = False
+                                    state.completed_time = time.time()
+                                    threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
+                                    pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
+                                    color_status = (0, 255, 0)
+                                    state.reset_to_standby()
+                                else:
+                                    state.part_ok_popup = True
+                                    pesan_ui = "Part OK! Lanjut part berikutnya."
+                                    color_status = (0, 255, 0)
+                else:
+                    # Reset timer jika kondisi belum lengkap / terputus
+                    with state.lock:
+                        state.ok_start_time = 0.0
+                        state.live_metrics["hold_progress"] = 0.0
+                        state.live_metrics["is_stabilizing"] = False
 
         elif status == "NG":
             pesan_ui = "STATUS: NG! SILAKAN KONFIRMASI PADA MODAL ALARM."

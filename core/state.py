@@ -20,6 +20,8 @@ class SystemState:
         self.flip_part_popup: bool = False
         self.last_inspection_details: dict = {}
         self.live_metrics: dict = {}
+        self.ok_start_time: float = 0.0
+        self.hold_duration: float = 1.2
         self.completed_time: float = 0.0
         self.operator_name: str = ""       # Nama operator utama
         self.operator_username: str = ""   # Username operator utama
@@ -102,5 +104,6 @@ class SystemState:
             self.flip_part_popup = False
             self.last_inspection_details = {}
             self.live_metrics = {}
+            self.ok_start_time = 0.0
 
 state = SystemState()

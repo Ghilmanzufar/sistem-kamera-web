@@ -509,6 +509,10 @@ export default function OperatorInspection() {
       statusBg = 'bg-amber-950/80 border-amber-500';
       statusText = 'MODE MANUAL (VISUAL)';
       statusTextColor = 'text-amber-400 font-bold';
+    } else if (telemetry.live_metrics?.is_stabilizing) {
+      statusBg = 'bg-teal-950/90 border-teal-400 shadow-[0_0_20px_rgba(20,184,166,0.4)]';
+      statusText = `MEMVERIFIKASI (${telemetry.live_metrics.hold_progress || 0}%)`;
+      statusTextColor = 'text-teal-300 font-black tracking-wider animate-pulse';
     } else {
       statusBg = 'bg-emerald-950/80 border-emerald-500';
       statusText = 'DETECT PART';
@@ -554,6 +558,17 @@ export default function OperatorInspection() {
             <div className={`text-xl sm:text-2xl lg:text-3xl tracking-wide font-black ${statusTextColor}`}>
               {statusText}
             </div>
+
+            {/* Verification Hold Progress Bar */}
+            {telemetry.live_metrics?.is_stabilizing && (
+              <div className="w-full max-w-xs mx-auto mt-2 bg-slate-950/80 rounded-full h-2 overflow-hidden border border-teal-500/40">
+                <div 
+                  className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(20,184,166,0.8)]"
+                  style={{ width: `${telemetry.live_metrics.hold_progress || 0}%` }}
+                />
+              </div>
+            )}
+
             {telemetry.status !== 'STANDBY' && telemetry.status !== 'IDLE' && (
               <div className="text-xs sm:text-sm text-slate-200 font-bold truncate max-w-lg mx-auto mt-0.5">
                 {telemetry.live_metrics?.total_count > 0 ? (
@@ -676,6 +691,24 @@ export default function OperatorInspection() {
 
       {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER */}
       <main className="flex-1 min-h-0 w-full relative flex items-center justify-center bg-black rounded-2xl border-2 border-slate-800 shadow-2xl overflow-hidden">
+        {/* Floating Hold Progress Indicator */}
+        {telemetry.live_metrics?.is_stabilizing && (
+          <div className="absolute top-4 left-4 z-20 px-3.5 py-2 bg-slate-950/85 border border-teal-400/60 rounded-xl backdrop-blur-md text-teal-300 shadow-2xl flex items-center gap-3 animate-fadeIn pointer-events-none">
+            <div className="w-3 h-3 rounded-full bg-teal-400 animate-ping shrink-0" />
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-wider text-teal-200">
+                Memverifikasi Stabilitas ({telemetry.live_metrics.hold_progress || 0}%)
+              </div>
+              <div className="w-32 bg-slate-800 rounded-full h-1.5 mt-1 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-teal-400 to-emerald-400 h-full transition-all duration-100 ease-out"
+                  style={{ width: `${telemetry.live_metrics.hold_progress || 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {telemetry.is_cam_active ? (
           <img
             src="/api/video_feed"
