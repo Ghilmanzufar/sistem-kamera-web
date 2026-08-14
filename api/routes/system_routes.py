@@ -66,7 +66,6 @@ def get_line_monitoring_data(db: Session = Depends(get_db)):
                 "is_active": True
             },
             "video_feed_url": "/api/video_feed",
-            "snapshot_url": "/api/camera_snapshot",
             "last_pesan_ui": stream_worker.last_pesan_ui if cam_live else "Standby",
             "ng_active": bool((stream_worker.ng_active or cur_status == "NG") and cam_live)
         })
