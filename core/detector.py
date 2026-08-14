@@ -340,13 +340,13 @@ class KameraProses:
                                 threading.Thread(target=log_inspeksi_db, args=(state.id_trans, state.p_no, "OK", current_avg_conf, "AI", state.operator_name)).start()
                                 
                                 if state.qty <= 0:
-                                    state.part_ok_popup = False
+                                    state.status = "COMPLETED"
+                                    state.part_ok_popup = True
                                     state.flip_part_popup = False
                                     state.completed_time = time.time()
                                     threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
                                     pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
                                     color_status = (0, 255, 0)
-                                    state.reset_to_standby()
                                 else:
                                     state.part_ok_popup = True
                                     pesan_ui = "Part OK! Lanjut part berikutnya."
@@ -367,13 +367,19 @@ class KameraProses:
             
         elif status == "RUNNING" and qty <= 0 and target_qty > 0:
             with state.lock:
+                state.status = "COMPLETED"
+                state.part_ok_popup = True
+                state.flip_part_popup = False
                 state.completed_time = time.time()
                 threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
-                state.reset_to_standby()
-            pesan_ui = "STANDBY"
+            pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
             color_status = (0, 255, 0)
             
-        elif status in ["COMPLETED", "STANDBY"]:
+        elif status == "COMPLETED":
+            pesan_ui = "BATCH SELESAI (100% OK) - STANDBY"
+            color_status = (0, 255, 0)
+            
+        elif status == "STANDBY":
             pesan_ui = "STANDBY"
             color_status = (0, 255, 0)
 
