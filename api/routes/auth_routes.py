@@ -235,14 +235,20 @@ def admin_login(creds: LoginSchema, request: Request, db: Session = Depends(get_
     fullname = user.fullname.strip() if (getattr(user, 'fullname', None) and user.fullname.strip()) else user.username
     shift = creds.shift.strip() if creds.shift else "Shift 1"
 
-    # Sinkronkan info operator ke system state
-    if user.role == "operator" or not state.operator_name:
+    # Sinkronkan info operator ke system state jika role operator
+    if user.role == "operator":
         with state.lock:
             state.operator_name = fullname
             state.operator_username = user.username
             state.operator_role = user.role
             state.operator_shift = shift
             state.operator_login_time = time.time()
+        state.update_operator_heartbeat(
+            username=user.username,
+            fullname=fullname,
+            role=user.role,
+            client_ip=client_ip
+        )
 
     log_audit_event(db, user.username, "LOGIN", f"Berhasil masuk sebagai {user.role.upper()} (Shift: {shift}, IP: {client_ip})")
     return {
@@ -256,11 +262,13 @@ def admin_login(creds: LoginSchema, request: Request, db: Session = Depends(get_
 @router.post("/logout")
 def admin_logout_root(db: Session = Depends(get_db), auth: dict = Depends(verify_admin_auth)):
     username = auth.get("u", "ADMIN")
+    state.remove_operator_session(username)
     log_audit_event(db, username, "LOGOUT", "User keluar dari Dashboard")
     return {"success": True}
 
 @router.post("/admin/logout")
 def admin_logout_admin(db: Session = Depends(get_db), auth: dict = Depends(verify_admin_auth)):
     username = auth.get("u", "ADMIN")
+    state.remove_operator_session(username)
     log_audit_event(db, username, "LOGOUT", "User keluar dari Dashboard")
     return {"success": True}

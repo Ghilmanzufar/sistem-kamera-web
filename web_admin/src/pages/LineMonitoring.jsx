@@ -43,9 +43,9 @@ export default function LineMonitoring() {
     alarm_ng_active: false
   };
 
-  // Hanya stasiun yang benar-benar aktif (kamera live atau ada operator bertugas)
+  // Hanya stasiun yang memiliki operator yang sedang login/join
   const stations = (monitoringData?.stations || []).filter(
-    st => st.is_camera_active === true || (st.operator?.is_active === true && st.operator?.name !== 'Tidak Ada Operator')
+    st => st.operator?.is_active === true && st.operator?.name && st.operator?.name !== 'Tidak Ada Operator'
   );
 
   return (
@@ -223,10 +223,10 @@ export default function LineMonitoring() {
           </div>
         ) : (
           <div className="glass-card p-12 rounded-3xl border-2 border-white/10 text-center space-y-3 shadow-xl">
-            <Camera className="w-14 h-14 text-slate-600 mx-auto" />
-            <h4 className="text-lg font-black text-slate-300">Tidak Ada Stasiun Kerja yang Sedang Aktif</h4>
+            <User className="w-14 h-14 text-slate-600 mx-auto" />
+            <h4 className="text-lg font-black text-slate-300">Tidak Ada Operator yang Sedang Login</h4>
             <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-              Saat ini belum ada kamera yang menyala atau operator yang membuka layar inspeksi. Stasiun kerja akan otomatis muncul saat stasiun line mulai beroperasi.
+              Saat ini belum ada operator yang login ke stasiun inspeksi. Card stasiun kerja akan otomatis muncul saat operator join ke sistem.
             </p>
           </div>
         )}
