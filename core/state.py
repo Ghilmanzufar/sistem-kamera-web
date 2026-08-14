@@ -77,11 +77,21 @@ class SystemState:
                     self.operator_login_time = 0.0
 
     def get_all_active_operators(self, timeout_seconds: float = 60.0) -> list:
-        """Mengembalikan daftar seluruh operator yang sedang aktif/online."""
+        """Mengembalikan daftar seluruh operator yang sedang aktif/online (sesi maksimal 8 jam)."""
         with self.lock:
             now = time.time()
             active_list = []
             for u, data in list(self.active_operator_sessions.items()):
+                # Jika sesi operator sudah lebih dari 8 jam (28800 detik), hapus sesi (kedaluwarsa)
+                login_time = data.get("login_time", now)
+                if (now - login_time) > (8 * 3600):
+                    del self.active_operator_sessions[u]
+                    if self.operator_username == u:
+                        self.operator_name = ""
+                        self.operator_username = ""
+                        self.operator_role = ""
+                        self.operator_login_time = 0.0
+                    continue
                 if now - data.get("last_seen", 0) <= timeout_seconds:
                     active_list.append(data)
             return active_list

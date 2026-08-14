@@ -174,7 +174,7 @@ def operator_login(req: OperatorLoginRequest, request: Request, db: Session = De
         client_ip=client_ip
     )
 
-    token = create_admin_token(user.username, user.role, expires_in_seconds=86400)
+    token = create_admin_token(user.username, user.role, expires_in_seconds=8 * 3600)
     log_audit_event(db, user.username, "OPERATOR_LOGIN", f"Operator {fullname} masuk ke layar inspeksi (IP: {client_ip}).")
 
     return {

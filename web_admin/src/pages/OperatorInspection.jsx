@@ -282,6 +282,39 @@ export default function OperatorInspection() {
     return () => clearInterval(heartbeatTimer);
   }, []);
 
+  // Pengecekan Kedaluwarsa Sesi (8 Jam untuk Operator)
+  useEffect(() => {
+    const checkSessionExpiry = () => {
+      const token = localStorage.getItem('operator_token') || localStorage.getItem('admin_token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const parts = token.split('.');
+        if (parts.length === 2) {
+          const payloadB64 = parts[0];
+          const padding = '='.repeat((4 - (payloadB64.length % 4)) % 4);
+          const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = JSON.parse(atob(base64 + padding));
+          if (jsonPayload.exp && Date.now() / 1000 > jsonPayload.exp) {
+            toast.error('Sesi kerja Anda telah kedaluwarsa (lebih dari 8 jam). Silakan login kembali.', { duration: 5000 });
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('operator_token');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('username');
+            localStorage.removeItem('operator_name');
+            navigate('/login');
+          }
+        }
+      } catch {}
+    };
+
+    checkSessionExpiry();
+    const sessionTimer = setInterval(checkSessionExpiry, 30000);
+    return () => clearInterval(sessionTimer);
+  }, [navigate]);
+
   // 2. Tangani Perubahan Popups & NG Alarm
   useEffect(() => {
     if (telemetry.popups) {

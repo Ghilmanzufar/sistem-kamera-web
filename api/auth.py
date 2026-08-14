@@ -47,10 +47,13 @@ def get_secret_key() -> str:
     return secret
 
 def create_admin_token(username: str, role: str, expires_in_seconds: Optional[int] = None) -> str:
-    """Buat signed HMAC-SHA256 token dengan masa berlaku terkonfigurasi."""
+    """Buat signed HMAC-SHA256 token dengan masa berlaku terkonfigurasi (8 jam untuk Operator)."""
     if expires_in_seconds is None:
-        expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10"))
-        expires_in_seconds = expire_minutes * 60
+        if role == "operator":
+            expires_in_seconds = 8 * 3600  # 8 jam masa aktif sesi operator
+        else:
+            expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+            expires_in_seconds = expire_minutes * 60
     secret = get_secret_key()
     exp = int(time.time()) + expires_in_seconds
     payload = {"u": username, "r": role, "exp": exp}

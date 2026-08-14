@@ -231,7 +231,8 @@ def admin_login(creds: LoginSchema, request: Request, db: Session = Depends(get_
         raise HTTPException(status_code=403, detail="Akun tidak berwenang mengakses sistem!")
     
     clear_failed_attempts(client_ip)
-    token = create_admin_token(user.username, user.role, expires_in_seconds=86400)
+    session_expire_seconds = (8 * 3600) if user.role == "operator" else 86400
+    token = create_admin_token(user.username, user.role, expires_in_seconds=session_expire_seconds)
     fullname = user.fullname.strip() if (getattr(user, 'fullname', None) and user.fullname.strip()) else user.username
     shift = creds.shift.strip() if creds.shift else "Shift 1"
 
