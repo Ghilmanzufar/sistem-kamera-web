@@ -11,6 +11,11 @@ def auto_migrate_schema():
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         with engine.connect() as conn:
+            if "users" in tables:
+                cols = [c["name"] for c in inspector.get_columns("users")]
+                if "nik" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nik VARCHAR;"))
+
             if "part_rules" in tables:
                 cols = [c["name"] for c in inspector.get_columns("part_rules")]
                 if "min_confidence" not in cols:

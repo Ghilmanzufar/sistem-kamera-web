@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     password: str
     role: str
     fullname: str
+    nik: Optional[str] = None
     is_active: bool = True
 
 class UserUpdate(BaseModel):
@@ -19,6 +20,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: str
     fullname: str
+    nik: Optional[str] = None
     is_active: bool = True
 
 class UserResponse(BaseModel):
@@ -26,6 +28,7 @@ class UserResponse(BaseModel):
     username: str
     role: str
     fullname: Optional[str] = None
+    nik: Optional[str] = None
     is_active: bool = True
 
     class Config:
@@ -46,12 +49,13 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), uname: str = De
         password=hash_password(user.password),
         role=user.role,
         fullname=user.fullname,
+        nik=user.nik.strip() if (user.nik and user.nik.strip()) else None,
         is_active=user.is_active
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    log_audit_event(db, uname, "CREATE_USER", f"Membuat user baru: {user.username} ({user.fullname}, Role: {user.role.upper()})")
+    log_audit_event(db, uname, "CREATE_USER", f"Membuat user baru: {user.username} ({user.fullname}, NIK: {user.nik or '-'}, Role: {user.role.upper()})")
     return db_user
 
 @router.put("/users/{user_id}", response_model=UserResponse)
@@ -64,10 +68,11 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db), u
         db_user.password = hash_password(user.password)
     db_user.role = user.role
     db_user.fullname = user.fullname
+    db_user.nik = user.nik.strip() if (user.nik and user.nik.strip()) else None
     db_user.is_active = user.is_active
     db.commit()
     db.refresh(db_user)
-    log_audit_event(db, uname, "UPDATE_USER", f"Mengubah data user {user.username} (Role: {user.role.upper()})")
+    log_audit_event(db, uname, "UPDATE_USER", f"Mengubah data user {user.username} (NIK: {user.nik or '-'}, Role: {user.role.upper()})")
     return db_user
 
 @router.delete("/users/{user_id}")

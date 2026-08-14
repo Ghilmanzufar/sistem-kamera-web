@@ -19,6 +19,7 @@ export default function Users() {
 
   // Form State
   const [username, setUsername] = useState('');
+  const [nik, setNik] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('pengawas');
   const [fullname, setFullname] = useState('');
@@ -51,6 +52,7 @@ export default function Users() {
   const openCreateModal = () => {
     setEditingUser(null);
     setUsername('');
+    setNik('');
     setPassword('');
     setRole('pengawas');
     setFullname('');
@@ -61,6 +63,7 @@ export default function Users() {
   const openEditModal = (u) => {
     setEditingUser(u);
     setUsername(u.username);
+    setNik(u.nik || '');
     setPassword(''); // Kosongkan jika tidak ingin ganti password
     setRole(u.role);
     setFullname(u.fullname || '');
@@ -74,6 +77,7 @@ export default function Users() {
 
     const payload = {
       username,
+      nik: nik.trim() || null,
       role,
       fullname,
       is_active: isActive,
@@ -121,24 +125,24 @@ export default function Users() {
 
   const filteredUsers = users.filter((u) => {
     const q = searchQuery.toLowerCase().trim();
-    const matchQuery = !q || (u.username || '').toLowerCase().includes(q) || (u.fullname || '').toLowerCase().includes(q);
+    const matchQuery = !q || (u.username || '').toLowerCase().includes(q) || (u.fullname || '').toLowerCase().includes(q) || (u.nik || '').toLowerCase().includes(q);
     const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
     const matchStatus = statusFilter === 'ALL' || (statusFilter === 'ACTIVE' ? u.is_active : !u.is_active);
     return matchQuery && matchRole && matchStatus;
   });
 
-  const headers = ["# ID", "Username", "Nama Lengkap", "Role", "Status", "Aksi"];
+  const headers = ["# ID", "NIK", "Username", "Nama Lengkap", "Role", "Status", "Aksi"];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Manajemen"
         highlightTitle="User & PIN"
-        subtitle="Kelola akun pengguna dan hak akses sistem inspeksi"
+        subtitle="Kelola akun pengguna, NIK, dan hak akses sistem inspeksi"
         actionButton={
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Tambah User Baru
@@ -159,11 +163,11 @@ export default function Users() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {/* Pencarian Username / Nama */}
+          {/* Pencarian Username / Nama / NIK */}
           <div className="sm:col-span-2 lg:col-span-2 relative">
             <input
               type="text"
-              placeholder="Cari username atau nama lengkap..."
+              placeholder="Cari username, nama lengkap, atau NIK..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 transition-colors"
@@ -213,6 +217,15 @@ export default function Users() {
           {filteredUsers.map((u) => (
             <tr key={u.id} className="hover:bg-white/5 transition-colors">
               <td className="p-4 text-xs font-mono text-slate-400 text-center">#{u.id}</td>
+              <td className="p-4 text-xs font-mono font-bold text-sky-300 text-center">
+                {u.nik ? (
+                  <span className="px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-400/30">
+                    {u.nik}
+                  </span>
+                ) : (
+                  <span className="text-slate-500">-</span>
+                )}
+              </td>
               <td className="p-4 font-bold text-white text-center">
                 <div className="flex items-center justify-center gap-2">
                   <UserCheck className="w-4 h-4 text-blue-400 shrink-0" />
@@ -268,18 +281,34 @@ export default function Users() {
               {editingUser ? `Edit User: ${editingUser.username}` : 'Tambah User Baru'}
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-base focus:outline-none focus:border-blue-500"
-                />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Contoh: op_budi"
+                    className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    NIK (Nomor Induk Karyawan)
+                  </label>
+                  <input
+                    type="text"
+                    value={nik}
+                    onChange={(e) => setNik(e.target.value)}
+                    placeholder="Contoh: 2026-0812"
+                    className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -290,7 +319,8 @@ export default function Users() {
                   type="text"
                   value={fullname}
                   onChange={(e) => setFullname(e.target.value)}
-                  className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-base focus:outline-none focus:border-blue-500"
+                  placeholder="Contoh: Budi Santoso"
+                  className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -303,7 +333,7 @@ export default function Users() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-base focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -314,7 +344,7 @@ export default function Users() {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white text-base focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                 >
                   <option value="pengawas">Pengawas (Akses Penuh)</option>
                   <option value="operator">Operator (History Inspeksi Only)</option>
@@ -329,23 +359,23 @@ export default function Users() {
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="w-5 h-5 rounded bg-black/30 border-white/10 text-blue-600 focus:ring-0 cursor-pointer"
                 />
-                <label htmlFor="isActiveCheck" className="text-base font-semibold text-slate-300 cursor-pointer">
+                <label htmlFor="isActiveCheck" className="text-sm font-semibold text-slate-300 cursor-pointer">
                   Status Akun Aktif
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6">
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2.5 text-base font-semibold text-slate-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10"
+                  className="px-5 py-2.5 text-sm font-semibold text-slate-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-600/30 disabled:opacity-50"
+                  className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-600/30 disabled:opacity-50 cursor-pointer"
                 >
                   {submitting ? 'Memproses...' : 'Simpan User'}
                 </button>
