@@ -122,8 +122,8 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
   const isAdminOrPengawas = rawRole === 'admin' || rawRole === 'pengawas';
 
   const headers = operatorOnly
-    ? ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Confidence", "Aksi"]
-    : ["# ID", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Metode", "Confidence", "Operator", "Aksi"];
+    ? ["Part Name", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Confidence", "Aksi"]
+    : ["Part Name", "Waktu", "ID Trans", "Part No", "Target", "Aktual", "Status Deteksi", "Metode", "Confidence", "Operator", "Aksi"];
 
   return (
     <div className="space-y-6 font-sans">
@@ -298,16 +298,17 @@ export default function History({ operatorOnly = false, operatorName = '' }) {
       >
         {currentLogs.map((log) => (
           <tr key={log.id} className="hover:bg-white/[0.03] transition-colors border-b border-white/5">
-            <td className="p-4 text-xs sm:text-sm font-mono text-slate-400 font-bold">#{log.id}</td>
+            <td className="p-4 text-xs sm:text-sm font-extrabold text-white max-w-[180px] truncate" title={log.part_name || '-'}>
+              {log.part_name || '-'}
+            </td>
             <td className="p-4 text-xs sm:text-sm text-slate-300 font-sans font-medium">
               {log.created_at ? new Date(log.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
             </td>
             <td className="p-4 text-xs sm:text-sm font-mono text-slate-400 max-w-[100px] truncate" title={log.id_trans}>
               {log.id_trans || '-'}
             </td>
-            <td className="p-4">
-              <span className="font-extrabold text-white text-xs sm:text-sm block">{log.part_no || '-'}</span>
-              <span className="text-xs text-slate-400 block truncate max-w-[140px]">{log.part_name || '-'}</span>
+            <td className="p-4 text-xs sm:text-sm font-mono font-bold text-slate-200 max-w-[120px] truncate" title={log.part_no || '-'}>
+              {log.part_no || '-'}
             </td>
             <td className="p-4 text-xs sm:text-sm font-bold text-slate-200">{log.target_qty ?? '-'}</td>
             <td className="p-4 text-xs sm:text-sm font-bold text-slate-200">{log.qty_actual ?? '-'}</td>
