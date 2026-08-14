@@ -95,13 +95,55 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db), u
     log_audit_event(db, uname, "UPDATE_USER", f"Mengubah data user {user.username} (NIK: {clean_nik or '-'}, Role: {user.role.upper()})")
     return db_user
 
+class UserDeleteRequest(BaseModel):
+    admin_password: str
+
 @router.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
+def delete_user(
+    user_id: int, 
+    payload: Optional[UserDeleteRequest] = None,
+    admin_password: Optional[str] = None,
+    db: Session = Depends(get_db), 
+    uname: str = Depends(get_current_user_name)
+):
+    pwd_to_check = (payload.admin_password if payload and payload.admin_password else admin_password)
+    if not pwd_to_check or not pwd_to_check.strip():
+        raise HTTPException(
+            status_code=400, 
+            detail="Password admin yang sedang login wajib diisi untuk konfirmasi penghapusan user"
+        )
+
+    # Ambil data user admin/pengawas yang sedang login
+    current_admin = db.query(User).filter(User.username == uname).first()
+    if not current_admin or not verify_password(pwd_to_check.strip(), current_admin.password):
+        raise HTTPException(
+            status_code=403, 
+            detail="Password admin salah! Penghapusan akun dibatalkan."
+        )
+
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Cegah admin menghapus akunnya sendiri yang sedang aktif
+    if db_user.username.lower() == uname.lower():
+        raise HTTPException(
+            status_code=400, 
+            detail="Tidak dapat menghapus akun admin yang sedang aktif login!"
+        )
+
     target_username = db_user.username
+    target_fullname = db_user.fullname or "-"
+    target_nik = db_user.nik or "-"
+    target_role = db_user.role
+
     db.delete(db_user)
     db.commit()
-    log_audit_event(db, uname, "DELETE_USER", f"Menghapus user {target_username} (ID: #{user_id})")
-    return {"status": "ok"}
+
+    log_audit_event(
+        db, 
+        uname, 
+        "DELETE_USER", 
+        f"Admin '{uname}' menghapus user: '{target_username}' (Nama: {target_fullname}, NIK: {target_nik}, Role: {target_role.upper()})"
+    )
+    return {"status": "ok", "message": f"User {target_username} berhasil dihapus"}

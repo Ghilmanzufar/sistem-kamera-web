@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, UserCheck, Shield, Search, Filter, RotateCcw } from 'lucide-react';
+import { Plus, Edit, Trash2, UserCheck, Shield, Search, Filter, RotateCcw, Lock, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import PageHeader from '../components/PageHeader';
 import DataTable from '../components/DataTable';
-import ConfirmModal from '../components/ConfirmModal';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -26,8 +25,10 @@ export default function Users() {
   const [isActive, setIsActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Confirm Delete
-  const [deleteUserId, setDeleteUserId] = useState(null);
+  // Delete User State with Admin Password Verification
+  const [deleteUserTarget, setDeleteUserTarget] = useState(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -71,6 +72,11 @@ export default function Users() {
     setShowModal(true);
   };
 
+  const openDeleteModal = (u) => {
+    setDeleteUserTarget(u);
+    setAdminPassword('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -104,16 +110,26 @@ export default function Users() {
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!deleteUserId) return;
+  const handleDeleteUser = async (e) => {
+    if (e) e.preventDefault();
+    if (!deleteUserTarget) return;
+    if (!adminPassword || !adminPassword.trim()) {
+      return toast.error('Silakan masukkan password admin untuk validasi!');
+    }
+
+    setDeleting(true);
     try {
-      await api.delete(`/api/admin/users/${deleteUserId}`);
-      toast.success('User berhasil dihapus!');
+      await api.delete(`/api/admin/users/${deleteUserTarget.id}`, {
+        data: { admin_password: adminPassword },
+      });
+      toast.success(`User ${deleteUserTarget.username} berhasil dihapus.`);
+      setDeleteUserTarget(null);
+      setAdminPassword('');
       fetchUsers();
     } catch (err) {
-      toast.error('Gagal menghapus user');
+      toast.error(err.response?.data?.detail || 'Gagal menghapus user. Periksa kembali password admin Anda.');
     } finally {
-      setDeleteUserId(null);
+      setDeleting(false);
     }
   };
 
@@ -260,7 +276,7 @@ export default function Users() {
                     <Edit className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => setDeleteUserId(u.id)}
+                    onClick={() => openDeleteModal(u)}
                     className="p-2 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
                     title="Hapus User"
                   >
@@ -385,16 +401,85 @@ export default function Users() {
         </div>
       )}
 
-      {/* Delete User Modal */}
-      <ConfirmModal
-        isOpen={Boolean(deleteUserId)}
-        title="Hapus Akun User"
-        message="Apakah Anda yakin ingin menghapus user ini? Tindakan ini tidak dapat dibatalkan."
-        confirmText="Hapus User"
-        isDanger={true}
-        onConfirm={handleDeleteUser}
-        onCancel={() => setDeleteUserId(null)}
-      />
+      {/* SECURE ADMIN PASSWORD CONFIRMATION MODAL FOR DELETING USER */}
+      {deleteUserTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md p-7 glass-card border-2 border-rose-500/40 rounded-3xl shadow-2xl space-y-5">
+            <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-lg">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white leading-tight">Konfirmasi Hapus User</h3>
+                <p className="text-xs text-rose-300 font-medium">Otorisasi admin diperlukan</p>
+              </div>
+            </div>
+
+            {/* Detail Target User */}
+            <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-white/10 space-y-1.5 text-xs text-slate-300">
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">Target User:</span>
+                <span className="font-extrabold text-white">{deleteUserTarget.username}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">Nama Lengkap:</span>
+                <span className="font-bold text-slate-200">{deleteUserTarget.fullname || '-'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">NIK:</span>
+                <span className="font-mono font-bold text-sky-300">{deleteUserTarget.nik || '-'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">Role:</span>
+                <span className="font-extrabold uppercase text-amber-400">{deleteUserTarget.role}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleDeleteUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Password Admin Anda (Akun Login) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    autoFocus
+                    placeholder="Masukkan password admin Anda..."
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border-2 border-rose-500/40 rounded-xl text-white text-sm focus:outline-none focus:border-rose-400 transition-colors"
+                  />
+                  <Lock className="w-4 h-4 text-rose-400 absolute left-3.5 top-3" />
+                </div>
+                <div className="flex items-center gap-1.5 mt-2 text-[11px] text-amber-300 font-semibold">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Aksi penghapusan akan dicatat permanen di Log Audit sistem.</span>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => { setDeleteUserTarget(null); setAdminPassword(''); }}
+                  className="px-5 py-2.5 text-xs font-extrabold text-slate-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 cursor-pointer disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleting || !adminPassword}
+                  className="px-5 py-2.5 text-xs font-black text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 rounded-xl shadow-lg shadow-rose-600/30 disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{deleting ? 'Memverifikasi...' : 'Hapus User Permanen'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
