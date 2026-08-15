@@ -21,6 +21,7 @@ class SoundManager {
     };
 
     // Active Audio Player Refs
+    this.activeAudio = null;
     this.activeNgAudio = null;
 
     // Listeners for UI state reactivity
@@ -97,6 +98,12 @@ class SoundManager {
       }
     }
 
+    if (this.activeAudio && typeof this.activeAudio.setSinkId === 'function') {
+      try {
+        await this.activeAudio.setSinkId(sinkVal);
+      } catch {}
+    }
+
     if (this.activeNgAudio && typeof this.activeNgAudio.setSinkId === 'function') {
       try {
         await this.activeNgAudio.setSinkId(sinkVal);
@@ -162,7 +169,7 @@ class SoundManager {
     this.isEnabled = !!enabled;
     localStorage.setItem('inspection_audio_enabled', this.isEnabled ? 'true' : 'false');
     if (!this.isEnabled) {
-      this.stopNg();
+      this.stopAll();
     }
     this.notify();
   }
@@ -171,6 +178,9 @@ class SoundManager {
     const clamped = Math.max(0, Math.min(100, volPercent));
     this.volume = clamped / 100;
     localStorage.setItem('inspection_audio_volume', this.volume.toString());
+    if (this.activeAudio) {
+      this.activeAudio.volume = this.volume;
+    }
     if (this.activeNgAudio) {
       this.activeNgAudio.volume = this.volume;
     }
@@ -192,9 +202,38 @@ class SoundManager {
     this.notify();
   }
 
+  // --- HENTIKAN SELURUH SUARA SECARA INSTAN ---
+  stopAll() {
+    if (this.activeAudio) {
+      try {
+        this.activeAudio.pause();
+        this.activeAudio.currentTime = 0;
+      } catch {}
+      this.activeAudio = null;
+    }
+    if (this.activeNgAudio) {
+      try {
+        this.activeNgAudio.pause();
+        this.activeNgAudio.currentTime = 0;
+      } catch {}
+      this.activeNgAudio = null;
+    }
+    if (window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+  }
+
+  stopNg() {
+    this.stopAll();
+  }
+
   // --- PEMUTAR FILE AUDIO (AI VOICE / UPLOAD) ---
   playAudioFile(url) {
     if (!this.isEnabled || this.volume <= 0 || !url) return;
+    // Potong/matikan suara sebelumnya agar tidak bertabrakan
+    this.stopAll();
     try {
       const audio = new Audio(url);
       audio.volume = this.volume;
@@ -202,9 +241,15 @@ class SoundManager {
       if (typeof audio.setSinkId === 'function' && sinkVal) {
         audio.setSinkId(sinkVal).catch(() => {});
       }
+      audio.onended = () => {
+        if (this.activeAudio === audio) {
+          this.activeAudio = null;
+        }
+      };
       audio.play().catch((err) => {
         console.warn('[SoundManager] Play audio error:', err);
       });
+      this.activeAudio = audio;
     } catch (err) {
       console.warn('[SoundManager] Audio initialization error:', err);
     }
@@ -212,7 +257,8 @@ class SoundManager {
 
   playAudioLoop(url) {
     if (!this.isEnabled || this.volume <= 0 || !url) return;
-    this.stopNg();
+    // Potong/matikan suara sebelumnya agar tidak bertabrakan
+    this.stopAll();
     try {
       const audio = new Audio(url);
       audio.volume = this.volume;
@@ -248,16 +294,6 @@ class SoundManager {
     this.playAudioLoop(url);
   }
 
-  stopNg() {
-    if (this.activeNgAudio) {
-      try {
-        this.activeNgAudio.pause();
-        this.activeNgAudio.currentTime = 0;
-      } catch {}
-      this.activeNgAudio = null;
-    }
-  }
-
   // --- 4. SUARA SELESAI BATCH (FINISH) ---
   playFinish() {
     const url = this.config.finish_custom_url || '/uploads/audio/default_finish.mp3';
@@ -266,7 +302,7 @@ class SoundManager {
 
   // --- 5. TEST METHOD ---
   testSound(category, customUrl = null) {
-    this.stopNg();
+    this.stopAll();
     if (category === 'ok') {
       this.playAudioFile(customUrl || this.config.ok_custom_url || '/uploads/audio/default_ok.mp3');
     } else if (category === 'flip') {
@@ -275,7 +311,7 @@ class SoundManager {
       this.playAudioLoop(customUrl || this.config.ng_custom_url || '/uploads/audio/default_ng.mp3');
       // Auto stop test NG setelah 4 detik
       setTimeout(() => {
-        this.stopNg();
+        this.stopAll();
       }, 4000);
     } else if (category === 'finish') {
       this.playAudioFile(customUrl || this.config.finish_custom_url || '/uploads/audio/default_finish.mp3');

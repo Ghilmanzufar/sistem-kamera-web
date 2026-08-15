@@ -494,6 +494,7 @@ export default function OperatorInspection() {
 
   // Action Handlers
   const handleManualPass = async () => {
+    soundManager.stopAll();
     try {
       const res = await api.post('/api/operator/manual-pass');
       toast.success(res.data?.message || 'Part Diverifikasi OK (Manual Pass)!');
@@ -505,6 +506,7 @@ export default function OperatorInspection() {
   };
 
   const handleManualReject = async () => {
+    soundManager.stopAll();
     try {
       const res = await api.post('/api/operator/manual-reject');
       toast.error(res.data?.message || 'Part Di-reject (Manual NG)!');
@@ -527,6 +529,7 @@ export default function OperatorInspection() {
   };
 
   const handleClosePartOkModal = async () => {
+    soundManager.stopAll();
     ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
     setShowPartOkModal(false);
     try {
@@ -535,6 +538,7 @@ export default function OperatorInspection() {
   };
 
   const handleFinishBatch = async () => {
+    soundManager.stopAll();
     ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
     setShowPartOkModal(false);
     try {
@@ -545,6 +549,7 @@ export default function OperatorInspection() {
   };
 
   const handleCloseFlipModal = async () => {
+    soundManager.stopAll();
     ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
     setShowFlipModal(false);
     try {
@@ -553,11 +558,12 @@ export default function OperatorInspection() {
   };
 
   const handleResolveNg = async (actionType = 'CONFIRM_NG') => {
+    soundManager.stopAll();
     setNgResolving(true);
     try {
       const res = await api.post('/api/operator/resolve-ng', { action: actionType });
       if (res.data?.success) {
-        stopSirenAlert();
+        soundManager.stopAll();
         setShowNgModal(false);
         if (actionType === 'CONFIRM_NG') {
           toast.error('Part Cacat (NG) Telah Dikonfirmasi!');
