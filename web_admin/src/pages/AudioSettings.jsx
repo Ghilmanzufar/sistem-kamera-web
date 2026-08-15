@@ -563,34 +563,7 @@ export default function AudioSettings() {
               </div>
             </div>
 
-            {/* Template Cepat Narasi */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-extrabold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Pilih Template Narasi Cepat (Klik untuk Mengisi):</span>
-                </label>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {ttsCatalog.templates.map((tpl, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectTemplate(tpl)}
-                    className="p-3 rounded-2xl bg-slate-950/70 hover:bg-slate-800/90 border border-white/10 hover:border-sky-400/40 text-left transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
-                  >
-                    <div className="font-extrabold text-xs text-white group-hover:text-sky-300 transition-colors flex items-center justify-between">
-                      <span>{tpl.title}</span>
-                      <ArrowRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-sky-400" />
-                    </div>
-                    <p className="text-[11px] text-slate-400 line-clamp-2 mt-1 font-medium">
-                      "{tpl.text}"
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Target Penugasan Suara Otomatis */}
             <div className="p-4 rounded-2xl bg-sky-950/60 border border-sky-500/30 space-y-2.5">
