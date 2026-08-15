@@ -339,17 +339,26 @@ async def generate_ai_voice(
 
     analysis = _normalize_and_analyze_text(req.text)
     
-    # Hitung rate dan pitch sesuai vibe preset & offset manual
+    # Hitung rate dan pitch secara dinamis (kombinasi base vibe + offset tempo kustom)
     vibe_cfg = VIBE_PRESETS.get(req.vibe, VIBE_PRESETS["formal"])
     
-    if req.vibe == "custom":
-        rate_val = max(-50, min(50, req.rate_offset or 0))
-        pitch_val = max(-20, min(20, req.pitch_offset or 0))
-        rate_str = f"{'+' if rate_val >= 0 else ''}{rate_val}%"
-        pitch_str = f"{'+' if pitch_val >= 0 else ''}{pitch_val}Hz"
-    else:
-        rate_str = vibe_cfg.get("rate", "+0%")
-        pitch_str = vibe_cfg.get("pitch", "+0Hz")
+    try:
+        base_rate_str = vibe_cfg.get("rate", "+0%")
+        base_rate_num = int(base_rate_str.replace("%", "").replace("+", ""))
+    except Exception:
+        base_rate_num = 0
+    
+    total_rate = max(-60, min(80, base_rate_num + (req.rate_offset or 0)))
+    rate_str = f"{'+' if total_rate >= 0 else ''}{total_rate}%"
+
+    try:
+        base_pitch_str = vibe_cfg.get("pitch", "+0Hz")
+        base_pitch_num = int(base_pitch_str.replace("Hz", "").replace("+", ""))
+    except Exception:
+        base_pitch_num = 0
+    
+    total_pitch = max(-30, min(30, base_pitch_num + (req.pitch_offset or 0)))
+    pitch_str = f"{'+' if total_pitch >= 0 else ''}{total_pitch}Hz"
 
     voice_model = req.voice if req.voice in ["id-ID-GadisNeural", "id-ID-ArdiNeural"] else "id-ID-GadisNeural"
     category = req.category if req.category in ["ok", "flip", "ng", "general"] else "general"

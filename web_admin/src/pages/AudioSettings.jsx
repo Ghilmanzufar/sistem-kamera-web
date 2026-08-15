@@ -210,10 +210,14 @@ export default function AudioSettings() {
     };
   }, []);
 
-  // Text analysis metrics live
+  // Player Preview Playback Rate
+  const [previewPlaybackRate, setPreviewPlaybackRate] = useState(1.0);
+
+  // Text analysis metrics live yang otomatis merespons slider kecepatan tempo
   const textWords = ttsText.trim() ? ttsText.trim().split(/\s+/).length : 0;
   const textChars = ttsText.length;
-  const estimatedSeconds = Math.max(1, Math.round(textWords / 2.5 * 10) / 10);
+  const speedMultiplier = Math.max(0.4, 1 + (customRateOffset / 100));
+  const estimatedSeconds = Math.max(0.5, Math.round((textWords / (2.5 * speedMultiplier)) * 10) / 10);
 
   // Handle Template Selection
   const handleSelectTemplate = (template) => {
@@ -242,8 +246,8 @@ export default function AudioSettings() {
         voice: ttsVoice,
         vibe: ttsVibe,
         category: ttsCategory,
-        rate_offset: ttsVibe === 'custom' ? parseInt(customRateOffset) : 0,
-        pitch_offset: ttsVibe === 'custom' ? parseInt(customPitchOffset) : 0
+        rate_offset: parseInt(customRateOffset) || 0,
+        pitch_offset: parseInt(customPitchOffset) || 0
       };
 
       const res = await api.post('/api/admin/audio/tts/generate', payload);
@@ -255,6 +259,7 @@ export default function AudioSettings() {
         setTimeout(() => {
           if (previewAudioRef.current) {
             previewAudioRef.current.currentTime = 0;
+            previewAudioRef.current.playbackRate = previewPlaybackRate;
             previewAudioRef.current.play().catch(() => {});
             setIsPlayingPreview(true);
           }
@@ -265,6 +270,14 @@ export default function AudioSettings() {
     } finally {
       setGeneratingTts(false);
     }
+  };
+
+  const handleSetPlaybackRate = (rate) => {
+    setPreviewPlaybackRate(rate);
+    if (previewAudioRef.current) {
+      previewAudioRef.current.playbackRate = rate;
+    }
+    toast.success(`Kecepatan putar preview: ${rate}x`, { id: 'rate-toast' });
   };
 
   // Toggle Play / Pause Audio Preview
@@ -665,6 +678,86 @@ export default function AudioSettings() {
 
             </div>
 
+            {/* Baris Kontrol Mandiri: KECEPATAN TEMPO (SPEECH RATE) & TINGGI NADA (PITCH) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-950/80 border border-sky-500/30 space-y-4 shadow-inner">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2 font-black text-xs sm:text-sm text-white uppercase tracking-wider">
+                  <Sliders className="w-4 h-4 text-sky-400" />
+                  <span>PENGATURAN KECEPATAN TEMPO SUARA AI:</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-bold">Tempo Saat Ini:</span>
+                  <span className="font-mono text-xs font-black px-2.5 py-1 rounded-lg bg-sky-950 border border-sky-500/40 text-sky-300">
+                    {customRateOffset > 0 ? `+${customRateOffset}%` : `${customRateOffset}%`} ({speedMultiplier.toFixed(2)}x)
+                  </span>
+                </div>
+              </div>
+
+              {/* Tombol Preset Cepat Tempo */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {[
+                  { label: '🐢 0.75x Lambat', val: -25 },
+                  { label: '🎙️ 1.0x Normal', val: 0 },
+                  { label: '⚡ 1.15x Lincah', val: 15 },
+                  { label: '🚀 1.3x Cepat', val: 30 },
+                  { label: '🔥 1.5x Sangat Cepat', val: 50 }
+                ].map((p) => (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => setCustomRateOffset(p.val)}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer border ${
+                      customRateOffset === p.val
+                        ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-md font-black scale-105'
+                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/10'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Slider Pengatur Tempo Presisi */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                  <span>-50% (Sangat Lambat)</span>
+                  <span className="text-sky-300 font-extrabold">Geser Slider Untuk Fine-Tuning Tempo</span>
+                  <span>+50% (Sangat Cepat)</span>
+                </div>
+                <input
+                  type="range"
+                  min="-50"
+                  max="50"
+                  step="5"
+                  value={customRateOffset}
+                  onChange={(e) => setCustomRateOffset(parseInt(e.target.value))}
+                  className="w-full h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
+                />
+              </div>
+
+              {/* Slider Tinggi Nada (Pitch) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Tinggi / Rendah Nada Suara (Pitch):</span>
+                </div>
+                <div className="flex items-center gap-2 flex-1 max-w-sm">
+                  <input
+                    type="range"
+                    min="-20"
+                    max="20"
+                    step="2"
+                    value={customPitchOffset}
+                    onChange={(e) => setCustomPitchOffset(parseInt(e.target.value))}
+                    className="flex-1 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+                  />
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-indigo-300 w-16 text-center">
+                    {customPitchOffset > 0 ? `+${customPitchOffset}Hz` : `${customPitchOffset}Hz`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Tombol Utama: Generate Suara AI */}
             <div className="pt-2">
               <button
@@ -705,7 +798,7 @@ export default function AudioSettings() {
                       Audio AI Berhasil Dibuat
                     </h3>
                     <p className="text-xs text-emerald-300 font-semibold">
-                      Model: {generatedAudio.voice} | Vibe: {generatedAudio.vibe} | {generatedAudio.analysis?.word_count || 0} Kata
+                      Model: {generatedAudio.voice} | Vibe: {generatedAudio.vibe} | Tempo: {generatedAudio.rate || '0%'} | {generatedAudio.analysis?.word_count || 0} Kata
                     </p>
                   </div>
                 </div>
@@ -772,6 +865,30 @@ export default function AudioSettings() {
                         style={{ width: `${previewProgress}%` }}
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Kecepatan Putar Player Preview Switcher */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10 text-xs">
+                  <span className="text-slate-400 font-bold flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Kecepatan Putar Preview:</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {[0.75, 1.0, 1.25, 1.5, 2.0].map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => handleSetPlaybackRate(rate)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer border ${
+                          previewPlaybackRate === rate
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow font-black'
+                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/10'
+                        }`}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
