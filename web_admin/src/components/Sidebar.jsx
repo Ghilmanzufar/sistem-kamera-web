@@ -19,10 +19,8 @@ import {
   Sun,
   Moon,
   Lock,
-  ShieldCheck,
-  ExternalLink
+  ShieldCheck
 } from 'lucide-react';
-import LinkedinIcon from './LinkedinIcon';
 import api from '../api/client';
 import ConfirmModal from './ConfirmModal';
 import SupervisorLoginModal from './SupervisorLoginModal';
@@ -254,33 +252,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Developer Watermark (Option 1) */}
-          {!isCollapsed ? (
-            <a
-              href="https://www.linkedin.com/in/ghilman-zufar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white/[0.03] hover:bg-sky-500/10 border border-white/5 hover:border-sky-500/30 text-slate-400 hover:text-sky-300 transition-all group text-[11px] font-medium"
-              title="Developed by Ghilman Zufar - Buka LinkedIn"
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <LinkedinIcon className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
-                <span className="truncate">Dev: <strong className="font-semibold text-slate-200 group-hover:text-white">Ghilman Zufar</strong></span>
-              </div>
-              <ExternalLink className="w-3 h-3 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </a>
-          ) : (
-            <a
-              href="https://www.linkedin.com/in/ghilman-zufar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex justify-center py-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10 rounded-xl transition-all border border-transparent hover:border-sky-500/30 group"
-              title="Developed by Ghilman Zufar (LinkedIn)"
-            >
-              <LinkedinIcon className="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform" />
-            </a>
           )}
         </div>
       </aside>
