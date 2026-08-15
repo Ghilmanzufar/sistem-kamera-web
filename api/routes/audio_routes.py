@@ -195,3 +195,197 @@ def scan_audio_devices(db: Session = Depends(get_db)):
     """Memindai ulang perangkat audio hardware yang tercolok ke sistem."""
     return _scan_hardware_audio_devices()
 
+# ==========================================================
+# 🎙️ AI VOICE GENERATOR (TEXT TO SPEECH BAHASA INDONESIA)
+# ==========================================================
+
+class TtsGenerateRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "id-ID-GadisNeural"
+    vibe: Optional[str] = "formal"
+    rate_offset: Optional[int] = 0   # -50 s/d +50%
+    pitch_offset: Optional[int] = 0  # -20 s/d +20 Hz
+    category: Optional[str] = "general" # 'ok', 'flip', 'ng', 'general'
+
+def _normalize_and_analyze_text(raw_text: str) -> dict:
+    """Menganalisis dan mengoptimalkan teks narasi untuk artikulasi akurat alami bahasa Indonesia."""
+    import re
+    cleaned = raw_text.strip()
+    
+    # 1. Optimasi frasa & akronim industri agar dibaca presisi dan wajar
+    norm_text = cleaned
+    norm_text = re.sub(r'\bOK\b', 'O.K.', norm_text, flags=re.IGNORECASE)
+    norm_text = re.sub(r'\bNG\b', 'N.G.', norm_text, flags=re.IGNORECASE)
+    norm_text = re.sub(r'\bPCS\b', 'Pcs', norm_text, flags=re.IGNORECASE)
+    norm_text = re.sub(r'\bQTY\b', 'Kuantitas', norm_text, flags=re.IGNORECASE)
+    norm_text = re.sub(r'\bP/N\b', 'Part Number', norm_text, flags=re.IGNORECASE)
+    norm_text = re.sub(r'\bLOT\b', 'Nomor Lot', norm_text, flags=re.IGNORECASE)
+    norm_text = re.sub(r'\bAI\b', 'A.I.', norm_text, flags=re.IGNORECASE)
+
+    words = cleaned.split()
+    word_count = len(words)
+    char_count = len(cleaned)
+    
+    # Estimasi durasi pembacaan natural (rata-rata ~2.5 kata per detik)
+    estimated_duration = max(1.0, round(word_count / 2.5, 1)) if word_count > 0 else 0.0
+
+    return {
+        "raw_text": cleaned,
+        "normalized_text": norm_text,
+        "char_count": char_count,
+        "word_count": word_count,
+        "estimated_duration_sec": estimated_duration
+    }
+
+VIBE_PRESETS = {
+    "formal": {
+        "name": "🏢 Formal Industri",
+        "desc": "Artikulasi presisi & nada instruksi standar pabrik",
+        "rate": "+0%",
+        "pitch": "+0Hz"
+    },
+    "energetic": {
+        "name": "😊 Ramah & Enerjik",
+        "desc": "Tempo sedikit lebih lincah dan nada ramah memotivasi",
+        "rate": "+6%",
+        "pitch": "+2Hz"
+    },
+    "warning": {
+        "name": "🚨 Tegas & Waspada (Warning)",
+        "desc": "Intonasi tegas berwibawa, cocok untuk notifikasi cacat NG",
+        "rate": "-5%",
+        "pitch": "-2Hz"
+    },
+    "calm": {
+        "name": "🧘 Tenang & Jelas",
+        "desc": "Tempo rileks dan artikulasi panduan inspeksi yang mudah dipahami",
+        "rate": "-8%",
+        "pitch": "+0Hz"
+    },
+    "custom": {
+        "name": "⚙️ Kustom Manual",
+        "desc": "Kecepatan dan tinggi nada diatur secara bebas oleh operator/admin",
+        "rate": "+0%",
+        "pitch": "+0Hz"
+    }
+}
+
+SAMPLE_TEMPLATES = [
+    {
+        "title": "✅ Part OK & Lanjut",
+        "category": "ok",
+        "vibe": "formal",
+        "voice": "id-ID-GadisNeural",
+        "text": "Part berhasil diverifikasi O.K. Seluruh label lengkap, silakan lanjutkan ke part berikutnya."
+    },
+    {
+        "title": "🔄 Instruksi Balik Part (Rear)",
+        "category": "flip",
+        "vibe": "calm",
+        "voice": "id-ID-GadisNeural",
+        "text": "Sisi depan selesai dengan status O.K. Silakan balik part ke sisi belakang untuk inspeksi kedua."
+    },
+    {
+        "title": "🚨 Peringatan Cacat (NG Alert)",
+        "category": "ng",
+        "vibe": "warning",
+        "voice": "id-ID-ArdiNeural",
+        "text": "Peringatan! Terdeteksi ketidaksesuaian atau cacat pada komponen. Segera periksa fisik part di line produksi."
+    },
+    {
+        "title": "🏁 Seluruh Batch Selesai",
+        "category": "ok",
+        "vibe": "energetic",
+        "voice": "id-ID-GadisNeural",
+        "text": "Selamat, seluruh target kuantitas part telah selesai diinspeksi dengan status O.K. Sistem kembali ke mode siaga."
+    }
+]
+
+@router.get("/admin/audio/tts/voices")
+def get_tts_voices():
+    """Mengambil katalog model suara AI Bahasa Indonesia, preset vibe, dan template narasi."""
+    return {
+        "voices": [
+            {
+                "id": "id-ID-GadisNeural",
+                "name": "Gadis (Wanita Indonesia)",
+                "gender": "Female",
+                "locale": "id-ID",
+                "desc": "Suara wanita Bahasa Indonesia alami, artikulasi hangat, jernih, dan ramah"
+            },
+            {
+                "id": "id-ID-ArdiNeural",
+                "name": "Ardi (Pria Indonesia)",
+                "gender": "Male",
+                "locale": "id-ID",
+                "desc": "Suara pria Bahasa Indonesia berwibawa, tegas, mantap, dan terstruktur"
+            }
+        ],
+        "vibes": VIBE_PRESETS,
+        "templates": SAMPLE_TEMPLATES
+    }
+
+@router.post("/admin/audio/tts/generate")
+async def generate_ai_voice(
+    req: TtsGenerateRequest,
+    db: Session = Depends(get_db),
+    uname: str = Depends(get_current_user_name)
+):
+    """Men-generate audio AI Text-to-Speech Bahasa Indonesia dengan presisi tinggi dan logat natural."""
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=400, detail="Teks narasi tidak boleh kosong.")
+
+    import edge_tts
+
+    analysis = _normalize_and_analyze_text(req.text)
+    
+    # Hitung rate dan pitch sesuai vibe preset & offset manual
+    vibe_cfg = VIBE_PRESETS.get(req.vibe, VIBE_PRESETS["formal"])
+    
+    if req.vibe == "custom":
+        rate_val = max(-50, min(50, req.rate_offset or 0))
+        pitch_val = max(-20, min(20, req.pitch_offset or 0))
+        rate_str = f"{'+' if rate_val >= 0 else ''}{rate_val}%"
+        pitch_str = f"{'+' if pitch_val >= 0 else ''}{pitch_val}Hz"
+    else:
+        rate_str = vibe_cfg.get("rate", "+0%")
+        pitch_str = vibe_cfg.get("pitch", "+0Hz")
+
+    voice_model = req.voice if req.voice in ["id-ID-GadisNeural", "id-ID-ArdiNeural"] else "id-ID-GadisNeural"
+    category = req.category if req.category in ["ok", "flip", "ng", "general"] else "general"
+
+    filename = f"tts_{category}_{uuid.uuid4().hex[:8]}.mp3"
+    dest_path = os.path.join(UPLOAD_DIR, filename)
+
+    try:
+        comm = edge_tts.Communicate(
+            text=analysis["normalized_text"],
+            voice=voice_model,
+            rate=rate_str,
+            pitch=pitch_str
+        )
+        await comm.save(dest_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal memproses sintesis suara AI: {e}")
+
+    file_url = f"/uploads/audio/{filename}"
+    log_audit_event(
+        db, 
+        uname, 
+        "GENERATE_TTS_AUDIO", 
+        f"Membuat file suara AI '{filename}' ({voice_model}, Vibe: {req.vibe}) untuk teks: '{req.text[:60]}...'"
+    )
+
+    return {
+        "status": "success",
+        "filename": filename,
+        "url": file_url,
+        "category": category,
+        "voice": voice_model,
+        "vibe": req.vibe,
+        "rate": rate_str,
+        "pitch": pitch_str,
+        "analysis": analysis
+    }
+
+

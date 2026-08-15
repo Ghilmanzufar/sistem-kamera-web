@@ -9,4 +9,6 @@ __pycache__/
 *.onnx
 ng_records/*.jpg
 *.db
+uploads/*
+!uploads/.gitkeep
 
