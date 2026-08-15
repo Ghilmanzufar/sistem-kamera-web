@@ -10,6 +10,8 @@ class SoundManager {
     this.ctx = null;
     this.isEnabled = localStorage.getItem('inspection_audio_enabled') !== 'false';
     this.volume = parseFloat(localStorage.getItem('inspection_audio_volume') || '0.8');
+    this.selectedDeviceId = localStorage.getItem('inspection_audio_device_id') || 'default';
+    this.selectedDeviceName = localStorage.getItem('inspection_audio_device_name') || 'Default Speaker Output';
     
     // Config preset default
     this.config = {
@@ -40,6 +42,8 @@ class SoundManager {
     this.listeners.forEach(cb => cb({
       isEnabled: this.isEnabled,
       volume: Math.round(this.volume * 100),
+      selectedDeviceId: this.selectedDeviceId,
+      selectedDeviceName: this.selectedDeviceName,
       config: { ...this.config }
     }));
   }
@@ -49,12 +53,56 @@ class SoundManager {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+        if (this.selectedDeviceId && this.selectedDeviceId !== 'default' && this.ctx.setSinkId) {
+          this.ctx.setSinkId(this.selectedDeviceId).catch(() => {});
+        }
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
     return this.ctx;
+  }
+
+  async setAudioOutputDevice(deviceId, deviceName = '') {
+    this.selectedDeviceId = deviceId || 'default';
+    if (deviceName) {
+      this.selectedDeviceName = deviceName;
+      localStorage.setItem('inspection_audio_device_name', deviceName);
+    }
+    localStorage.setItem('inspection_audio_device_id', this.selectedDeviceId);
+    
+    if (this.ctx && this.ctx.setSinkId) {
+      try {
+        await this.ctx.setSinkId(this.selectedDeviceId === 'default' ? '' : this.selectedDeviceId);
+      } catch (e) {
+        console.warn('Gagal setSinkId pada AudioContext:', e);
+      }
+    }
+    if (this.customAudioElem && this.customAudioElem.setSinkId) {
+      try {
+        await this.customAudioElem.setSinkId(this.selectedDeviceId === 'default' ? '' : this.selectedDeviceId);
+      } catch {}
+    }
+    this.notify();
+  }
+
+  async getBrowserAudioDevices() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        return [];
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+      return audioOutputs.map((d, idx) => ({
+        id: d.deviceId || String(idx),
+        name: d.label || (idx === 0 ? 'Default Audio Output / Speaker' : `Speaker ${idx + 1}`),
+        is_usb: (d.label || '').toLowerCase().includes('usb'),
+        type: 'output'
+      }));
+    } catch {
+      return [];
+    }
   }
 
   setEnabled(enabled) {

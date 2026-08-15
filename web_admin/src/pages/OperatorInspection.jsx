@@ -4,7 +4,7 @@ import {
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
   Layers, User, Clock, Eye, GripHorizontal, WifiOff, Wifi,
-  Volume2, VolumeX, Volume1, Sliders
+  Volume2, VolumeX, Volume1, Sliders, Speaker, RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -200,8 +200,94 @@ export default function OperatorInspection() {
   const [audioState, setAudioState] = useState({
     isEnabled: soundManager.isEnabled,
     volume: Math.round(soundManager.volume * 100),
+    selectedDeviceId: soundManager.selectedDeviceId,
+    selectedDeviceName: soundManager.selectedDeviceName,
     config: soundManager.config
   });
+
+  // Audio Devices State (Hardware USB Speaker & Browser Output Devices)
+  const [audioDevices, setAudioDevices] = useState([
+    { id: 'default', name: 'Default Speaker / Audio Output Sistem', is_usb: false, type: 'output' }
+  ]);
+  const [scanningAudioDevices, setScanningAudioDevices] = useState(false);
+
+  const fetchOrScanAudioDevices = async (isManualScan = false) => {
+    setScanningAudioDevices(true);
+    try {
+      // 1. Ambil dari Browser API (enumerateDevices)
+      const browserDevs = await soundManager.getBrowserAudioDevices();
+      
+      // 2. Ambil dari Backend API (PowerShell / PnP Windows Audio Endpoints)
+      let backendDevs = [];
+      try {
+        const res = isManualScan 
+          ? await api.post('/api/audio/devices/scan')
+          : await api.get('/api/audio/devices');
+        if (Array.isArray(res.data)) {
+          backendDevs = res.data.filter(d => d.type === 'output');
+        }
+      } catch (err) {
+        console.warn('Backend audio devices query warning:', err);
+      }
+
+      // Gabungkan & hilangkan duplikasi
+      const combined = [];
+      const seenNames = new Set();
+
+      // Tambahkan default device
+      combined.push({
+        id: 'default',
+        name: 'Default Speaker Output Sistem',
+        is_usb: false,
+        type: 'output'
+      });
+      seenNames.add('default');
+      seenNames.add('default speaker output sistem');
+
+      browserDevs.forEach(b => {
+        const key = b.name.toLowerCase().trim();
+        if (key && !seenNames.has(key) && b.id !== 'default') {
+          seenNames.add(key);
+          combined.push(b);
+        }
+      });
+
+      backendDevs.forEach(b => {
+        const key = b.name.toLowerCase().trim();
+        if (key && !seenNames.has(key)) {
+          seenNames.add(key);
+          combined.push({
+            id: b.id || b.instance_id || b.name,
+            name: b.name,
+            is_usb: !!b.is_usb,
+            type: 'output'
+          });
+        }
+      });
+
+      setAudioDevices(combined);
+      if (isManualScan) {
+        toast.success(`Berhasil mendeteksi ${combined.length} perangkat speaker!`, { icon: '🔊' });
+      }
+    } catch (err) {
+      console.warn('Gagal memindai perangkat audio:', err);
+      if (isManualScan) toast.error('Gagal memindai perangkat audio');
+    } finally {
+      setScanningAudioDevices(false);
+    }
+  };
+
+  const handleSelectAudioDevice = async (device) => {
+    await soundManager.setAudioOutputDevice(device.id, device.name);
+    soundManager.testSound('ok', 'chime');
+    toast.success(`Speaker aktif: ${device.name}`, { icon: '🔊' });
+  };
+
+  useEffect(() => {
+    if (showAudioModal) {
+      fetchOrScanAudioDevices(false);
+    }
+  }, [showAudioModal]);
 
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
@@ -1149,121 +1235,250 @@ export default function OperatorInspection() {
         onCancel={() => setShowLogoutModal(false)}
       />
 
-      {/* 9. MODAL PENGATURAN AUDIO & SPEAKER USB OPERATOR */}
+      {/* 9. MODAL PENGATURAN AUDIO & SPEAKER USB OPERATOR (Spacious, High-Contrast & Clear) */}
       {showAudioModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3.5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shadow-md">
-                  <Volume2 className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-lg animate-fadeIn overflow-y-auto">
+          <div className="w-full max-w-2xl lg:max-w-3xl my-auto bg-slate-900/98 border-2 border-sky-500/50 rounded-3xl p-5 sm:p-7 lg:p-8 shadow-2xl shadow-sky-950/60 space-y-5 sm:space-y-6 text-slate-100 max-h-[92vh] overflow-y-auto">
+            
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-sky-500/20 border-2 border-sky-400 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/30 shrink-0">
+                  <Volume2 className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white leading-tight">Pengaturan Audio & Suara</h3>
-                  <p className="text-xs text-sky-300 font-medium">Output Speaker USB / Komputer</p>
+                  <h3 className="text-lg sm:text-2xl font-black text-white leading-tight tracking-wide">
+                    Pengaturan Suara & Speaker USB
+                  </h3>
+                  <p className="text-xs sm:text-sm text-sky-300 font-semibold mt-0.5">
+                    Pilih perangkat speaker aktif, kelola volume suara, dan uji coba nada notifikasi
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => { soundManager.stopNg(); setShowAudioModal(false); }}
-                className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title="Tutup Modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            {/* Master Switch On/Off */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950/80 border border-white/10">
-              <div className="flex items-center gap-2.5">
-                {audioState.isEnabled ? (
-                  <Volume2 className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <VolumeX className="w-5 h-5 text-rose-400" />
-                )}
-                <div>
-                  <div className="text-xs font-black text-white">Status Suara Speaker</div>
-                  <div className="text-[11px] text-slate-400">{audioState.isEnabled ? 'Aktif (Berbunyi saat deteksi)' : 'Senyap / Mute'}</div>
+            {/* SECTION 1: PILIH & CARI PERANGKAT SPEAKER HARDWARE */}
+            <div className="space-y-3 bg-slate-950/80 p-4 sm:p-5 rounded-2xl border border-white/10 shadow-inner">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-black text-xs sm:text-sm text-white uppercase tracking-wider">
+                  <Speaker className="w-4 h-4 text-sky-400" />
+                  <span>PILIH PERANGKAT SPEAKER AKTIF:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchOrScanAudioDevices(true)}
+                  disabled={scanningAudioDevices}
+                  className="py-1.5 px-3 rounded-xl bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-400/40 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+                  title="Pindai ulang perangkat speaker USB yang terpasang"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${scanningAudioDevices ? 'animate-spin' : ''}`} />
+                  <span>{scanningAudioDevices ? 'Memindai Hardware...' : '🔍 Pindai Ulang Speaker'}</span>
+                </button>
+              </div>
+
+              {/* Grid Kartu Perangkat Speaker */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1">
+                {audioDevices.map((dev, idx) => {
+                  const isSelected = (audioState.selectedDeviceId === dev.id) || (!audioState.selectedDeviceId && dev.id === 'default');
+                  return (
+                    <div
+                      key={dev.id || idx}
+                      onClick={() => handleSelectAudioDevice(dev)}
+                      className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-2 select-none hover:scale-[1.01] active:scale-[0.99] ${
+                        isSelected
+                          ? 'border-sky-400 bg-sky-950/90 shadow-lg shadow-sky-500/25 ring-2 ring-sky-400/30'
+                          : 'border-white/10 bg-slate-900/90 hover:border-sky-500/40 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-sky-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'}`}>
+                            <Speaker className="w-4 h-4" />
+                          </div>
+                          <span className="font-extrabold text-xs sm:text-sm text-white truncate" title={dev.name}>
+                            {dev.name}
+                          </span>
+                        </div>
+                        {dev.is_usb && (
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-500/30 border border-indigo-400/50 text-indigo-300 text-[10px] font-black uppercase shrink-0">
+                            USB
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-white/10">
+                        {isSelected ? (
+                          <span className="text-emerald-400 font-extrabold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Speaker Aktif Digunakan</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-semibold">
+                            Klik untuk jadikan output suara
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectAudioDevice(dev);
+                          }}
+                          className={`text-[11px] px-2.5 py-1 rounded-lg font-black transition-all ${
+                            isSelected
+                              ? 'bg-sky-500 text-slate-950 hover:bg-sky-400'
+                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          }`}
+                        >
+                          {isSelected ? 'Terpilih' : 'Pilih'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SECTION 2: MASTER ON/OFF & VOLUME CONTROLS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+              {/* Card Master On/Mute */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-white/10 flex flex-col justify-between gap-3 shadow-inner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {audioState.isEnabled ? (
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+                        <Volume2 className="w-5 h-5" />
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-400">
+                        <VolumeX className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-xs font-black text-white uppercase tracking-wide">Status Suara</div>
+                      <div className="text-xs sm:text-sm font-bold text-slate-300">
+                        {audioState.isEnabled ? 'Aktif (Berbunyi)' : 'Senyap / Mute'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => soundManager.setEnabled(!audioState.isEnabled)}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95 ${
+                      audioState.isEnabled
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
+                        : 'bg-rose-700 hover:bg-rose-600 text-white shadow-rose-700/30'
+                    }`}
+                  >
+                    {audioState.isEnabled ? '🔊 ON (AKTIF)' : '🔇 MUTE'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                  {audioState.isEnabled 
+                    ? 'Speaker akan mengeluarkan bunyi notifikasi otomatis saat part OK, balik part, atau terjadi NG.' 
+                    : 'Semua suara notifikasi dinonaktifkan sementara.'}
+                </p>
+              </div>
+
+              {/* Card Master Volume */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3 shadow-inner">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-white uppercase tracking-wide">Level Volume Speaker</span>
+                  <span className="font-mono text-sky-400 font-black text-base sm:text-lg bg-sky-950 px-2.5 py-0.5 rounded-lg border border-sky-500/30">
+                    {audioState.volume}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={audioState.volume}
+                  onChange={(e) => soundManager.setVolume(parseInt(e.target.value))}
+                  className="w-full h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
+                />
+                <div className="flex items-center justify-between gap-1.5 pt-1">
+                  {[0, 25, 50, 75, 100].map((vol) => (
+                    <button
+                      key={vol}
+                      type="button"
+                      onClick={() => soundManager.setVolume(vol)}
+                      className={`flex-1 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer border ${
+                        audioState.volume === vol 
+                          ? 'bg-sky-500 text-slate-950 border-sky-400 shadow'
+                          : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/10'
+                      }`}
+                    >
+                      {vol}%
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => soundManager.setEnabled(!audioState.isEnabled)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow ${
-                  audioState.isEnabled
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10'
-                }`}
-              >
-                {audioState.isEnabled ? 'ON (AKTIF)' : 'MUTE'}
-              </button>
             </div>
 
-            {/* Master Volume Slider */}
-            <div className="space-y-2 p-3.5 rounded-2xl bg-slate-950/80 border border-white/10">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-300 uppercase tracking-wider">Level Volume:</span>
-                <span className="font-mono text-sky-400 font-black text-sm">{audioState.volume}%</span>
+            {/* SECTION 3: UJI COBA NADA NOTIFIKASI */}
+            <div className="space-y-2.5">
+              <div className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <span>UJI COBA NADA SUARA PADA SPEAKER TERPILIH:</span>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={audioState.volume}
-                onChange={(e) => soundManager.setVolume(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
-              />
-              <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                <span>0% (Hening)</span>
-                <span>50%</span>
-                <span>100% (Maksimal)</span>
-              </div>
-            </div>
-
-            {/* Uji Coba Suara (Test Buttons) */}
-            <div className="space-y-2">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                Uji Coba Nada Notifikasi:
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
                   type="button"
                   onClick={() => soundManager.testSound('ok', soundManager.config.ok_sound_type, soundManager.config.ok_custom_url)}
-                  className="py-2.5 px-3 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-200 font-black text-xs transition-all shadow cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                  className="py-3 px-3.5 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-emerald-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
-                  <span>▶ Part OK</span>
-                  <span className="text-[10px] font-normal text-emerald-400">Chime Sukses</span>
+                  <div className="flex items-center gap-1.5 font-black text-white">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>▶ Uji Part OK</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-300">Nada Part Selesai / Lanjut</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => soundManager.testSound('flip', soundManager.config.flip_sound_type, soundManager.config.flip_custom_url)}
-                  className="py-2.5 px-3 rounded-xl bg-teal-950/70 hover:bg-teal-900 border border-teal-500/40 text-teal-200 font-black text-xs transition-all shadow cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                  className="py-3 px-3.5 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-teal-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
-                  <span>▶ Balik Part</span>
-                  <span className="text-[10px] font-normal text-teal-400">Dual Beep</span>
+                  <div className="flex items-center gap-1.5 font-black text-white">
+                    <RotateCcw className="w-4 h-4 text-teal-400" />
+                    <span>▶ Uji Balik Part</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-teal-300">Nada Balik Sisi Belakang</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => soundManager.testSound('ng', soundManager.config.ng_sound_type, soundManager.config.ng_custom_url)}
-                  className="py-2.5 px-3 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-rose-200 font-black text-xs transition-all shadow cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                  className="py-3 px-3.5 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-rose-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
-                  <span>▶ Alarm NG</span>
-                  <span className="text-[10px] font-normal text-rose-400">Sirene Cacat</span>
+                  <div className="flex items-center gap-1.5 font-black text-white">
+                    <ShieldAlert className="w-4 h-4 text-rose-400" />
+                    <span>🚨 Uji Alarm NG</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-rose-300">Sirene Peringatan Cacat</span>
                 </button>
               </div>
             </div>
 
-            <div className="pt-1 flex justify-end">
+            {/* SECTION 4: FOOTER ACTION */}
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={() => { soundManager.stopNg(); setShowAudioModal(false); }}
-                className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
+                className="w-full py-3.5 px-6 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-black text-xs sm:text-base rounded-2xl shadow-xl shadow-sky-600/30 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
               >
-                Tutup & Terapkan
+                <Check className="w-5 h-5 stroke-[3]" />
+                <span>Simpan & Terapkan Pengaturan Speaker</span>
               </button>
             </div>
+
           </div>
         </div>
       )}

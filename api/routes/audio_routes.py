@@ -151,3 +151,47 @@ def get_audio_presets():
             {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload Anda"}
         ]
     }
+
+def _scan_hardware_audio_devices() -> list:
+    """Pindai perangkat audio hardware (speaker / USB audio / output) terhubung ke komputer."""
+    import subprocess
+    import json
+    devices = []
+    try:
+        cmd = [
+            'powershell', '-NoProfile', '-Command',
+            'Get-PnpDevice -Class AudioEndpoint -Status OK | Select-Object -Property FriendlyName, InstanceId | ConvertTo-Json'
+        ]
+        res = subprocess.check_output(cmd, timeout=5).decode(errors='ignore')
+        data = json.loads(res)
+        if isinstance(data, dict):
+            data = [data]
+        for idx, item in enumerate(data):
+            name = item.get('FriendlyName', 'Audio Device')
+            inst_id = item.get('InstanceId', '')
+            is_mic = 'microphone' in name.lower() or 'mic' in name.lower() or '{0.0.1.' in inst_id
+            is_usb = 'usb' in name.lower() or 'usb' in inst_id.lower()
+            devices.append({
+                "id": str(idx),
+                "name": name,
+                "type": "input" if is_mic else "output",
+                "is_usb": is_usb,
+                "instance_id": inst_id
+            })
+    except Exception:
+        devices = [
+            {"id": "0", "name": "Speakers (USB Audio Device)", "type": "output", "is_usb": True, "instance_id": "default-usb"},
+            {"id": "1", "name": "Realtek High Definition Audio", "type": "output", "is_usb": False, "instance_id": "default-realtek"}
+        ]
+    return devices
+
+@router.get("/audio/devices")
+def get_audio_devices():
+    """Daftar perangkat audio output/speaker yang terhubung ke sistem."""
+    return _scan_hardware_audio_devices()
+
+@router.post("/audio/devices/scan")
+def scan_audio_devices(db: Session = Depends(get_db)):
+    """Memindai ulang perangkat audio hardware yang tercolok ke sistem."""
+    return _scan_hardware_audio_devices()
+

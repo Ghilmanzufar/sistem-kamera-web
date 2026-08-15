@@ -97,11 +97,11 @@ def verify_admin_auth(request: Request, credentials: HTTPAuthorizationCredential
     payload = decode_and_verify_token(credentials.credentials)
     role = payload.get("r", "pengawas")
     
-    # Operator hanya diizinkan mengakses /inspection-logs, /logout, dan /cameras
+    # Operator hanya diizinkan mengakses /inspection-logs, /logout, /cameras, dan /audio/devices
     if role == "operator":
         path = request.url.path
-        allowed_operator_paths = ("/inspection-logs", "/logout", "/cameras", "/cameras/scan")
-        is_allowed = any(path.endswith(p) or "/cameras/" in path for p in allowed_operator_paths)
+        allowed_operator_paths = ("/inspection-logs", "/logout", "/cameras", "/cameras/scan", "/audio/devices", "/audio/devices/scan")
+        is_allowed = any(path.endswith(p) or "/cameras/" in path or "/audio/" in path for p in allowed_operator_paths)
         if not is_allowed:
             raise HTTPException(status_code=403, detail="Akses ditolak. Peran Operator tidak memiliki izin untuk fitur administratif ini.")
             
