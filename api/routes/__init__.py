@@ -29,7 +29,6 @@ admin_protected_router.include_router(model_router) # /models, /models/{part_no}
 admin_protected_router.include_router(user_router) # /users
 admin_protected_router.include_router(camera_router) # /cameras, /cameras/scan, /cameras/{id}/*
 admin_protected_router.include_router(sison_config_router) # /sison-config, /sison-test-ping
-admin_protected_router.include_router(audio_router) # /audio/config, /audio/upload, /audio/presets
 
 __all__ = [
     "sison_inbound_router",
