@@ -1366,7 +1366,7 @@ export default function OperatorInspection() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 <button
                   type="button"
-                  onClick={() => soundManager.testSound('ok', soundManager.config.ok_sound_type, soundManager.config.ok_custom_url)}
+                  onClick={() => soundManager.testSound('ok')}
                   className="py-3 px-3 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-emerald-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">
@@ -1378,7 +1378,7 @@ export default function OperatorInspection() {
 
                 <button
                   type="button"
-                  onClick={() => soundManager.testSound('flip', soundManager.config.flip_sound_type, soundManager.config.flip_custom_url)}
+                  onClick={() => soundManager.testSound('flip')}
                   className="py-3 px-3 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-teal-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">
@@ -1390,7 +1390,7 @@ export default function OperatorInspection() {
 
                 <button
                   type="button"
-                  onClick={() => soundManager.testSound('ng', soundManager.config.ng_sound_type, soundManager.config.ng_custom_url)}
+                  onClick={() => soundManager.testSound('ng')}
                   className="py-3 px-3 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-rose-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">
@@ -1402,7 +1402,7 @@ export default function OperatorInspection() {
 
                 <button
                   type="button"
-                  onClick={() => soundManager.testSound('finish', soundManager.config.finish_sound_type, soundManager.config.finish_custom_url)}
+                  onClick={() => soundManager.testSound('finish')}
                   className="py-3 px-3 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border-2 border-indigo-500/50 text-indigo-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-indigo-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">

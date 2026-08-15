@@ -7,18 +7,40 @@ def seed_default_audio_config():
     """Seeding konfigurasi audio default jika belum ada di database."""
     try:
         with SessionLocal() as db:
-            if db.query(AudioConfig).count() == 0:
+            cfg = db.query(AudioConfig).first()
+            if not cfg:
                 default_audio = AudioConfig(
                     is_enabled=True,
                     volume=80,
-                    ok_sound_type="chime",
-                    flip_sound_type="beep",
-                    ng_sound_type="siren",
-                    finish_sound_type="fanfare"
+                    ok_custom_url="/uploads/audio/default_ok.mp3",
+                    flip_custom_url="/uploads/audio/default_flip.mp3",
+                    ng_custom_url="/uploads/audio/default_ng.mp3",
+                    finish_custom_url="/uploads/audio/default_finish.mp3",
+                    ok_sound_type="custom",
+                    flip_sound_type="custom",
+                    ng_sound_type="custom",
+                    finish_sound_type="custom"
                 )
                 db.add(default_audio)
                 db.commit()
-                print("[SYSTEM] Default audio configuration seeded (volume: 80%, OK: chime, Flip: beep, NG: siren, Finish: fanfare).")
+                print("[SYSTEM] Default audio configuration seeded with AI generated voices.")
+            else:
+                # Update null or empty URLs with default AI audio
+                changed = False
+                if not cfg.ok_custom_url:
+                    cfg.ok_custom_url = "/uploads/audio/default_ok.mp3"
+                    changed = True
+                if not cfg.flip_custom_url:
+                    cfg.flip_custom_url = "/uploads/audio/default_flip.mp3"
+                    changed = True
+                if not cfg.ng_custom_url:
+                    cfg.ng_custom_url = "/uploads/audio/default_ng.mp3"
+                    changed = True
+                if not cfg.finish_custom_url:
+                    cfg.finish_custom_url = "/uploads/audio/default_finish.mp3"
+                    changed = True
+                if changed:
+                    db.commit()
     except Exception as e:
         print(f"[WARN] Auto-seed audio config: {e}")
 

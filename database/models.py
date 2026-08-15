@@ -74,14 +74,15 @@ class AudioConfig(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     is_enabled = Column(Boolean, default=True)
     volume = Column(Integer, default=80)  # 0 - 100
-    ok_sound_type = Column(String, default="chime")  # 'chime', 'bell', 'voice_id', 'custom'
-    ok_custom_url = Column(String, nullable=True)
-    flip_sound_type = Column(String, default="beep")  # 'beep', 'ding', 'voice_id', 'custom'
-    flip_custom_url = Column(String, nullable=True)
-    ng_sound_type = Column(String, default="siren")  # 'siren', 'buzzer', 'alarm', 'voice_id', 'custom'
-    ng_custom_url = Column(String, nullable=True)
-    finish_sound_type = Column(String, default="fanfare")  # 'fanfare', 'chime_finish', 'voice_id', 'custom'
-    finish_custom_url = Column(String, nullable=True)
+    ok_custom_url = Column(String, default="/uploads/audio/default_ok.mp3")
+    flip_custom_url = Column(String, default="/uploads/audio/default_flip.mp3")
+    ng_custom_url = Column(String, default="/uploads/audio/default_ng.mp3")
+    finish_custom_url = Column(String, default="/uploads/audio/default_finish.mp3")
+    # Legacy type fields (optional compatibility)
+    ok_sound_type = Column(String, default="custom")
+    flip_sound_type = Column(String, default="custom")
+    ng_sound_type = Column(String, default="custom")
+    finish_sound_type = Column(String, default="custom")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

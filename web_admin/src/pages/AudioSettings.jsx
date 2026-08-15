@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Volume2, VolumeX, Music, Bell, ShieldAlert, Upload, 
-  Play, Pause, Square, Save, RefreshCw, Check, Radio, FileAudio, 
+  Play, Pause, Square, Save, RefreshCw, Check, FileAudio, 
   HelpCircle, Mic, Sparkles, Sliders, Download, Layers, Bot, 
   Zap, Copy, RotateCcw, SlidersHorizontal, ArrowRight, CheckCircle2,
-  Trophy, Award, Flag
+  Trophy, Award, Flag, ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -72,17 +72,13 @@ export default function AudioSettings() {
   const [saving, setSaving] = useState(false);
   const [uploadingCategory, setUploadingCategory] = useState(null);
 
-  // Form State 4 Konfigurasi Nada Inspeksi: OK, Flip, NG, Finish
+  // Form State 4 URL Suara Notifikasi (Hanya AI & Upload File)
   const [isEnabled, setIsEnabled] = useState(true);
   const [volume, setVolume] = useState(80);
-  const [okSoundType, setOkSoundType] = useState('chime');
-  const [okCustomUrl, setOkCustomUrl] = useState('');
-  const [flipSoundType, setFlipSoundType] = useState('beep');
-  const [flipCustomUrl, setFlipCustomUrl] = useState('');
-  const [ngSoundType, setNgSoundType] = useState('siren');
-  const [ngCustomUrl, setNgCustomUrl] = useState('');
-  const [finishSoundType, setFinishSoundType] = useState('fanfare');
-  const [finishCustomUrl, setFinishCustomUrl] = useState('');
+  const [okCustomUrl, setOkCustomUrl] = useState('/uploads/audio/default_ok.mp3');
+  const [flipCustomUrl, setFlipCustomUrl] = useState('/uploads/audio/default_flip.mp3');
+  const [ngCustomUrl, setNgCustomUrl] = useState('/uploads/audio/default_ng.mp3');
+  const [finishCustomUrl, setFinishCustomUrl] = useState('/uploads/audio/default_finish.mp3');
 
   // AI Voice Studio State
   const [ttsText, setTtsText] = useState(
@@ -103,36 +99,6 @@ export default function AudioSettings() {
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
   const [previewPlaybackRate, setPreviewPlaybackRate] = useState(1.0);
   const previewAudioRef = useRef(null);
-
-  // Presets Data 4 Nada
-  const [presets, setPresets] = useState({
-    ok_presets: [
-      { id: 'chime', name: 'Harmonic Chime (Default)', desc: 'Nada mayor 4-kord lembut & elegan' },
-      { id: 'bell', name: 'Success Bell', desc: 'Lonceng cerah tanda part sukses' },
-      { id: 'marimba', name: 'Marimba Melody', desc: 'Melodi perkusi cepat & jelas' },
-      { id: 'voice_id', name: 'Suara Bahasa Indonesia', desc: "Ucapan: 'Part O.K., Silakan Lanjut'" },
-      { id: 'custom', name: 'File Audio Kustom', desc: 'Gunakan file audio upload / generate AI' }
-    ],
-    flip_presets: [
-      { id: 'beep', name: 'Dual Beep (Default)', desc: 'Nada notifikasi dua ketukan' },
-      { id: 'ding', name: 'Bright Ding', desc: 'Nada pemberitahuan balik sisi part' },
-      { id: 'voice_id', name: 'Suara Bahasa Indonesia', desc: "Ucapan: 'Silakan balik part ke sisi belakang'" },
-      { id: 'custom', name: 'File Audio Kustom', desc: 'Gunakan file audio upload / generate AI' }
-    ],
-    ng_presets: [
-      { id: 'siren', name: 'Factory Siren (Default)', desc: 'Sirene darurat industri kontinu' },
-      { id: 'buzzer', name: 'Industrial Buzzer', desc: 'Buzzer frekuensi tinggi peringatan cacat' },
-      { id: 'alarm', name: 'High Alert Pulse', desc: 'Alarm denyut cepat berulang' },
-      { id: 'voice_id', name: 'Suara Bahasa Indonesia', desc: "Ucapan: 'Peringatan, cacat terdeteksi!'" },
-      { id: 'custom', name: 'File Audio Kustom', desc: 'Gunakan file audio upload / generate AI' }
-    ],
-    finish_presets: [
-      { id: 'fanfare', name: 'Harmonic Fanfare (Default)', desc: 'Melodi akor kemenangan selesai 1 nomor transaksi/batch' },
-      { id: 'arpeggio', name: 'Success Arpeggio', desc: 'Rangkaian nada naik 6-akor cerah bertingkat' },
-      { id: 'voice_id', name: 'Suara Bahasa Indonesia', desc: "Ucapan: 'Selamat, seluruh target part telah selesai diinspeksi'" },
-      { id: 'custom', name: 'File Audio Kustom', desc: 'Gunakan file audio upload / generate AI' }
-    ]
-  });
 
   // TTS Catalog from Backend
   const [ttsCatalog, setTtsCatalog] = useState({
@@ -191,14 +157,10 @@ export default function AudioSettings() {
         const data = cfgRes.value.data;
         setIsEnabled(data.is_enabled ?? true);
         setVolume(data.volume ?? 80);
-        setOkSoundType(data.ok_sound_type || 'chime');
-        setOkCustomUrl(data.ok_custom_url || '');
-        setFlipSoundType(data.flip_sound_type || 'beep');
-        setFlipCustomUrl(data.flip_custom_url || '');
-        setNgSoundType(data.ng_sound_type || 'siren');
-        setNgCustomUrl(data.ng_custom_url || '');
-        setFinishSoundType(data.finish_sound_type || 'fanfare');
-        setFinishCustomUrl(data.finish_custom_url || '');
+        setOkCustomUrl(data.ok_custom_url || '/uploads/audio/default_ok.mp3');
+        setFlipCustomUrl(data.flip_custom_url || '/uploads/audio/default_flip.mp3');
+        setNgCustomUrl(data.ng_custom_url || '/uploads/audio/default_ng.mp3');
+        setFinishCustomUrl(data.finish_custom_url || '/uploads/audio/default_finish.mp3');
         soundManager.syncConfig(data);
       }
 
@@ -222,7 +184,7 @@ export default function AudioSettings() {
     };
   }, []);
 
-  // Text analysis metrics live yang otomatis merespons slider kecepatan tempo
+  // Text analysis metrics live
   const textWords = ttsText.trim() ? ttsText.trim().split(/\s+/).length : 0;
   const textChars = ttsText.length;
   const speedMultiplier = Math.max(0.4, 1 + (customRateOffset / 100));
@@ -235,6 +197,19 @@ export default function AudioSettings() {
     if (template.voice) setTtsVoice(template.voice);
     if (template.vibe) setTtsVibe(template.vibe);
     toast.success(`Template '${template.title}' dimuat!`, { icon: '📝' });
+  };
+
+  // Switch to Studio for a specific event card
+  const handleGoToStudioFor = (category) => {
+    const matchedTemplate = ttsCatalog.templates.find(t => t.category === category);
+    if (matchedTemplate) {
+      setTtsText(matchedTemplate.text);
+      setTtsCategory(matchedTemplate.category);
+      if (matchedTemplate.voice) setTtsVoice(matchedTemplate.voice);
+      if (matchedTemplate.vibe) setTtsVibe(matchedTemplate.vibe);
+    }
+    setActiveTab('studio');
+    toast.success(`Membuka AI Studio untuk kategori ${category.toUpperCase()}...`, { icon: '🎙️' });
   };
 
   // Generate TTS Handler
@@ -348,35 +323,31 @@ export default function AudioSettings() {
       const payload = {
         is_enabled: isEnabled,
         volume: parseInt(volume),
-        ok_sound_type: targetCategory === 'ok' ? 'custom' : okSoundType,
-        ok_custom_url: targetCategory === 'ok' ? generatedAudio.url : (okCustomUrl || null),
-        flip_sound_type: targetCategory === 'flip' ? 'custom' : flipSoundType,
-        flip_custom_url: targetCategory === 'flip' ? generatedAudio.url : (flipCustomUrl || null),
-        ng_sound_type: targetCategory === 'ng' ? 'custom' : ngSoundType,
-        ng_custom_url: targetCategory === 'ng' ? generatedAudio.url : (ngCustomUrl || null),
-        finish_sound_type: targetCategory === 'finish' ? 'custom' : finishSoundType,
-        finish_custom_url: targetCategory === 'finish' ? generatedAudio.url : (finishCustomUrl || null)
+        ok_sound_type: 'custom',
+        ok_custom_url: targetCategory === 'ok' ? generatedAudio.url : okCustomUrl,
+        flip_sound_type: 'custom',
+        flip_custom_url: targetCategory === 'flip' ? generatedAudio.url : flipCustomUrl,
+        ng_sound_type: 'custom',
+        ng_custom_url: targetCategory === 'ng' ? generatedAudio.url : ngCustomUrl,
+        finish_sound_type: 'custom',
+        finish_custom_url: targetCategory === 'finish' ? generatedAudio.url : finishCustomUrl
       };
 
       const res = await api.put('/api/admin/audio/config', payload);
       soundManager.syncConfig(res.data);
 
       if (targetCategory === 'ok') {
-        setOkSoundType('custom');
         setOkCustomUrl(generatedAudio.url);
-        toast.success('Suara AI berhasil dijadikan nada Part OK!', { icon: '✅' });
+        toast.success('Suara AI berhasil dijadikan suara Part OK!', { icon: '✅' });
       } else if (targetCategory === 'flip') {
-        setFlipSoundType('custom');
         setFlipCustomUrl(generatedAudio.url);
-        toast.success('Suara AI berhasil dijadikan nada Balik Part!', { icon: '🔄' });
+        toast.success('Suara AI berhasil dijadikan suara Balik Part!', { icon: '🔄' });
       } else if (targetCategory === 'ng') {
-        setNgSoundType('custom');
         setNgCustomUrl(generatedAudio.url);
-        toast.success('Suara AI berhasil dijadikan nada Alarm NG!', { icon: '🚨' });
+        toast.success('Suara AI berhasil dijadikan suara Alarm NG!', { icon: '🚨' });
       } else if (targetCategory === 'finish') {
-        setFinishSoundType('custom');
         setFinishCustomUrl(generatedAudio.url);
-        toast.success('Suara AI berhasil dijadikan nada Selesai Batch!', { icon: '🏁' });
+        toast.success('Suara AI berhasil dijadikan suara Selesai Batch!', { icon: '🏁' });
       }
     } catch (err) {
       toast.error('Gagal menerapkan audio ke konfigurasi notifikasi');
@@ -391,19 +362,19 @@ export default function AudioSettings() {
       const payload = {
         is_enabled: isEnabled,
         volume: parseInt(volume),
-        ok_sound_type: okSoundType,
-        ok_custom_url: okCustomUrl || null,
-        flip_sound_type: flipSoundType,
-        flip_custom_url: flipCustomUrl || null,
-        ng_sound_type: ngSoundType,
-        ng_custom_url: ngCustomUrl || null,
-        finish_sound_type: finishSoundType,
-        finish_custom_url: finishCustomUrl || null
+        ok_sound_type: 'custom',
+        ok_custom_url: okCustomUrl,
+        flip_sound_type: 'custom',
+        flip_custom_url: flipCustomUrl,
+        ng_sound_type: 'custom',
+        ng_custom_url: ngCustomUrl,
+        finish_sound_type: 'custom',
+        finish_custom_url: finishCustomUrl
       };
 
       const res = await api.put('/api/admin/audio/config', payload);
       soundManager.syncConfig(res.data);
-      toast.success('4 Pengaturan nada audio berhasil disimpan & disinkronkan!');
+      toast.success('4 Pengaturan suara inspeksi berhasil disimpan & disinkronkan!');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal menyimpan konfigurasi audio');
     } finally {
@@ -426,19 +397,32 @@ export default function AudioSettings() {
       });
 
       if (category === 'ok') {
-        setOkSoundType('custom');
         setOkCustomUrl(res.data.url);
       } else if (category === 'flip') {
-        setFlipSoundType('custom');
         setFlipCustomUrl(res.data.url);
       } else if (category === 'ng') {
-        setNgSoundType('custom');
         setNgCustomUrl(res.data.url);
       } else if (category === 'finish') {
-        setFinishSoundType('custom');
         setFinishCustomUrl(res.data.url);
       }
-      toast.success(`File audio '${file.name}' berhasil diunggah!`);
+
+      // Auto save after upload
+      const payload = {
+        is_enabled: isEnabled,
+        volume: parseInt(volume),
+        ok_sound_type: 'custom',
+        ok_custom_url: category === 'ok' ? res.data.url : okCustomUrl,
+        flip_sound_type: 'custom',
+        flip_custom_url: category === 'flip' ? res.data.url : flipCustomUrl,
+        ng_sound_type: 'custom',
+        ng_custom_url: category === 'ng' ? res.data.url : ngCustomUrl,
+        finish_sound_type: 'custom',
+        finish_custom_url: category === 'finish' ? res.data.url : finishCustomUrl
+      };
+      const saveRes = await api.put('/api/admin/audio/config', payload);
+      soundManager.syncConfig(saveRes.data);
+
+      toast.success(`File audio '${file.name}' berhasil diunggah dan terpasang!`);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal mengunggah file audio');
     } finally {
@@ -447,16 +431,16 @@ export default function AudioSettings() {
     }
   };
 
-  const handleTest = (category, type, customUrl) => {
-    soundManager.testSound(category, type, customUrl);
+  const handleTest = (category, customUrl) => {
+    soundManager.testSound(category, customUrl);
   };
 
   return (
     <div className="space-y-6 font-sans">
       <PageHeader
-        title="Audio Studio &"
-        highlightTitle="Pengaturan Suara"
-        subtitle="Hasilkan narasi audio AI khas Bahasa Indonesia atau kelola 4 nada notifikasi inspeksi operator (OK, Balik Part, Alarm NG, Selesai Batch)"
+        title="Studio Audio AI &"
+        highlightTitle="Kelola Suara Inspeksi"
+        subtitle="Hasilkan narasi audio AI berkualitas tinggi khas Bahasa Indonesia atau pasang file audio kustom untuk 4 event inspeksi (OK, Balik Part, Alarm NG, Selesai Batch)"
         actionButton={
           activeTab === 'config' ? (
             <button
@@ -466,7 +450,7 @@ export default function AudioSettings() {
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-50 hover:scale-105 active:scale-95"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? 'Menyimpan...' : 'Simpan 4 Nada'}</span>
+              <span>{saving ? 'Menyimpan...' : 'Simpan 4 Suara'}</span>
             </button>
           ) : null
         }
@@ -500,7 +484,7 @@ export default function AudioSettings() {
           }`}
         >
           <Sliders className="w-4 h-4 text-blue-300" />
-          <span>🎛️ Konfigurasi 4 Nada Inspeksi</span>
+          <span>🎛️ Konfigurasi 4 Suara Inspeksi</span>
         </button>
       </div>
 
@@ -894,7 +878,7 @@ export default function AudioSettings() {
                     className="py-3 px-4 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
-                    <span>Jadikan Nada Part OK</span>
+                    <span>Jadikan Suara Part OK</span>
                   </button>
 
                   <button
@@ -903,7 +887,7 @@ export default function AudioSettings() {
                     className="py-3 px-4 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <RotateCcw className="w-4 h-4 text-teal-400" />
-                    <span>Jadikan Nada Balik Part</span>
+                    <span>Jadikan Suara Balik Part</span>
                   </button>
 
                   <button
@@ -912,7 +896,7 @@ export default function AudioSettings() {
                     className="py-3 px-4 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <ShieldAlert className="w-4 h-4 text-rose-400" />
-                    <span>Jadikan Nada Alarm NG</span>
+                    <span>Jadikan Suara Alarm NG</span>
                   </button>
 
                   <button
@@ -921,7 +905,7 @@ export default function AudioSettings() {
                     className="py-3 px-4 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border-2 border-indigo-500/50 text-indigo-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <Trophy className="w-4 h-4 text-amber-400" />
-                    <span>Jadikan Nada Selesai Batch</span>
+                    <span>Jadikan Suara Selesai Batch</span>
                   </button>
                 </div>
               </div>
@@ -933,7 +917,7 @@ export default function AudioSettings() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: KONFIGURASI 4 NADA & SPEAKER KIOSK OPERATOR                        */}
+      {/* TAB 2: KONFIGURASI 4 SUARA INSPEKSI (AI & UPLOAD FILE ONLY)               */}
       {/* ========================================================================= */}
       {activeTab === 'config' && (
         <div className="space-y-6 animate-fadeIn">
@@ -947,7 +931,7 @@ export default function AudioSettings() {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-black text-white">Status Master Audio & Volume</h2>
-                  <p className="text-xs text-slate-400">Pengaturan global output suara ke seluruh line workstation operator (4 Event Suara Aktif)</p>
+                  <p className="text-xs text-slate-400">Pengaturan global output suara ke seluruh line workstation operator (Murni Suara AI & File Upload)</p>
                 </div>
               </div>
 
@@ -1006,12 +990,12 @@ export default function AudioSettings() {
             </div>
           </div>
 
-          {/* Grid 4 Kartu Konfigurasi Nada Event: OK, Flip, NG, Finish */}
+          {/* Grid 4 Kartu Suara Event: OK, Flip, NG, Finish */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             
             {/* 1. KARTU SUARA PART OK */}
-            <div className="glass-card p-5 border-2 border-emerald-500/30 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
-              <div className="space-y-3.5">
+            <div className="glass-card p-5 border-2 border-emerald-500/40 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
@@ -1024,84 +1008,64 @@ export default function AudioSettings() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleTest('ok', okSoundType, okCustomUrl)}
-                    className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
-                    title="Dengarkan Contoh Suara"
+                    onClick={() => handleTest('ok', okCustomUrl)}
+                    className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer hover:scale-105"
+                    title="Dengarkan File Audio"
                   >
                     <Play className="w-3 h-3" />
                     <span>Test</span>
                   </button>
                 </div>
 
-                {/* Pilihan Preset OK */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
-                    Pilih Preset Nada:
-                  </label>
-                  <div className="space-y-1.5">
-                    {presets.ok_presets.map((preset) => (
-                      <label
-                        key={preset.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          okSoundType === preset.id
-                            ? 'bg-emerald-950/70 border-emerald-500 text-white shadow-sm'
-                            : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="ok_sound_preset"
-                          value={preset.id}
-                          checked={okSoundType === preset.id}
-                          onChange={(e) => setOkSoundType(e.target.value)}
-                          className="mt-0.5 text-emerald-600 focus:ring-0 cursor-pointer"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
-                        </div>
-                      </label>
-                    ))}
+                {/* Status File Aktif */}
+                <div className="p-3 bg-slate-950/90 rounded-2xl border border-emerald-500/30 space-y-2 shadow-inner">
+                  <div className="text-[11px] font-bold text-emerald-300 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <FileAudio className="w-3.5 h-3.5" />
+                      <span>File Suara Aktif:</span>
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-black">
+                      AI / AUDIO
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 p-2 rounded-xl border border-white/10">
+                    {okCustomUrl || '/uploads/audio/default_ok.mp3'}
                   </div>
                 </div>
 
-                {/* Custom URL Display */}
-                {okSoundType === 'custom' && (
-                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-emerald-500/40 space-y-1.5">
-                    <div className="text-[11px] font-bold text-emerald-300 flex items-center gap-1">
-                      <FileAudio className="w-3 h-3" />
-                      <span>File Terpasang:</span>
-                    </div>
-                    {okCustomUrl ? (
-                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
-                        {okCustomUrl}
-                      </div>
-                    ) : (
-                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
-                    )}
-                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
-                      <Upload className="w-3 h-3" />
-                      <span>{uploadingCategory === 'ok' ? 'Mengunggah...' : 'Upload File Audio'}</span>
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => handleFileUpload('ok', e)}
-                        disabled={uploadingCategory === 'ok'}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                )}
+                {/* Tombol Opsi: AI Studio & Upload */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleGoToStudioFor('ok')}
+                    className="w-full py-2 px-3 rounded-xl bg-sky-950/80 hover:bg-sky-900 border border-sky-400/50 text-sky-200 font-extrabold text-xs transition-all shadow flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+                  >
+                    <Bot className="w-3.5 h-3.5 text-sky-300" />
+                    <span>Buat Baru di AI Studio</span>
+                  </button>
+
+                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all border border-white/10 hover:scale-[1.02]">
+                    <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{uploadingCategory === 'ok' ? 'Mengunggah...' : 'Upload File Sendiri'}</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => handleFileUpload('ok', e)}
+                      disabled={uploadingCategory === 'ok'}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
             {/* 2. KARTU SUARA BALIK PART (FRONT OK) */}
-            <div className="glass-card p-5 border-2 border-teal-500/30 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
-              <div className="space-y-3.5">
+            <div className="glass-card p-5 border-2 border-teal-500/40 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-400">
-                      <Bell className="w-4 h-4" />
+                      <RotateCcw className="w-4 h-4" />
                     </div>
                     <div>
                       <h3 className="text-sm font-black text-white">2. Suara Balik Part</h3>
@@ -1110,80 +1074,60 @@ export default function AudioSettings() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleTest('flip', flipSoundType, flipCustomUrl)}
-                    className="px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
-                    title="Dengarkan Contoh Suara"
+                    onClick={() => handleTest('flip', flipCustomUrl)}
+                    className="px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer hover:scale-105"
+                    title="Dengarkan File Audio"
                   >
                     <Play className="w-3 h-3" />
                     <span>Test</span>
                   </button>
                 </div>
 
-                {/* Pilihan Preset Flip */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
-                    Pilih Preset Nada:
-                  </label>
-                  <div className="space-y-1.5">
-                    {presets.flip_presets.map((preset) => (
-                      <label
-                        key={preset.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          flipSoundType === preset.id
-                            ? 'bg-teal-950/70 border-teal-500 text-white shadow-sm'
-                            : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="flip_sound_preset"
-                          value={preset.id}
-                          checked={flipSoundType === preset.id}
-                          onChange={(e) => setFlipSoundType(e.target.value)}
-                          className="mt-0.5 text-teal-600 focus:ring-0 cursor-pointer"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
-                        </div>
-                      </label>
-                    ))}
+                {/* Status File Aktif */}
+                <div className="p-3 bg-slate-950/90 rounded-2xl border border-teal-500/30 space-y-2 shadow-inner">
+                  <div className="text-[11px] font-bold text-teal-300 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <FileAudio className="w-3.5 h-3.5" />
+                      <span>File Suara Aktif:</span>
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 font-black">
+                      AI / AUDIO
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 p-2 rounded-xl border border-white/10">
+                    {flipCustomUrl || '/uploads/audio/default_flip.mp3'}
                   </div>
                 </div>
 
-                {/* Custom URL Display */}
-                {flipSoundType === 'custom' && (
-                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-teal-500/40 space-y-1.5">
-                    <div className="text-[11px] font-bold text-teal-300 flex items-center gap-1">
-                      <FileAudio className="w-3 h-3" />
-                      <span>File Terpasang:</span>
-                    </div>
-                    {flipCustomUrl ? (
-                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
-                        {flipCustomUrl}
-                      </div>
-                    ) : (
-                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
-                    )}
-                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-teal-700 hover:bg-teal-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
-                      <Upload className="w-3 h-3" />
-                      <span>{uploadingCategory === 'flip' ? 'Mengunggah...' : 'Upload File Audio'}</span>
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => handleFileUpload('flip', e)}
-                        disabled={uploadingCategory === 'flip'}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                )}
+                {/* Tombol Opsi: AI Studio & Upload */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleGoToStudioFor('flip')}
+                    className="w-full py-2 px-3 rounded-xl bg-sky-950/80 hover:bg-sky-900 border border-sky-400/50 text-sky-200 font-extrabold text-xs transition-all shadow flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+                  >
+                    <Bot className="w-3.5 h-3.5 text-sky-300" />
+                    <span>Buat Baru di AI Studio</span>
+                  </button>
+
+                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all border border-white/10 hover:scale-[1.02]">
+                    <Upload className="w-3.5 h-3.5 text-teal-400" />
+                    <span>{uploadingCategory === 'flip' ? 'Mengunggah...' : 'Upload File Sendiri'}</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => handleFileUpload('flip', e)}
+                      disabled={uploadingCategory === 'flip'}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
             {/* 3. KARTU SUARA ALARM CACAT (NG) */}
             <div className="glass-card p-5 border-2 border-rose-500/40 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shadow-md">
@@ -1196,80 +1140,60 @@ export default function AudioSettings() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleTest('ng', ngSoundType, ngCustomUrl)}
-                    className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
-                    title="Dengarkan Contoh Suara Alarm (3 detik)"
+                    onClick={() => handleTest('ng', ngCustomUrl)}
+                    className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer hover:scale-105"
+                    title="Dengarkan File Alarm (4 Detik)"
                   >
                     <Play className="w-3 h-3" />
                     <span>Test</span>
                   </button>
                 </div>
 
-                {/* Pilihan Preset NG */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
-                    Pilih Jenis Alarm:
-                  </label>
-                  <div className="space-y-1.5">
-                    {presets.ng_presets.map((preset) => (
-                      <label
-                        key={preset.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          ngSoundType === preset.id
-                            ? 'bg-rose-950/80 border-rose-500 text-white shadow-sm'
-                            : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="ng_sound_preset"
-                          value={preset.id}
-                          checked={ngSoundType === preset.id}
-                          onChange={(e) => setNgSoundType(e.target.value)}
-                          className="mt-0.5 text-rose-600 focus:ring-0 cursor-pointer"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
-                        </div>
-                      </label>
-                    ))}
+                {/* Status File Aktif */}
+                <div className="p-3 bg-slate-950/90 rounded-2xl border border-rose-500/30 space-y-2 shadow-inner">
+                  <div className="text-[11px] font-bold text-rose-300 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <FileAudio className="w-3.5 h-3.5" />
+                      <span>File Suara Aktif:</span>
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-black">
+                      AI / AUDIO
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 p-2 rounded-xl border border-white/10">
+                    {ngCustomUrl || '/uploads/audio/default_ng.mp3'}
                   </div>
                 </div>
 
-                {/* Custom URL Display */}
-                {ngSoundType === 'custom' && (
-                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-rose-500/40 space-y-1.5">
-                    <div className="text-[11px] font-bold text-rose-300 flex items-center gap-1">
-                      <FileAudio className="w-3 h-3" />
-                      <span>File Terpasang:</span>
-                    </div>
-                    {ngCustomUrl ? (
-                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
-                        {ngCustomUrl}
-                      </div>
-                    ) : (
-                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
-                    )}
-                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
-                      <Upload className="w-3 h-3" />
-                      <span>{uploadingCategory === 'ng' ? 'Mengunggah...' : 'Upload File Audio'}</span>
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => handleFileUpload('ng', e)}
-                        disabled={uploadingCategory === 'ng'}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                )}
+                {/* Tombol Opsi: AI Studio & Upload */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleGoToStudioFor('ng')}
+                    className="w-full py-2 px-3 rounded-xl bg-sky-950/80 hover:bg-sky-900 border border-sky-400/50 text-sky-200 font-extrabold text-xs transition-all shadow flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+                  >
+                    <Bot className="w-3.5 h-3.5 text-sky-300" />
+                    <span>Buat Baru di AI Studio</span>
+                  </button>
+
+                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all border border-white/10 hover:scale-[1.02]">
+                    <Upload className="w-3.5 h-3.5 text-rose-400" />
+                    <span>{uploadingCategory === 'ng' ? 'Mengunggah...' : 'Upload File Sendiri'}</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => handleFileUpload('ng', e)}
+                      disabled={uploadingCategory === 'ng'}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
-            {/* 4. KARTU SUARA SELESAI BATCH / TARGET TERCAPAI (FINISH) */}
+            {/* 4. KARTU SUARA SELESAI BATCH (FINISH) */}
             <div className="glass-card p-5 border-2 border-indigo-500/40 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-amber-400 shadow-md">
@@ -1282,84 +1206,64 @@ export default function AudioSettings() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleTest('finish', finishSoundType, finishCustomUrl)}
-                    className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
-                    title="Dengarkan Contoh Suara Selesai Batch"
+                    onClick={() => handleTest('finish', finishCustomUrl)}
+                    className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer hover:scale-105"
+                    title="Dengarkan File Audio"
                   >
                     <Play className="w-3 h-3" />
                     <span>Test</span>
                   </button>
                 </div>
 
-                {/* Pilihan Preset Finish */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
-                    Pilih Preset Nada:
-                  </label>
-                  <div className="space-y-1.5">
-                    {presets.finish_presets.map((preset) => (
-                      <label
-                        key={preset.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          finishSoundType === preset.id
-                            ? 'bg-indigo-950/80 border-indigo-500 text-white shadow-sm'
-                            : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="finish_sound_preset"
-                          value={preset.id}
-                          checked={finishSoundType === preset.id}
-                          onChange={(e) => setFinishSoundType(e.target.value)}
-                          className="mt-0.5 text-indigo-600 focus:ring-0 cursor-pointer"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
-                        </div>
-                      </label>
-                    ))}
+                {/* Status File Aktif */}
+                <div className="p-3 bg-slate-950/90 rounded-2xl border border-indigo-500/30 space-y-2 shadow-inner">
+                  <div className="text-[11px] font-bold text-indigo-300 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <FileAudio className="w-3.5 h-3.5" />
+                      <span>File Suara Aktif:</span>
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-black">
+                      AI / AUDIO
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 p-2 rounded-xl border border-white/10">
+                    {finishCustomUrl || '/uploads/audio/default_finish.mp3'}
                   </div>
                 </div>
 
-                {/* Custom URL Display */}
-                {finishSoundType === 'custom' && (
-                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-indigo-500/40 space-y-1.5">
-                    <div className="text-[11px] font-bold text-indigo-300 flex items-center gap-1">
-                      <FileAudio className="w-3 h-3" />
-                      <span>File Terpasang:</span>
-                    </div>
-                    {finishCustomUrl ? (
-                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
-                        {finishCustomUrl}
-                      </div>
-                    ) : (
-                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
-                    )}
-                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
-                      <Upload className="w-3 h-3" />
-                      <span>{uploadingCategory === 'finish' ? 'Mengunggah...' : 'Upload File Audio'}</span>
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => handleFileUpload('finish', e)}
-                        disabled={uploadingCategory === 'finish'}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                )}
+                {/* Tombol Opsi: AI Studio & Upload */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleGoToStudioFor('finish')}
+                    className="w-full py-2 px-3 rounded-xl bg-sky-950/80 hover:bg-sky-900 border border-sky-400/50 text-sky-200 font-extrabold text-xs transition-all shadow flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+                  >
+                    <Bot className="w-3.5 h-3.5 text-sky-300" />
+                    <span>Buat Baru di AI Studio</span>
+                  </button>
+
+                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all border border-white/10 hover:scale-[1.02]">
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{uploadingCategory === 'finish' ? 'Mengunggah...' : 'Upload File Sendiri'}</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => handleFileUpload('finish', e)}
+                      disabled={uploadingCategory === 'finish'}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
           </div>
 
-          {/* Info Hardware Box */}
+          {/* Info Box AI Audio System */}
           <div className="p-4 sm:p-5 rounded-2xl bg-sky-950/40 border border-sky-500/30 flex items-start gap-3.5">
             <Sparkles className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
             <div className="text-xs text-slate-300 leading-relaxed">
-              <strong className="text-sky-300 font-bold">Koneksi Hardware Speaker USB:</strong> Sistem suara notifikasi otomatis diarahkan ke speaker USB atau perangkat audio default Windows. Pastikan speaker tercolok dan volume pada kontrol fisik speaker dalam keadaan menyala.
+              <strong className="text-sky-300 font-bold">Sistem Audio Murni AI & File Upload:</strong> Sistem kini menggunakan file audio MP3/WAV beresolusi tinggi hasil generasi AI Voice Studio atau file upload Anda. Suara bawaan sintetis telah dinonaktifkan sehingga seluruh instruksi dan nada terdengar natural dengan artikulasi bahasa Indonesia yang jelas.
             </div>
           </div>
         </div>
