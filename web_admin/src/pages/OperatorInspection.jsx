@@ -207,67 +207,19 @@ export default function OperatorInspection() {
 
   // Audio Devices State (Hardware USB Speaker & Browser Output Devices)
   const [audioDevices, setAudioDevices] = useState([
-    { id: 'default', name: 'Default Speaker / Audio Output Sistem', is_usb: false, type: 'output' }
+    { id: 'default', name: 'Default - Output Sistem Komputer (Otomatis)', is_default: true, type: 'output' }
   ]);
   const [scanningAudioDevices, setScanningAudioDevices] = useState(false);
 
   const fetchOrScanAudioDevices = async (isManualScan = false) => {
     setScanningAudioDevices(true);
     try {
-      // 1. Ambil dari Browser API (enumerateDevices)
+      // Ambil daftar perangkat output audio asli langsung dari browser API
       const browserDevs = await soundManager.getBrowserAudioDevices();
+      setAudioDevices(browserDevs);
       
-      // 2. Ambil dari Backend API (PowerShell / PnP Windows Audio Endpoints)
-      let backendDevs = [];
-      try {
-        const res = isManualScan 
-          ? await api.post('/api/audio/devices/scan')
-          : await api.get('/api/audio/devices');
-        if (Array.isArray(res.data)) {
-          backendDevs = res.data.filter(d => d.type === 'output');
-        }
-      } catch (err) {
-        console.warn('Backend audio devices query warning:', err);
-      }
-
-      // Gabungkan & hilangkan duplikasi
-      const combined = [];
-      const seenNames = new Set();
-
-      // Tambahkan default device
-      combined.push({
-        id: 'default',
-        name: 'Default Speaker Output Sistem',
-        is_usb: false,
-        type: 'output'
-      });
-      seenNames.add('default');
-      seenNames.add('default speaker output sistem');
-
-      browserDevs.forEach(b => {
-        const key = b.name.toLowerCase().trim();
-        if (key && !seenNames.has(key) && b.id !== 'default') {
-          seenNames.add(key);
-          combined.push(b);
-        }
-      });
-
-      backendDevs.forEach(b => {
-        const key = b.name.toLowerCase().trim();
-        if (key && !seenNames.has(key)) {
-          seenNames.add(key);
-          combined.push({
-            id: b.id || b.instance_id || b.name,
-            name: b.name,
-            is_usb: !!b.is_usb,
-            type: 'output'
-          });
-        }
-      });
-
-      setAudioDevices(combined);
       if (isManualScan) {
-        toast.success(`Berhasil mendeteksi ${combined.length} perangkat speaker!`, { icon: '🔊' });
+        toast.success(`Ditemukan ${browserDevs.length} opsi output audio!`, { icon: '🎧' });
       }
     } catch (err) {
       console.warn('Gagal memindai perangkat audio:', err);
@@ -277,10 +229,12 @@ export default function OperatorInspection() {
     }
   };
 
-  const handleSelectAudioDevice = async (device) => {
-    await soundManager.setAudioOutputDevice(device.id, device.name);
+  const handleAudioDeviceChange = async (e) => {
+    const chosenId = e.target.value;
+    const chosenDev = audioDevices.find(d => d.id === chosenId) || { id: chosenId, name: 'Audio Output' };
+    await soundManager.setAudioOutputDevice(chosenDev.id, chosenDev.name);
     soundManager.testSound('ok', 'chime');
-    toast.success(`Speaker aktif: ${device.name}`, { icon: '🔊' });
+    toast.success(`Output audio dialihkan ke: ${chosenDev.name}`, { icon: '🎧' });
   };
 
   useEffect(() => {
@@ -1265,84 +1219,58 @@ export default function OperatorInspection() {
               </button>
             </div>
 
-            {/* SECTION 1: PILIH & CARI PERANGKAT SPEAKER HARDWARE */}
+            {/* SECTION 1: PILIH & CARI PERANGKAT SPEAKER (DROPDOWN COMPACT & CLEAR) */}
             <div className="space-y-3 bg-slate-950/80 p-4 sm:p-5 rounded-2xl border border-white/10 shadow-inner">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 font-black text-xs sm:text-sm text-white uppercase tracking-wider">
+                <label htmlFor="audio-device-select" className="flex items-center gap-2 font-black text-xs sm:text-sm text-white uppercase tracking-wider">
                   <Speaker className="w-4 h-4 text-sky-400" />
-                  <span>PILIH PERANGKAT SPEAKER AKTIF:</span>
-                </div>
+                  <span>PILIH PERANGKAT SPEAKER / HEADSET:</span>
+                </label>
                 <button
                   type="button"
                   onClick={() => fetchOrScanAudioDevices(true)}
                   disabled={scanningAudioDevices}
-                  className="py-1.5 px-3 rounded-xl bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-400/40 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
-                  title="Pindai ulang perangkat speaker USB yang terpasang"
+                  className="py-1.5 px-3.5 rounded-xl bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-400/40 text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+                  title="Pindai ulang perangkat audio (Headset / USB Speaker)"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${scanningAudioDevices ? 'animate-spin' : ''}`} />
-                  <span>{scanningAudioDevices ? 'Memindai Hardware...' : '🔍 Pindai Ulang Speaker'}</span>
+                  <span>{scanningAudioDevices ? 'Memindai...' : '🔍 Pindai Ulang'}</span>
                 </button>
               </div>
 
-              {/* Grid Kartu Perangkat Speaker */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1">
-                {audioDevices.map((dev, idx) => {
-                  const isSelected = (audioState.selectedDeviceId === dev.id) || (!audioState.selectedDeviceId && dev.id === 'default');
-                  return (
-                    <div
-                      key={dev.id || idx}
-                      onClick={() => handleSelectAudioDevice(dev)}
-                      className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-2 select-none hover:scale-[1.01] active:scale-[0.99] ${
-                        isSelected
-                          ? 'border-sky-400 bg-sky-950/90 shadow-lg shadow-sky-500/25 ring-2 ring-sky-400/30'
-                          : 'border-white/10 bg-slate-900/90 hover:border-sky-500/40 hover:bg-slate-800'
-                      }`}
+              {/* Dropdown Select Box */}
+              <div className="relative">
+                <select
+                  id="audio-device-select"
+                  value={audioState.selectedDeviceId || 'default'}
+                  onChange={handleAudioDeviceChange}
+                  className="w-full py-3.5 px-4 pr-10 bg-slate-900 border-2 border-sky-500/40 focus:border-sky-400 rounded-2xl text-white font-extrabold text-xs sm:text-sm shadow-inner appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400/30 transition-all leading-normal"
+                >
+                  {audioDevices.map((dev, idx) => (
+                    <option 
+                      key={dev.id || idx} 
+                      value={dev.id}
+                      className="bg-slate-900 text-white font-bold py-2"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-sky-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'}`}>
-                            <Speaker className="w-4 h-4" />
-                          </div>
-                          <span className="font-extrabold text-xs sm:text-sm text-white truncate" title={dev.name}>
-                            {dev.name}
-                          </span>
-                        </div>
-                        {dev.is_usb && (
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-500/30 border border-indigo-400/50 text-indigo-300 text-[10px] font-black uppercase shrink-0">
-                            USB
-                          </span>
-                        )}
-                      </div>
+                      {dev.is_headset ? '🎧 ' : dev.is_usb ? '🔊 [USB] ' : '🔈 '}
+                      {dev.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-sky-400">
+                  <Sliders className="w-4 h-4" />
+                </div>
+              </div>
 
-                      <div className="flex items-center justify-between text-xs pt-1 border-t border-white/10">
-                        {isSelected ? (
-                          <span className="text-emerald-400 font-extrabold flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Speaker Aktif Digunakan</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 font-semibold">
-                            Klik untuk jadikan output suara
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAudioDevice(dev);
-                          }}
-                          className={`text-[11px] px-2.5 py-1 rounded-lg font-black transition-all ${
-                            isSelected
-                              ? 'bg-sky-500 text-slate-950 hover:bg-sky-400'
-                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                          }`}
-                        >
-                          {isSelected ? 'Terpilih' : 'Pilih'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Status Banner Output Terkoneksi */}
+              <div className="flex flex-wrap items-center justify-between gap-1 text-xs pt-1 px-1 text-slate-300">
+                <span className="flex items-center gap-1.5 font-bold text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Output Aktif: <strong className="text-white">{audioState.selectedDeviceName || 'Default Sistem'}</strong></span>
+                </span>
+                <span className="text-slate-500 text-[11px] font-medium hidden sm:inline">
+                  Pilih Headset atau Speaker lalu klik uji suara di bawah
+                </span>
               </div>
             </div>
 

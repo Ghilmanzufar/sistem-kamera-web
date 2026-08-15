@@ -49,17 +49,24 @@ class SoundManager {
   }
 
   initContext() {
+    const sinkVal = (this.selectedDeviceId && this.selectedDeviceId !== 'default') ? this.selectedDeviceId : '';
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
-        this.ctx = new AudioCtx();
-        if (this.selectedDeviceId && this.selectedDeviceId !== 'default' && this.ctx.setSinkId) {
-          this.ctx.setSinkId(this.selectedDeviceId).catch(() => {});
+        try {
+          this.ctx = sinkVal ? new AudioCtx({ sinkId: sinkVal }) : new AudioCtx();
+        } catch {
+          this.ctx = new AudioCtx();
         }
       }
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      if (typeof this.ctx.setSinkId === 'function' && sinkVal && this.ctx.sinkId !== sinkVal) {
+        this.ctx.setSinkId(sinkVal).catch(() => {});
+      }
     }
     return this.ctx;
   }
@@ -72,16 +79,33 @@ class SoundManager {
     }
     localStorage.setItem('inspection_audio_device_id', this.selectedDeviceId);
     
-    if (this.ctx && this.ctx.setSinkId) {
-      try {
-        await this.ctx.setSinkId(this.selectedDeviceId === 'default' ? '' : this.selectedDeviceId);
-      } catch (e) {
-        console.warn('Gagal setSinkId pada AudioContext:', e);
+    const sinkVal = (this.selectedDeviceId === 'default' || !this.selectedDeviceId) ? '' : this.selectedDeviceId;
+
+    // Terapkan ke AudioContext aktif atau bangun ulang jika diperlukan
+    if (this.ctx) {
+      if (typeof this.ctx.setSinkId === 'function') {
+        try {
+          await this.ctx.setSinkId(sinkVal);
+        } catch (err) {
+          console.warn('[SoundManager] ctx.setSinkId gagal, rebuild AudioContext:', err);
+          try {
+            await this.ctx.close();
+          } catch {}
+          this.ctx = null;
+          this.initContext();
+        }
+      } else {
+        try {
+          await this.ctx.close();
+        } catch {}
+        this.ctx = null;
+        this.initContext();
       }
     }
-    if (this.customAudioElem && this.customAudioElem.setSinkId) {
+
+    if (this.customAudioElem && typeof this.customAudioElem.setSinkId === 'function') {
       try {
-        await this.customAudioElem.setSinkId(this.selectedDeviceId === 'default' ? '' : this.selectedDeviceId);
+        await this.customAudioElem.setSinkId(sinkVal);
       } catch {}
     }
     this.notify();
@@ -90,18 +114,53 @@ class SoundManager {
   async getBrowserAudioDevices() {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-        return [];
+        return [{ id: 'default', name: 'Default - Output Sistem Komputer (Otomatis)', is_default: true, type: 'output' }];
       }
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
-      return audioOutputs.map((d, idx) => ({
-        id: d.deviceId || String(idx),
-        name: d.label || (idx === 0 ? 'Default Audio Output / Speaker' : `Speaker ${idx + 1}`),
-        is_usb: (d.label || '').toLowerCase().includes('usb'),
+
+      let devices = await navigator.mediaDevices.enumerateDevices();
+      let audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+      // Jika label masih kosong (karena browser butuh trigger izin media)
+      const isBlank = audioOutputs.some(d => !d.label || d.label.trim() === '');
+      if (isBlank) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+          devices = await navigator.mediaDevices.enumerateDevices();
+          audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+        } catch {}
+      }
+
+      const result = [];
+      result.push({
+        id: 'default',
+        name: 'Default - Output Sistem Komputer (Otomatis)',
+        label: 'Default - Output Sistem Komputer (Otomatis)',
+        is_default: true,
         type: 'output'
-      }));
-    } catch {
-      return [];
+      });
+
+      audioOutputs.forEach((d, idx) => {
+        if (d.deviceId === 'default') return;
+        const name = d.label || `Speaker ${idx + 1}`;
+        const nameLower = name.toLowerCase();
+        const isUsb = nameLower.includes('usb');
+        const isHeadset = nameLower.includes('headset') || nameLower.includes('headphone') || nameLower.includes('earphone');
+
+        result.push({
+          id: d.deviceId,
+          name: name,
+          label: name,
+          is_usb: isUsb,
+          is_headset: isHeadset,
+          type: 'output'
+        });
+      });
+
+      return result;
+    } catch (err) {
+      console.warn('[SoundManager] getBrowserAudioDevices error:', err);
+      return [{ id: 'default', name: 'Default - Output Sistem Komputer (Otomatis)', is_default: true, type: 'output' }];
     }
   }
 
