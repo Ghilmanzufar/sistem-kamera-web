@@ -83,7 +83,3 @@ def create_app() -> FastAPI:
     return app
 
 app_fastapi = create_app()
-
-def run_fastapi(host: str = "0.0.0.0", port: int = 8000):
-    """Jalankan uvicorn server."""
-    uvicorn.run(app_fastapi, host=host, port=port, log_level="info")

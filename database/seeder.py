@@ -45,17 +45,9 @@ def seed_default_audio_config():
         print(f"[WARN] Auto-seed audio config: {e}")
 
 def seed_default_users():
-    """Seeding akun pengawas default & migrasi role admin lama."""
+    """Seeding akun pengawas default jika database kosong."""
     try:
         with SessionLocal() as db:
-            # Migrasi user lama ber-role 'admin' menjadi 'pengawas'
-            admins = db.query(User).filter(User.role == "admin").all()
-            if admins:
-                for a in admins:
-                    a.role = "pengawas"
-                db.commit()
-                print(f"[SYSTEM] Auto-migrated {len(admins)} user(s) from 'admin' role to 'pengawas'.")
-
             # Seed default user pengawas jika database kosong
             if not db.query(User).first():
                 default_pengawas = User(
@@ -69,7 +61,7 @@ def seed_default_users():
                 db.commit()
                 print("[SYSTEM] Default pengawas seeded (username: pengawas, pin: 1234).")
     except Exception as e:
-        print(f"[WARN] Gagal seeding/migrasi default user: {e}")
+        print(f"[WARN] Gagal seeding default user: {e}")
 
 def auto_seed_camera_hardware():
     """Deteksi otomatis kamera USB yang tercolok saat startup jika DB masih kosong."""

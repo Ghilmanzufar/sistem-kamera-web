@@ -88,10 +88,6 @@ def decode_and_verify_token(token: str) -> dict:
 # Alias untuk kompatibilitas
 decode_admin_token = decode_and_verify_token
 
-def verify_authenticated_user(credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> dict:
-    """Proteksi endpoint untuk seluruh pengguna terotentikasi (Operator, Pengawas, Admin)."""
-    return decode_and_verify_token(credentials.credentials)
-
 def verify_admin_auth(request: Request, credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> dict:
     """Proteksi endpoint admin dengan verifikasi token & hak akses role."""
     payload = decode_and_verify_token(credentials.credentials)
@@ -118,16 +114,6 @@ def verify_supervisor_only(credentials: HTTPAuthorizationCredentials = Depends(a
 def get_current_user_name(credentials: HTTPAuthorizationCredentials = Depends(admin_security)) -> str:
     payload = decode_and_verify_token(credentials.credentials)
     return payload.get("u", "SYSTEM")
-
-def get_current_user_name_optional(request: Request) -> str:
-    auth = request.headers.get("Authorization")
-    if auth and auth.startswith("Bearer "):
-        try:
-            payload = decode_and_verify_token(auth.split(" ", 1)[1].strip())
-            return payload.get("u", "Operator")
-        except Exception:
-            pass
-    return "Operator"
 
 # --- RATE LIMITER (BRUTE FORCE PROTECTION) ---
 _failed_login_attempts = defaultdict(list)

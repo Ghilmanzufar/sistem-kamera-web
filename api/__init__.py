@@ -1,4 +1,4 @@
-from .server import create_app, app_fastapi, run_fastapi, SPAStaticFiles
+from .server import create_app, app_fastapi, SPAStaticFiles
 from .auth import (
     create_admin_token,
     decode_and_verify_token,
@@ -15,7 +15,6 @@ from .routes import (
 __all__ = [
     "create_app",
     "app_fastapi",
-    "run_fastapi",
     "SPAStaticFiles",
     "create_admin_token",
     "decode_and_verify_token",
