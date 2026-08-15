@@ -276,8 +276,9 @@ export default function OperatorInspection() {
   // State Jaringan & Auto-Reconnect
   const [isNetworkOffline, setIsNetworkOffline] = useState(false);
   const offlineErrorsRef = useRef(0);
+  const [isStreamingActive, setIsStreamingActive] = useState(false);
 
-  // Sinkronisasi Konfigurasi Audio Backend
+  // Sinkronisasi Konfigurasi Audio Backend Real-time
   useEffect(() => {
     const fetchAudioConfig = async () => {
       try {
@@ -289,10 +290,20 @@ export default function OperatorInspection() {
     };
     fetchAudioConfig();
 
+    // Auto-sync audio config setiap 10 detik & saat window focus
+    const audioSyncTimer = setInterval(fetchAudioConfig, 10000);
+    const onFocus = () => fetchAudioConfig();
+    window.addEventListener('focus', onFocus);
+
     const unsub = soundManager.subscribe((state) => {
       setAudioState(state);
     });
-    return () => unsub();
+
+    return () => {
+      clearInterval(audioSyncTimer);
+      window.removeEventListener('focus', onFocus);
+      unsub();
+    };
   }, []);
 
   // 1. Sinkronisasi Real-Time via SSE (Server-Sent Events) dengan Fallback Polling & Network Recovery
@@ -318,63 +329,63 @@ export default function OperatorInspection() {
         eventSource = new EventSource('/api/operator/events');
         eventSource.onmessage = (e) => {
           try {
-            if (offlineErrorsRef.current > 0 || isNetworkOffline) {
-              setIsNetworkOffline(false);
-              offlineErrorsRef.current = 0;
-            }
-            if (Date.now() < ignoreSseRef.current) return;
             const data = JSON.parse(e.data);
-            setTelemetry(data);
-          } catch (err) {
-            console.error('Error parsing SSE event data', err);
-          }
+            if (ignoreSseRef.current > Date.now()) return;
+            setTelemetry((prev) => ({
+              ...prev,
+              ...data
+            }));
+            setIsStreamingActive(true);
+            setIsNetworkOffline(false);
+            offlineErrorsRef.current = 0;
+          } catch {}
         };
         eventSource.onerror = () => {
           if (eventSource) eventSource.close();
           offlineErrorsRef.current += 1;
-          if (offlineErrorsRef.current >= 3) {
-            setIsNetworkOffline(true);
-          }
-          if (!fallbackInterval) {
-            fallbackInterval = setInterval(async () => {
-              try {
-                if (Date.now() < ignoreSseRef.current) return;
-                const res = await api.get('/api/operator/state');
-                if (res.data) {
-                  setTelemetry(res.data);
-                  if (offlineErrorsRef.current > 0) {
-                    setIsNetworkOffline(false);
-                    offlineErrorsRef.current = 0;
-                  }
-                }
-              } catch {
-                offlineErrorsRef.current += 1;
-                if (offlineErrorsRef.current >= 3) {
-                  setIsNetworkOffline(true);
-                }
-              }
-            }, 500);
-          }
+          if (offlineErrorsRef.current > 3) setIsNetworkOffline(true);
         };
       } catch {
         offlineErrorsRef.current += 1;
-        if (offlineErrorsRef.current >= 3) {
-          setIsNetworkOffline(true);
-        }
+        if (offlineErrorsRef.current > 3) setIsNetworkOffline(true);
       }
     };
 
     connectSSE();
+    const reconnectInterval = setInterval(() => {
+      if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+        connectSSE();
+      }
+    }, 4000);
+
+    fallbackInterval = setInterval(async () => {
+      if (ignoreSseRef.current > Date.now()) return;
+      try {
+        const res = await api.get('/api/operator/telemetry');
+        if (res.data) {
+          setTelemetry((prev) => ({
+            ...prev,
+            ...res.data
+          }));
+          setIsNetworkOffline(false);
+          offlineErrorsRef.current = 0;
+        }
+      } catch {
+        offlineErrorsRef.current += 1;
+        if (offlineErrorsRef.current > 3) setIsNetworkOffline(true);
+      }
+    }, 2000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       if (eventSource) eventSource.close();
       if (fallbackInterval) clearInterval(fallbackInterval);
+      if (reconnectInterval) clearInterval(reconnectInterval);
     };
   }, []);
 
-  // Sinkronisasi Sesi Operator Aktif ke Backend secara Real-Time
+  // Sinkronisasi Sesi Operator Aktif (Heartbeat Session)
   useEffect(() => {
     const syncOperatorSession = async () => {
       try {
@@ -427,9 +438,16 @@ export default function OperatorInspection() {
   useEffect(() => {
     if (telemetry.popups) {
       const prev = prevPopupsRef.current || {};
+      const isBatchCompleted = telemetry.status === 'COMPLETED' || (telemetry.qty_remaining === 0 && (telemetry.qty_actual || 0) > 0);
+      const wasBatchCompleted = prev.status === 'COMPLETED' || (prev.qty_remaining === 0 && (prev.qty_actual || 0) > 0);
 
-      // Trigger Part OK Sound
-      if (telemetry.popups.part_ok && telemetry.status !== 'STANDBY') {
+      // Trigger 4: Suara Selesai Batch (Kemenangan/Target Selesai)
+      if (isBatchCompleted && !wasBatchCompleted && telemetry.status !== 'STANDBY') {
+        soundManager.playFinish();
+        setShowPartOkModal(false);
+      }
+      // Trigger 1: Suara Part OK (Hanya jika batch BELUM selesai)
+      else if (telemetry.popups.part_ok && !isBatchCompleted && telemetry.status !== 'STANDBY') {
         if (!prev.part_ok) {
           soundManager.playOk();
         }
@@ -438,7 +456,7 @@ export default function OperatorInspection() {
         setShowPartOkModal(false);
       }
 
-      // Trigger Flip Part Sound
+      // Trigger 2: Suara Balik Part (Instruksi Sisi Belakang)
       if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
         if (!prev.flip_part) {
           soundManager.playFlip();
@@ -448,7 +466,7 @@ export default function OperatorInspection() {
         setShowFlipModal(false);
       }
 
-      // Trigger NG Siren Alert
+      // Trigger 3: Suara Alarm Cacat NG
       if (telemetry.popups.ng_active || telemetry.status === 'NG') {
         if (!prev.ng_active && telemetry.status !== 'STANDBY') {
           soundManager.startNg();
@@ -459,14 +477,12 @@ export default function OperatorInspection() {
         soundManager.stopNg();
       }
 
-      // Trigger Finish Batch Celebration Sound (4th Sound)
-      if (telemetry.status === 'COMPLETED' || (telemetry.qty_remaining === 0 && (telemetry.qty_actual || 0) > 0)) {
-        if (prev.status !== 'COMPLETED' && prev.qty_remaining !== 0 && telemetry.status !== 'STANDBY') {
-          soundManager.playFinish();
-        }
-      }
-
-      prevPopupsRef.current = { ...telemetry.popups, status: telemetry.status, qty_remaining: telemetry.qty_remaining };
+      prevPopupsRef.current = { 
+        ...telemetry.popups, 
+        status: telemetry.status, 
+        qty_remaining: telemetry.qty_remaining,
+        qty_actual: telemetry.qty_actual
+      };
     }
   }, [telemetry.popups, telemetry.status, telemetry.qty_remaining, telemetry.qty_actual]);
 
