@@ -4,7 +4,7 @@ import {
   Play, Pause, Square, Save, RefreshCw, Check, FileAudio, 
   HelpCircle, Mic, Sparkles, Sliders, Download, Layers, Bot, 
   Zap, Copy, RotateCcw, SlidersHorizontal, ArrowRight, CheckCircle2,
-  Trophy, Award, Flag, ExternalLink
+  Trophy, Award, Flag, ExternalLink, Radio
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -87,6 +87,7 @@ export default function AudioSettings() {
   const [ttsVoice, setTtsVoice] = useState('id-ID-GadisNeural');
   const [ttsVibe, setTtsVibe] = useState('formal');
   const [ttsCategory, setTtsCategory] = useState('ok'); // 'ok' | 'flip' | 'ng' | 'finish' | 'general'
+  const [autoApplyTarget, setAutoApplyTarget] = useState(true); // Otomatis simpan & terapkan saat generate
   const [customRateOffset, setCustomRateOffset] = useState(0); // -50 to +50 %
   const [customPitchOffset, setCustomPitchOffset] = useState(0); // -20 to +20 Hz
   const [generatingTts, setGeneratingTts] = useState(false);
@@ -207,9 +208,12 @@ export default function AudioSettings() {
       setTtsCategory(matchedTemplate.category);
       if (matchedTemplate.voice) setTtsVoice(matchedTemplate.voice);
       if (matchedTemplate.vibe) setTtsVibe(matchedTemplate.vibe);
+    } else {
+      setTtsCategory(category);
     }
+    setAutoApplyTarget(true);
     setActiveTab('studio');
-    toast.success(`Membuka AI Studio untuk kategori ${category.toUpperCase()}...`, { icon: '🎙️' });
+    toast.success(`Membuka AI Studio untuk target: ${category.toUpperCase()}...`, { icon: '🎙️' });
   };
 
   // Generate TTS Handler
@@ -236,8 +240,46 @@ export default function AudioSettings() {
 
       const res = await api.post('/api/admin/audio/tts/generate', payload);
       if (res.data?.status === 'success') {
-        setGeneratedAudio(res.data);
-        toast.success('Audio AI Bahasa Indonesia berhasil digenerate!', { icon: '🎙️' });
+        const audioData = res.data;
+        setGeneratedAudio(audioData);
+
+        // Jika autoApplyTarget aktif dan targetnya adalah ok, flip, ng, atau finish:
+        // LANGSUNG SIMPAN KE DATABASE & TERAPKAN
+        if (autoApplyTarget && ['ok', 'flip', 'ng', 'finish'].includes(ttsCategory)) {
+          const configPayload = {
+            is_enabled: isEnabled,
+            volume: parseInt(volume),
+            ok_sound_type: 'custom',
+            ok_custom_url: ttsCategory === 'ok' ? audioData.url : okCustomUrl,
+            flip_sound_type: 'custom',
+            flip_custom_url: ttsCategory === 'flip' ? audioData.url : flipCustomUrl,
+            ng_sound_type: 'custom',
+            ng_custom_url: ttsCategory === 'ng' ? audioData.url : ngCustomUrl,
+            finish_sound_type: 'custom',
+            finish_custom_url: ttsCategory === 'finish' ? audioData.url : finishCustomUrl
+          };
+
+          const saveRes = await api.put('/api/admin/audio/config', configPayload);
+          soundManager.syncConfig(saveRes.data);
+
+          if (ttsCategory === 'ok') setOkCustomUrl(audioData.url);
+          else if (ttsCategory === 'flip') setFlipCustomUrl(audioData.url);
+          else if (ttsCategory === 'ng') setNgCustomUrl(audioData.url);
+          else if (ttsCategory === 'finish') setFinishCustomUrl(audioData.url);
+
+          const categoryNames = {
+            ok: 'Part OK',
+            flip: 'Balik Part',
+            ng: 'Alarm Cacat NG',
+            finish: 'Selesai Batch'
+          };
+          toast.success(
+            `Suara AI berhasil digenerate & LANGSUNG TERSIMPAN sebagai Suara ${categoryNames[ttsCategory]}!`,
+            { icon: '🏁', duration: 4000 }
+          );
+        } else {
+          toast.success('Audio AI Bahasa Indonesia berhasil digenerate!', { icon: '🎙️' });
+        }
         
         // Auto play audio preview
         setTimeout(() => {
@@ -508,7 +550,7 @@ export default function AudioSettings() {
                     Generator Suara AI Khas Bahasa Indonesia
                   </h2>
                   <p className="text-xs text-sky-300 font-semibold">
-                    Menghasilkan intonasi alami manusiawi dengan logat Bahasa Indonesia, artikulasi presisi, kontrol tempo, dan tanpa batasan panjang teks
+                    Menghasilkan intonasi alami manusiawi dengan logat Bahasa Indonesia, artikulasi presisi, kontrol tempo, dan langsung tersimpan ke sistem inspeksi
                   </p>
                 </div>
               </div>
@@ -550,6 +592,45 @@ export default function AudioSettings() {
               </div>
             </div>
 
+            {/* Target Penugasan Suara Otomatis */}
+            <div className="p-4 rounded-2xl bg-sky-950/60 border border-sky-500/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-white uppercase tracking-wide flex items-center gap-2">
+                  <Flag className="w-4 h-4 text-sky-400" />
+                  <span>Tujuan Penggunaan Suara (Terapkan Otomatis):</span>
+                </label>
+                <span className="text-[11px] font-bold text-sky-300">
+                  {autoApplyTarget ? '⚡ Otomatis Langsung Tersimpan' : 'Hanya Buat Audio'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'ok', label: '✅ Part OK', color: 'emerald' },
+                  { id: 'flip', label: '🔄 Balik Part', color: 'teal' },
+                  { id: 'ng', label: '🚨 Alarm Cacat NG', color: 'rose' },
+                  { id: 'finish', label: '🏁 Selesai Batch', color: 'indigo' },
+                ].map((target) => (
+                  <button
+                    key={target.id}
+                    type="button"
+                    onClick={() => {
+                      setTtsCategory(target.id);
+                      setAutoApplyTarget(true);
+                    }}
+                    className={`py-2.5 px-3 rounded-xl border-2 font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                      ttsCategory === target.id
+                        ? 'bg-sky-500 text-slate-950 border-sky-300 shadow-lg scale-[1.02]'
+                        : 'bg-slate-900/80 text-slate-300 border-white/10 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{target.label}</span>
+                    {ttsCategory === target.id && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Input Narasi Teks (Tanpa Batas Panjang) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -570,7 +651,7 @@ export default function AudioSettings() {
                 rows={4}
                 value={ttsText}
                 onChange={(e) => setTtsText(e.target.value)}
-                placeholder="Tulis kalimat apa saja dalam Bahasa Indonesia... Contoh: Part 74231 OK, silakan letakkan komponen berikutnya pada line inspeksi."
+                placeholder="Tulis kalimat apa saja dalam Bahasa Indonesia... Contoh: Selamat, seluruh target part telah selesai diinspeksi."
                 className="w-full p-4 bg-slate-950 border-2 border-white/15 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 leading-relaxed shadow-inner"
               />
             </div>
@@ -740,12 +821,19 @@ export default function AudioSettings() {
                 {generatingTts ? (
                   <>
                     <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Memproses Sintesis AI Neural TTS...</span>
+                    <span>Memproses Sintesis AI Neural TTS & Menyimpan ke Sistem...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    <span>🎙️ Generate Suara AI (Khas Bahasa Indonesia)</span>
+                    <span>
+                      🎙️ Generate Suara AI & Simpan ke {
+                        ttsCategory === 'finish' ? 'Selesai Batch' :
+                        ttsCategory === 'ok' ? 'Part OK' :
+                        ttsCategory === 'flip' ? 'Balik Part' :
+                        ttsCategory === 'ng' ? 'Alarm NG' : 'Sistem'
+                      }
+                    </span>
                   </>
                 )}
               </button>
@@ -766,7 +854,7 @@ export default function AudioSettings() {
                   </div>
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-white">
-                      Audio AI Berhasil Dibuat
+                      Audio AI Berhasil Dibuat & Aktif di Sistem
                     </h3>
                     <p className="text-xs text-emerald-300 font-semibold">
                       Model: {generatedAudio.voice} | Vibe: {generatedAudio.vibe} | Tempo: {generatedAudio.rate || '0%'} | {generatedAudio.analysis?.word_count || 0} Kata

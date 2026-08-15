@@ -374,7 +374,7 @@ async def generate_ai_voice(
     pitch_str = f"{'+' if total_pitch >= 0 else ''}{total_pitch}Hz"
 
     voice_model = req.voice if req.voice in ["id-ID-GadisNeural", "id-ID-ArdiNeural"] else "id-ID-GadisNeural"
-    category = req.category if req.category in ["ok", "flip", "ng", "general"] else "general"
+    category = req.category if req.category in ["ok", "flip", "ng", "finish", "general"] else "general"
 
     filename = f"tts_{category}_{uuid.uuid4().hex[:8]}.mp3"
     dest_path = os.path.join(UPLOAD_DIR, filename)
