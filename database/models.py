@@ -80,6 +80,8 @@ class AudioConfig(Base):
     flip_custom_url = Column(String, nullable=True)
     ng_sound_type = Column(String, default="siren")  # 'siren', 'buzzer', 'alarm', 'voice_id', 'custom'
     ng_custom_url = Column(String, nullable=True)
+    finish_sound_type = Column(String, default="fanfare")  # 'fanfare', 'chime_finish', 'voice_id', 'custom'
+    finish_custom_url = Column(String, nullable=True)
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

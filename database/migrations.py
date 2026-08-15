@@ -35,6 +35,13 @@ def auto_migrate_schema():
                     conn.execute(text("ALTER TABLE inspection_logs ADD COLUMN IF NOT EXISTS operator_name VARCHAR;"))
                 if "method" not in cols:
                     conn.execute(text("ALTER TABLE inspection_logs ADD COLUMN IF NOT EXISTS method VARCHAR DEFAULT 'AI';"))
+
+            if "audio_config" in tables:
+                cols = [c["name"] for c in inspector.get_columns("audio_config")]
+                if "finish_sound_type" not in cols:
+                    conn.execute(text("ALTER TABLE audio_config ADD COLUMN IF NOT EXISTS finish_sound_type VARCHAR DEFAULT 'fanfare';"))
+                if "finish_custom_url" not in cols:
+                    conn.execute(text("ALTER TABLE audio_config ADD COLUMN IF NOT EXISTS finish_custom_url VARCHAR;"))
             
             conn.commit()
     except Exception as e:

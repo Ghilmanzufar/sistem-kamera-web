@@ -3,7 +3,8 @@ import {
   Volume2, VolumeX, Music, Bell, ShieldAlert, Upload, 
   Play, Pause, Square, Save, RefreshCw, Check, Radio, FileAudio, 
   HelpCircle, Mic, Sparkles, Sliders, Download, Layers, Bot, 
-  Zap, Copy, RotateCcw, SlidersHorizontal, ArrowRight, CheckCircle2
+  Zap, Copy, RotateCcw, SlidersHorizontal, ArrowRight, CheckCircle2,
+  Trophy, Award, Flag
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -71,7 +72,7 @@ export default function AudioSettings() {
   const [saving, setSaving] = useState(false);
   const [uploadingCategory, setUploadingCategory] = useState(null);
 
-  // Form State Konfigurasi Nada Inspeksi
+  // Form State 4 Konfigurasi Nada Inspeksi: OK, Flip, NG, Finish
   const [isEnabled, setIsEnabled] = useState(true);
   const [volume, setVolume] = useState(80);
   const [okSoundType, setOkSoundType] = useState('chime');
@@ -80,6 +81,8 @@ export default function AudioSettings() {
   const [flipCustomUrl, setFlipCustomUrl] = useState('');
   const [ngSoundType, setNgSoundType] = useState('siren');
   const [ngCustomUrl, setNgCustomUrl] = useState('');
+  const [finishSoundType, setFinishSoundType] = useState('fanfare');
+  const [finishCustomUrl, setFinishCustomUrl] = useState('');
 
   // AI Voice Studio State
   const [ttsText, setTtsText] = useState(
@@ -87,7 +90,7 @@ export default function AudioSettings() {
   );
   const [ttsVoice, setTtsVoice] = useState('id-ID-GadisNeural');
   const [ttsVibe, setTtsVibe] = useState('formal');
-  const [ttsCategory, setTtsCategory] = useState('ok'); // 'ok' | 'flip' | 'ng' | 'general'
+  const [ttsCategory, setTtsCategory] = useState('ok'); // 'ok' | 'flip' | 'ng' | 'finish' | 'general'
   const [customRateOffset, setCustomRateOffset] = useState(0); // -50 to +50 %
   const [customPitchOffset, setCustomPitchOffset] = useState(0); // -20 to +20 Hz
   const [generatingTts, setGeneratingTts] = useState(false);
@@ -98,9 +101,10 @@ export default function AudioSettings() {
   const [previewProgress, setPreviewProgress] = useState(0);
   const [previewDuration, setPreviewDuration] = useState(0);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [previewPlaybackRate, setPreviewPlaybackRate] = useState(1.0);
   const previewAudioRef = useRef(null);
 
-  // Presets Data
+  // Presets Data 4 Nada
   const [presets, setPresets] = useState({
     ok_presets: [
       { id: 'chime', name: 'Harmonic Chime (Default)', desc: 'Nada mayor 4-kord lembut & elegan' },
@@ -120,6 +124,12 @@ export default function AudioSettings() {
       { id: 'buzzer', name: 'Industrial Buzzer', desc: 'Buzzer frekuensi tinggi peringatan cacat' },
       { id: 'alarm', name: 'High Alert Pulse', desc: 'Alarm denyut cepat berulang' },
       { id: 'voice_id', name: 'Suara Bahasa Indonesia', desc: "Ucapan: 'Peringatan, cacat terdeteksi!'" },
+      { id: 'custom', name: 'File Audio Kustom', desc: 'Gunakan file audio upload / generate AI' }
+    ],
+    finish_presets: [
+      { id: 'fanfare', name: 'Harmonic Fanfare (Default)', desc: 'Melodi akor kemenangan selesai 1 nomor transaksi/batch' },
+      { id: 'arpeggio', name: 'Success Arpeggio', desc: 'Rangkaian nada naik 6-akor cerah bertingkat' },
+      { id: 'voice_id', name: 'Suara Bahasa Indonesia', desc: "Ucapan: 'Selamat, seluruh target part telah selesai diinspeksi'" },
       { id: 'custom', name: 'File Audio Kustom', desc: 'Gunakan file audio upload / generate AI' }
     ]
   });
@@ -146,7 +156,7 @@ export default function AudioSettings() {
         text: 'Part berhasil diverifikasi O.K. Seluruh label lengkap, silakan lanjutkan ke part berikutnya.'
       },
       {
-        title: '🔄 Balik Part (Rear)',
+        title: '🔄 Instruksi Balik Part (Rear)',
         category: 'flip',
         vibe: 'calm',
         voice: 'id-ID-GadisNeural',
@@ -160,11 +170,11 @@ export default function AudioSettings() {
         text: 'Peringatan! Terdeteksi ketidaksesuaian atau cacat pada komponen. Segera periksa fisik part di line produksi.'
       },
       {
-        title: '🏁 Batch Selesai',
-        category: 'ok',
+        title: '🏁 Seluruh Batch Selesai',
+        category: 'finish',
         vibe: 'energetic',
         voice: 'id-ID-GadisNeural',
-        text: 'Selamat, seluruh target kuantitas part telah selesai diinspeksi dengan status O.K. Sistem kembali ke mode siaga.'
+        text: 'Selamat, seluruh target kuantitas part pada nomor transaksi ini telah selesai diinspeksi dengan status O.K. Sistem kembali ke mode siaga.'
       }
     ]
   });
@@ -187,6 +197,8 @@ export default function AudioSettings() {
         setFlipCustomUrl(data.flip_custom_url || '');
         setNgSoundType(data.ng_sound_type || 'siren');
         setNgCustomUrl(data.ng_custom_url || '');
+        setFinishSoundType(data.finish_sound_type || 'fanfare');
+        setFinishCustomUrl(data.finish_custom_url || '');
         soundManager.syncConfig(data);
       }
 
@@ -209,9 +221,6 @@ export default function AudioSettings() {
       }
     };
   }, []);
-
-  // Player Preview Playback Rate
-  const [previewPlaybackRate, setPreviewPlaybackRate] = useState(1.0);
 
   // Text analysis metrics live yang otomatis merespons slider kecepatan tempo
   const textWords = ttsText.trim() ? ttsText.trim().split(/\s+/).length : 0;
@@ -331,7 +340,7 @@ export default function AudioSettings() {
     }
   };
 
-  // Terapkan hasil TTS langsung ke nada notifikasi inspeksi
+  // Terapkan hasil TTS langsung ke 1 dari 4 nada notifikasi inspeksi
   const handleApplyToNotification = async (targetCategory) => {
     if (!generatedAudio?.url) return;
 
@@ -344,7 +353,9 @@ export default function AudioSettings() {
         flip_sound_type: targetCategory === 'flip' ? 'custom' : flipSoundType,
         flip_custom_url: targetCategory === 'flip' ? generatedAudio.url : (flipCustomUrl || null),
         ng_sound_type: targetCategory === 'ng' ? 'custom' : ngSoundType,
-        ng_custom_url: targetCategory === 'ng' ? generatedAudio.url : (ngCustomUrl || null)
+        ng_custom_url: targetCategory === 'ng' ? generatedAudio.url : (ngCustomUrl || null),
+        finish_sound_type: targetCategory === 'finish' ? 'custom' : finishSoundType,
+        finish_custom_url: targetCategory === 'finish' ? generatedAudio.url : (finishCustomUrl || null)
       };
 
       const res = await api.put('/api/admin/audio/config', payload);
@@ -362,6 +373,10 @@ export default function AudioSettings() {
         setNgSoundType('custom');
         setNgCustomUrl(generatedAudio.url);
         toast.success('Suara AI berhasil dijadikan nada Alarm NG!', { icon: '🚨' });
+      } else if (targetCategory === 'finish') {
+        setFinishSoundType('custom');
+        setFinishCustomUrl(generatedAudio.url);
+        toast.success('Suara AI berhasil dijadikan nada Selesai Batch!', { icon: '🏁' });
       }
     } catch (err) {
       toast.error('Gagal menerapkan audio ke konfigurasi notifikasi');
@@ -381,12 +396,14 @@ export default function AudioSettings() {
         flip_sound_type: flipSoundType,
         flip_custom_url: flipCustomUrl || null,
         ng_sound_type: ngSoundType,
-        ng_custom_url: ngCustomUrl || null
+        ng_custom_url: ngCustomUrl || null,
+        finish_sound_type: finishSoundType,
+        finish_custom_url: finishCustomUrl || null
       };
 
       const res = await api.put('/api/admin/audio/config', payload);
       soundManager.syncConfig(res.data);
-      toast.success('Pengaturan audio berhasil disimpan & disinkronkan!');
+      toast.success('4 Pengaturan nada audio berhasil disimpan & disinkronkan!');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Gagal menyimpan konfigurasi audio');
     } finally {
@@ -417,6 +434,9 @@ export default function AudioSettings() {
       } else if (category === 'ng') {
         setNgSoundType('custom');
         setNgCustomUrl(res.data.url);
+      } else if (category === 'finish') {
+        setFinishSoundType('custom');
+        setFinishCustomUrl(res.data.url);
       }
       toast.success(`File audio '${file.name}' berhasil diunggah!`);
     } catch (err) {
@@ -436,7 +456,7 @@ export default function AudioSettings() {
       <PageHeader
         title="Audio Studio &"
         highlightTitle="Pengaturan Suara"
-        subtitle="Hasilkan narasi audio AI khas Bahasa Indonesia atau kelola nada notifikasi inspeksi operator"
+        subtitle="Hasilkan narasi audio AI khas Bahasa Indonesia atau kelola 4 nada notifikasi inspeksi operator (OK, Balik Part, Alarm NG, Selesai Batch)"
         actionButton={
           activeTab === 'config' ? (
             <button
@@ -446,7 +466,7 @@ export default function AudioSettings() {
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-50 hover:scale-105 active:scale-95"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
+              <span>{saving ? 'Menyimpan...' : 'Simpan 4 Nada'}</span>
             </button>
           ) : null
         }
@@ -480,7 +500,7 @@ export default function AudioSettings() {
           }`}
         >
           <Sliders className="w-4 h-4 text-blue-300" />
-          <span>🎛️ Konfigurasi Nada Inspeksi</span>
+          <span>🎛️ Konfigurasi 4 Nada Inspeksi</span>
         </button>
       </div>
 
@@ -504,7 +524,7 @@ export default function AudioSettings() {
                     Generator Suara AI Khas Bahasa Indonesia
                   </h2>
                   <p className="text-xs text-sky-300 font-semibold">
-                    Menghasilkan intonasi alami manusiawi dengan logat Bahasa Indonesia, nada artikulasi presisi, dan tanpa batasan panjang teks
+                    Menghasilkan intonasi alami manusiawi dengan logat Bahasa Indonesia, artikulasi presisi, kontrol tempo, dan tanpa batasan panjang teks
                   </p>
                 </div>
               </div>
@@ -641,39 +661,6 @@ export default function AudioSettings() {
                     </button>
                   ))}
                 </div>
-
-                {/* Kontrol Kustom Slider jika Vibe Custom Dipilih */}
-                {ttsVibe === 'custom' && (
-                  <div className="p-3 bg-slate-900 rounded-xl border border-white/10 space-y-2 mt-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-300 font-bold">Kecepatan Tempo (Rate):</span>
-                      <span className="font-mono font-black text-sky-400">{customRateOffset > 0 ? `+${customRateOffset}` : customRateOffset}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-50"
-                      max="50"
-                      step="5"
-                      value={customRateOffset}
-                      onChange={(e) => setCustomRateOffset(parseInt(e.target.value))}
-                      className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
-                    />
-
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-slate-300 font-bold">Tinggi Nada (Pitch):</span>
-                      <span className="font-mono font-black text-indigo-400">{customPitchOffset > 0 ? `+${customPitchOffset}` : customPitchOffset}Hz</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-20"
-                      max="20"
-                      step="2"
-                      value={customPitchOffset}
-                      onChange={(e) => setCustomPitchOffset(parseInt(e.target.value))}
-                      className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-400"
-                    />
-                  </div>
-                )}
               </div>
 
             </div>
@@ -893,18 +880,18 @@ export default function AudioSettings() {
                 </div>
               </div>
 
-              {/* Action Bar: Terapkan Langsung ke Nada Notifikasi Inspeksi */}
+              {/* Action Bar: Terapkan Langsung ke 4 Nada Notifikasi Inspeksi */}
               <div className="space-y-2 pt-1">
                 <div className="text-xs font-black uppercase text-slate-300 tracking-wide flex items-center gap-1.5">
                   <Zap className="w-3.5 h-3.5 text-amber-400" />
                   <span>Pasang Suara Ini Langsung ke Sistem Notifikasi Kiosk Operator:</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <button
                     type="button"
                     onClick={() => handleApplyToNotification('ok')}
-                    className="py-3 px-4 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs sm:text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+                    className="py-3 px-4 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
                     <span>Jadikan Nada Part OK</span>
@@ -913,7 +900,7 @@ export default function AudioSettings() {
                   <button
                     type="button"
                     onClick={() => handleApplyToNotification('flip')}
-                    className="py-3 px-4 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs sm:text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+                    className="py-3 px-4 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <RotateCcw className="w-4 h-4 text-teal-400" />
                     <span>Jadikan Nada Balik Part</span>
@@ -922,10 +909,19 @@ export default function AudioSettings() {
                   <button
                     type="button"
                     onClick={() => handleApplyToNotification('ng')}
-                    className="py-3 px-4 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+                    className="py-3 px-4 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                   >
                     <ShieldAlert className="w-4 h-4 text-rose-400" />
                     <span>Jadikan Nada Alarm NG</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyToNotification('finish')}
+                    className="py-3 px-4 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border-2 border-indigo-500/50 text-indigo-200 font-black text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+                  >
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span>Jadikan Nada Selesai Batch</span>
                   </button>
                 </div>
               </div>
@@ -937,7 +933,7 @@ export default function AudioSettings() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: KONFIGURASI NADA & SPEAKER KIOSK OPERATOR                           */}
+      {/* TAB 2: KONFIGURASI 4 NADA & SPEAKER KIOSK OPERATOR                        */}
       {/* ========================================================================= */}
       {activeTab === 'config' && (
         <div className="space-y-6 animate-fadeIn">
@@ -951,7 +947,7 @@ export default function AudioSettings() {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-black text-white">Status Master Audio & Volume</h2>
-                  <p className="text-xs text-slate-400">Pengaturan global output suara ke seluruh line workstation operator</p>
+                  <p className="text-xs text-slate-400">Pengaturan global output suara ke seluruh line workstation operator (4 Event Suara Aktif)</p>
                 </div>
               </div>
 
@@ -1010,26 +1006,26 @@ export default function AudioSettings() {
             </div>
           </div>
 
-          {/* Grid 3 Kartu Konfigurasi Nada Event: OK, Flip, NG */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Grid 4 Kartu Konfigurasi Nada Event: OK, Flip, NG, Finish */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             
             {/* 1. KARTU SUARA PART OK */}
-            <div className="glass-card p-6 border-2 border-emerald-500/30 rounded-3xl shadow-xl space-y-5 flex flex-col justify-between">
-              <div className="space-y-4">
+            <div className="glass-card p-5 border-2 border-emerald-500/30 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
-                      <Check className="w-5 h-5 stroke-[3]" />
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+                      <Check className="w-4 h-4 stroke-[3]" />
                     </div>
                     <div>
-                      <h3 className="text-sm sm:text-base font-black text-white">Suara Part OK</h3>
-                      <p className="text-[11px] text-emerald-300 font-bold">Saat semua part lolos inspeksi</p>
+                      <h3 className="text-sm font-black text-white">1. Suara Part OK</h3>
+                      <p className="text-[10px] text-emerald-300 font-bold">Saat 1 part lolos inspeksi</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleTest('ok', okSoundType, okCustomUrl)}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
                     title="Dengarkan Contoh Suara"
                   >
                     <Play className="w-3 h-3" />
@@ -1038,17 +1034,17 @@ export default function AudioSettings() {
                 </div>
 
                 {/* Pilihan Preset OK */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
                     Pilih Preset Nada:
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {presets.ok_presets.map((preset) => (
                       <label
                         key={preset.id}
-                        className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
                           okSoundType === preset.id
-                            ? 'bg-emerald-950/70 border-emerald-500 text-white shadow-md'
+                            ? 'bg-emerald-950/70 border-emerald-500 text-white shadow-sm'
                             : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
                         }`}
                       >
@@ -1062,7 +1058,7 @@ export default function AudioSettings() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[11px] text-slate-400">{preset.desc}</div>
+                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
                         </div>
                       </label>
                     ))}
@@ -1071,20 +1067,20 @@ export default function AudioSettings() {
 
                 {/* Custom URL Display */}
                 {okSoundType === 'custom' && (
-                  <div className="p-3 bg-slate-950/80 rounded-2xl border border-dashed border-emerald-500/40 space-y-2">
-                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <FileAudio className="w-3.5 h-3.5" />
-                      <span>File Audio Terpasang (.mp3/.wav):</span>
+                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-emerald-500/40 space-y-1.5">
+                    <div className="text-[11px] font-bold text-emerald-300 flex items-center gap-1">
+                      <FileAudio className="w-3 h-3" />
+                      <span>File Terpasang:</span>
                     </div>
                     {okCustomUrl ? (
-                      <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 px-2.5 py-1.5 rounded-lg border border-white/10">
+                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
                         {okCustomUrl}
                       </div>
                     ) : (
-                      <div className="text-xs text-slate-500 italic">Belum ada file audio kustom dipilih</div>
+                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
                     )}
-                    <label className="flex items-center justify-center gap-2 w-full py-2 bg-emerald-700/80 hover:bg-emerald-600 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all shadow">
-                      <Upload className="w-3.5 h-3.5" />
+                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
+                      <Upload className="w-3 h-3" />
                       <span>{uploadingCategory === 'ok' ? 'Mengunggah...' : 'Upload File Audio'}</span>
                       <input
                         type="file"
@@ -1100,22 +1096,22 @@ export default function AudioSettings() {
             </div>
 
             {/* 2. KARTU SUARA BALIK PART (FRONT OK) */}
-            <div className="glass-card p-6 border-2 border-teal-500/30 rounded-3xl shadow-xl space-y-5 flex flex-col justify-between">
-              <div className="space-y-4">
+            <div className="glass-card p-5 border-2 border-teal-500/30 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-400">
-                      <Bell className="w-5 h-5" />
+                    <div className="w-8 h-8 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-400">
+                      <Bell className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm sm:text-base font-black text-white">Suara Balik Part</h3>
-                      <p className="text-[11px] text-teal-300 font-bold">Saat sisi depan OK & minta balik ke rear</p>
+                      <h3 className="text-sm font-black text-white">2. Suara Balik Part</h3>
+                      <p className="text-[10px] text-teal-300 font-bold">Minta balik ke sisi belakang</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleTest('flip', flipSoundType, flipCustomUrl)}
-                    className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-teal-600/20 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
                     title="Dengarkan Contoh Suara"
                   >
                     <Play className="w-3 h-3" />
@@ -1124,17 +1120,17 @@ export default function AudioSettings() {
                 </div>
 
                 {/* Pilihan Preset Flip */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
                     Pilih Preset Nada:
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {presets.flip_presets.map((preset) => (
                       <label
                         key={preset.id}
-                        className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
                           flipSoundType === preset.id
-                            ? 'bg-teal-950/70 border-teal-500 text-white shadow-md'
+                            ? 'bg-teal-950/70 border-teal-500 text-white shadow-sm'
                             : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
                         }`}
                       >
@@ -1148,7 +1144,7 @@ export default function AudioSettings() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[11px] text-slate-400">{preset.desc}</div>
+                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
                         </div>
                       </label>
                     ))}
@@ -1157,20 +1153,20 @@ export default function AudioSettings() {
 
                 {/* Custom URL Display */}
                 {flipSoundType === 'custom' && (
-                  <div className="p-3 bg-slate-950/80 rounded-2xl border border-dashed border-teal-500/40 space-y-2">
-                    <div className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                      <FileAudio className="w-3.5 h-3.5" />
-                      <span>File Audio Terpasang (.mp3/.wav):</span>
+                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-teal-500/40 space-y-1.5">
+                    <div className="text-[11px] font-bold text-teal-300 flex items-center gap-1">
+                      <FileAudio className="w-3 h-3" />
+                      <span>File Terpasang:</span>
                     </div>
                     {flipCustomUrl ? (
-                      <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 px-2.5 py-1.5 rounded-lg border border-white/10">
+                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
                         {flipCustomUrl}
                       </div>
                     ) : (
-                      <div className="text-xs text-slate-500 italic">Belum ada file audio kustom dipilih</div>
+                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
                     )}
-                    <label className="flex items-center justify-center gap-2 w-full py-2 bg-teal-700/80 hover:bg-teal-600 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all shadow">
-                      <Upload className="w-3.5 h-3.5" />
+                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-teal-700 hover:bg-teal-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
+                      <Upload className="w-3 h-3" />
                       <span>{uploadingCategory === 'flip' ? 'Mengunggah...' : 'Upload File Audio'}</span>
                       <input
                         type="file"
@@ -1186,22 +1182,22 @@ export default function AudioSettings() {
             </div>
 
             {/* 3. KARTU SUARA ALARM CACAT (NG) */}
-            <div className="glass-card p-6 border-2 border-rose-500/40 rounded-3xl shadow-xl space-y-5 flex flex-col justify-between">
-              <div className="space-y-4">
+            <div className="glass-card p-5 border-2 border-rose-500/40 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shadow-md">
-                      <ShieldAlert className="w-5 h-5" />
+                    <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shadow-md">
+                      <ShieldAlert className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm sm:text-base font-black text-white">Suara Alarm Cacat (NG)</h3>
-                      <p className="text-[11px] text-rose-300 font-bold">Saat cacat terdeteksi & popup NG aktif</p>
+                      <h3 className="text-sm font-black text-white">3. Suara Alarm NG</h3>
+                      <p className="text-[10px] text-rose-300 font-bold">Saat cacat terdeteksi & reject</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleTest('ng', ngSoundType, ngCustomUrl)}
-                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-rose-600/30 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
                     title="Dengarkan Contoh Suara Alarm (3 detik)"
                   >
                     <Play className="w-3 h-3" />
@@ -1210,17 +1206,17 @@ export default function AudioSettings() {
                 </div>
 
                 {/* Pilihan Preset NG */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
                     Pilih Jenis Alarm:
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {presets.ng_presets.map((preset) => (
                       <label
                         key={preset.id}
-                        className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
                           ngSoundType === preset.id
-                            ? 'bg-rose-950/80 border-rose-500 text-white shadow-md'
+                            ? 'bg-rose-950/80 border-rose-500 text-white shadow-sm'
                             : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
                         }`}
                       >
@@ -1234,7 +1230,7 @@ export default function AudioSettings() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-black text-white">{preset.name}</div>
-                          <div className="text-[11px] text-slate-400">{preset.desc}</div>
+                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
                         </div>
                       </label>
                     ))}
@@ -1243,26 +1239,112 @@ export default function AudioSettings() {
 
                 {/* Custom URL Display */}
                 {ngSoundType === 'custom' && (
-                  <div className="p-3 bg-slate-950/80 rounded-2xl border border-dashed border-rose-500/40 space-y-2">
-                    <div className="text-xs font-bold text-rose-300 flex items-center gap-1.5">
-                      <FileAudio className="w-3.5 h-3.5" />
-                      <span>File Audio Terpasang (.mp3/.wav):</span>
+                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-rose-500/40 space-y-1.5">
+                    <div className="text-[11px] font-bold text-rose-300 flex items-center gap-1">
+                      <FileAudio className="w-3 h-3" />
+                      <span>File Terpasang:</span>
                     </div>
                     {ngCustomUrl ? (
-                      <div className="text-[11px] font-mono text-slate-200 truncate bg-slate-900 px-2.5 py-1.5 rounded-lg border border-white/10">
+                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
                         {ngCustomUrl}
                       </div>
                     ) : (
-                      <div className="text-xs text-slate-500 italic">Belum ada file audio kustom dipilih</div>
+                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
                     )}
-                    <label className="flex items-center justify-center gap-2 w-full py-2 bg-rose-700/80 hover:bg-rose-600 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all shadow">
-                      <Upload className="w-3.5 h-3.5" />
+                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
+                      <Upload className="w-3 h-3" />
                       <span>{uploadingCategory === 'ng' ? 'Mengunggah...' : 'Upload File Audio'}</span>
                       <input
                         type="file"
                         accept="audio/*"
                         onChange={(e) => handleFileUpload('ng', e)}
                         disabled={uploadingCategory === 'ng'}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4. KARTU SUARA SELESAI BATCH / TARGET TERCAPAI (FINISH) */}
+            <div className="glass-card p-5 border-2 border-indigo-500/40 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-amber-400 shadow-md">
+                      <Trophy className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white">4. Selesai Batch</h3>
+                      <p className="text-[10px] text-indigo-300 font-bold">Saat target QTY tuntas tercapai</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleTest('finish', finishSoundType, finishCustomUrl)}
+                    className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
+                    title="Dengarkan Contoh Suara Selesai Batch"
+                  >
+                    <Play className="w-3 h-3" />
+                    <span>Test</span>
+                  </button>
+                </div>
+
+                {/* Pilihan Preset Finish */}
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
+                    Pilih Preset Nada:
+                  </label>
+                  <div className="space-y-1.5">
+                    {presets.finish_presets.map((preset) => (
+                      <label
+                        key={preset.id}
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                          finishSoundType === preset.id
+                            ? 'bg-indigo-950/80 border-indigo-500 text-white shadow-sm'
+                            : 'bg-slate-900/60 border-white/5 text-slate-300 hover:bg-white/5'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="finish_sound_preset"
+                          value={preset.id}
+                          checked={finishSoundType === preset.id}
+                          onChange={(e) => setFinishSoundType(e.target.value)}
+                          className="mt-0.5 text-indigo-600 focus:ring-0 cursor-pointer"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-black text-white">{preset.name}</div>
+                          <div className="text-[10px] text-slate-400 line-clamp-1">{preset.desc}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom URL Display */}
+                {finishSoundType === 'custom' && (
+                  <div className="p-2.5 bg-slate-950/80 rounded-xl border border-dashed border-indigo-500/40 space-y-1.5">
+                    <div className="text-[11px] font-bold text-indigo-300 flex items-center gap-1">
+                      <FileAudio className="w-3 h-3" />
+                      <span>File Terpasang:</span>
+                    </div>
+                    {finishCustomUrl ? (
+                      <div className="text-[10px] font-mono text-slate-200 truncate bg-slate-900 px-2 py-1 rounded border border-white/10">
+                        {finishCustomUrl}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-slate-500 italic">Belum ada file audio kustom</div>
+                    )}
+                    <label className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-extrabold rounded-lg cursor-pointer transition-all shadow">
+                      <Upload className="w-3 h-3" />
+                      <span>{uploadingCategory === 'finish' ? 'Mengunggah...' : 'Upload File Audio'}</span>
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => handleFileUpload('finish', e)}
+                        disabled={uploadingCategory === 'finish'}
                         className="hidden"
                       />
                     </label>

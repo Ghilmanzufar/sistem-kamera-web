@@ -22,6 +22,8 @@ class AudioConfigUpdate(BaseModel):
     flip_custom_url: Optional[str] = None
     ng_sound_type: str = "siren"
     ng_custom_url: Optional[str] = None
+    finish_sound_type: str = "fanfare"
+    finish_custom_url: Optional[str] = None
 
 class AudioConfigResponse(BaseModel):
     id: int
@@ -33,6 +35,8 @@ class AudioConfigResponse(BaseModel):
     flip_custom_url: Optional[str] = None
     ng_sound_type: str
     ng_custom_url: Optional[str] = None
+    finish_sound_type: Optional[str] = "fanfare"
+    finish_custom_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -45,7 +49,8 @@ def _get_or_create_config(db: Session) -> AudioConfig:
             volume=80,
             ok_sound_type="chime",
             flip_sound_type="beep",
-            ng_sound_type="siren"
+            ng_sound_type="siren",
+            finish_sound_type="fanfare"
         )
         db.add(cfg)
         db.commit()
@@ -77,6 +82,8 @@ def update_audio_config(
     cfg.flip_custom_url = update_data.flip_custom_url
     cfg.ng_sound_type = update_data.ng_sound_type
     cfg.ng_custom_url = update_data.ng_custom_url
+    cfg.finish_sound_type = update_data.finish_sound_type or "fanfare"
+    cfg.finish_custom_url = update_data.finish_custom_url
 
     db.commit()
     db.refresh(cfg)
@@ -86,7 +93,7 @@ def update_audio_config(
         db, 
         uname, 
         "UPDATE_AUDIO_CONFIG", 
-        f"Memperbarui setelan audio: Status={status_str}, Volume={vol}%, OK={cfg.ok_sound_type}, Flip={cfg.flip_sound_type}, NG={cfg.ng_sound_type}"
+        f"Memperbarui setelan audio: Status={status_str}, Volume={vol}%, OK={cfg.ok_sound_type}, Flip={cfg.flip_sound_type}, NG={cfg.ng_sound_type}, Finish={cfg.finish_sound_type}"
     )
     return cfg
 
@@ -135,20 +142,26 @@ def get_audio_presets():
             {"id": "bell", "name": "Success Bell", "desc": "Lonceng cerah tanda part sukses"},
             {"id": "voice_id", "name": "Suara Bahasa Indonesia", "desc": "Ucapan: 'Part OK, Silakan Lanjut'"},
             {"id": "marimba", "name": "Marimba Melody", "desc": "Melodi perkusi cepat & jelas"},
-            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload Anda"}
+            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload / generate AI"}
         ],
         "flip_presets": [
             {"id": "beep", "name": "Dual Beep (Default)", "desc": "Nada notifikasi dua ketukan"},
             {"id": "ding", "name": "Bright Ding", "desc": "Nada pemberitahuan balik sisi part"},
             {"id": "voice_id", "name": "Suara Bahasa Indonesia", "desc": "Ucapan: 'Silakan balik ke sisi belakang'"},
-            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload Anda"}
+            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload / generate AI"}
         ],
         "ng_presets": [
             {"id": "siren", "name": "Factory Siren (Default)", "desc": "Sirene darurat industri kontinu"},
             {"id": "buzzer", "name": "Industrial Buzzer", "desc": "Buzzer frekuensi tinggi peringatan cacat"},
             {"id": "alarm", "name": "High Alert Pulse", "desc": "Alarm denyut cepat berulang"},
             {"id": "voice_id", "name": "Suara Bahasa Indonesia", "desc": "Ucapan: 'Peringatan, Cacat terdeteksi!'"},
-            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload Anda"}
+            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload / generate AI"}
+        ],
+        "finish_presets": [
+            {"id": "fanfare", "name": "Harmonic Fanfare (Default)", "desc": "Melodi kemenangan tanda seluruh target batch selesai"},
+            {"id": "arpeggio", "name": "Success Arpeggio", "desc": "Rangkaian nada naik 5-akor cerah"},
+            {"id": "voice_id", "name": "Suara Bahasa Indonesia", "desc": "Ucapan: 'Selamat, seluruh target part telah selesai diinspeksi'"},
+            {"id": "custom", "name": "File Audio Kustom", "desc": "Gunakan file audio upload / generate AI"}
         ]
     }
 
@@ -205,7 +218,7 @@ class TtsGenerateRequest(BaseModel):
     vibe: Optional[str] = "formal"
     rate_offset: Optional[int] = 0   # -50 s/d +50%
     pitch_offset: Optional[int] = 0  # -20 s/d +20 Hz
-    category: Optional[str] = "general" # 'ok', 'flip', 'ng', 'general'
+    category: Optional[str] = "general" # 'ok', 'flip', 'ng', 'finish', 'general'
 
 def _normalize_and_analyze_text(raw_text: str) -> dict:
     """Menganalisis dan mengoptimalkan teks narasi untuk artikulasi akurat alami bahasa Indonesia."""

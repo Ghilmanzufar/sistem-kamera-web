@@ -13,7 +13,7 @@ class SoundManager {
     this.selectedDeviceId = localStorage.getItem('inspection_audio_device_id') || 'default';
     this.selectedDeviceName = localStorage.getItem('inspection_audio_device_name') || 'Default Speaker Output';
     
-    // Config preset default
+    // Config preset default (4 Kategori Suara: OK, Flip, NG, Finish)
     this.config = {
       ok_sound_type: 'chime',
       ok_custom_url: null,
@@ -21,6 +21,8 @@ class SoundManager {
       flip_custom_url: null,
       ng_sound_type: 'siren',
       ng_custom_url: null,
+      finish_sound_type: 'fanfare',
+      finish_custom_url: null,
     };
 
     // Siren loop refs
@@ -539,7 +541,94 @@ class SoundManager {
     } catch {}
   }
 
-  // --- 4. PEMUTAR FILE KUSTOM & VOICE SYNTH ---
+  // --- 4. SINTESIS SUARA SELESAI BATCH / TARGET TERCAPAI (FANFARE / ARPEGGIO) ---
+  playFinish() {
+    if (!this.isEnabled || this.volume <= 0) return;
+    const type = this.config.finish_sound_type || 'fanfare';
+    const customUrl = this.config.finish_custom_url;
+    this.triggerFinishPreset(type, customUrl);
+  }
+
+  triggerFinishPreset(type, customUrl = null) {
+    if (type === 'custom' && customUrl) {
+      this.playCustomFile(customUrl, () => this.synthesizeFanfare());
+      return;
+    }
+
+    if (type === 'voice_id') {
+      this.speak("Selamat, seluruh target part telah selesai diinspeksi.");
+      return;
+    }
+
+    if (type === 'arpeggio') {
+      this.synthesizeArpeggio();
+      return;
+    }
+
+    // Default: Harmonic Fanfare
+    this.synthesizeFanfare();
+  }
+
+  synthesizeFanfare() {
+    const ctx = this.initContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    // Rangkaian akor kemenangan: C5 -> E5 -> G5 -> C6 (panjang & megah)
+    const notes = [
+      { freq: 523.25, start: 0, dur: 0.16 },    // C5
+      { freq: 659.25, start: 0.14, dur: 0.16 }, // E5
+      { freq: 783.99, start: 0.28, dur: 0.18 }, // G5
+      { freq: 1046.50, start: 0.44, dur: 0.75 } // C6 (Finale)
+    ];
+
+    notes.forEach(n => {
+      const startTime = now + n.start;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(n.freq, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(this.volume * 0.35, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + n.dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + n.dur + 0.05);
+    });
+  }
+
+  synthesizeArpeggio() {
+    const ctx = this.initContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const freqs = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50]; // C5, D5, E5, G5, A5, C6
+    freqs.forEach((freq, idx) => {
+      const startTime = now + idx * 0.08;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(this.volume * 0.28, startTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.45);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + 0.5);
+    });
+  }
+
+  // --- 5. PEMUTAR FILE KUSTOM & VOICE SYNTH ---
   playCustomFile(url, fallbackFn) {
     try {
       const audio = new Audio(url);
@@ -581,7 +670,7 @@ class SoundManager {
     }
   }
 
-  // --- 5. METHOD TEST UNTUK MODAL SETTING ---
+  // --- 6. METHOD TEST UNTUK MODAL SETTING ---
   testSound(category, presetId, customUrl = null) {
     this.stopNg();
     if (category === 'ok') {
@@ -594,6 +683,8 @@ class SoundManager {
       setTimeout(() => {
         this.stopNg();
       }, 3000);
+    } else if (category === 'finish') {
+      this.triggerFinishPreset(presetId, customUrl);
     }
   }
 }

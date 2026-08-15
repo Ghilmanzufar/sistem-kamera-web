@@ -13,11 +13,12 @@ def seed_default_audio_config():
                     volume=80,
                     ok_sound_type="chime",
                     flip_sound_type="beep",
-                    ng_sound_type="siren"
+                    ng_sound_type="siren",
+                    finish_sound_type="fanfare"
                 )
                 db.add(default_audio)
                 db.commit()
-                print("[SYSTEM] Default audio configuration seeded (volume: 80%, OK: chime, Flip: beep, NG: siren).")
+                print("[SYSTEM] Default audio configuration seeded (volume: 80%, OK: chime, Flip: beep, NG: siren, Finish: fanfare).")
     except Exception as e:
         print(f"[WARN] Auto-seed audio config: {e}")
 

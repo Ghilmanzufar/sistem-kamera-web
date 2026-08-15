@@ -4,7 +4,7 @@ import {
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
   Layers, User, Clock, Eye, GripHorizontal, WifiOff, Wifi,
-  Volume2, VolumeX, Volume1, Sliders, Speaker, RefreshCw
+  Volume2, VolumeX, Volume1, Sliders, Speaker, RefreshCw, Trophy
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
@@ -459,9 +459,16 @@ export default function OperatorInspection() {
         soundManager.stopNg();
       }
 
-      prevPopupsRef.current = { ...telemetry.popups };
+      // Trigger Finish Batch Celebration Sound (4th Sound)
+      if (telemetry.status === 'COMPLETED' || (telemetry.qty_remaining === 0 && (telemetry.qty_actual || 0) > 0)) {
+        if (prev.status !== 'COMPLETED' && prev.qty_remaining !== 0 && telemetry.status !== 'STANDBY') {
+          soundManager.playFinish();
+        }
+      }
+
+      prevPopupsRef.current = { ...telemetry.popups, status: telemetry.status, qty_remaining: telemetry.qty_remaining };
     }
-  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining]);
+  }, [telemetry.popups, telemetry.status, telemetry.qty_remaining, telemetry.qty_actual]);
 
   useEffect(() => {
     return () => {
@@ -1356,41 +1363,53 @@ export default function OperatorInspection() {
               <div className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <span>UJI COBA NADA SUARA PADA SPEAKER TERPILIH:</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 <button
                   type="button"
                   onClick={() => soundManager.testSound('ok', soundManager.config.ok_sound_type, soundManager.config.ok_custom_url)}
-                  className="py-3 px-3.5 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-emerald-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                  className="py-3 px-3 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-emerald-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>▶ Uji Part OK</span>
+                    <span>▶ 1. Part OK</span>
                   </div>
-                  <span className="text-[11px] font-bold text-emerald-300">Nada Part Selesai / Lanjut</span>
+                  <span className="text-[10px] font-bold text-emerald-300">Lolos Inspeksi</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => soundManager.testSound('flip', soundManager.config.flip_sound_type, soundManager.config.flip_custom_url)}
-                  className="py-3 px-3.5 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-teal-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                  className="py-3 px-3 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-teal-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">
                     <RotateCcw className="w-4 h-4 text-teal-400" />
-                    <span>▶ Uji Balik Part</span>
+                    <span>▶ 2. Balik Part</span>
                   </div>
-                  <span className="text-[11px] font-bold text-teal-300">Nada Balik Sisi Belakang</span>
+                  <span className="text-[10px] font-bold text-teal-300">Balik Sisi Belakang</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => soundManager.testSound('ng', soundManager.config.ng_sound_type, soundManager.config.ng_custom_url)}
-                  className="py-3 px-3.5 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-rose-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                  className="py-3 px-3 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-rose-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
                 >
                   <div className="flex items-center gap-1.5 font-black text-white">
                     <ShieldAlert className="w-4 h-4 text-rose-400" />
-                    <span>🚨 Uji Alarm NG</span>
+                    <span>🚨 3. Alarm NG</span>
                   </div>
-                  <span className="text-[11px] font-bold text-rose-300">Sirene Peringatan Cacat</span>
+                  <span className="text-[10px] font-bold text-rose-300">Peringatan Cacat</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => soundManager.testSound('finish', soundManager.config.finish_sound_type, soundManager.config.finish_custom_url)}
+                  className="py-3 px-3 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border-2 border-indigo-500/50 text-indigo-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-indigo-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                >
+                  <div className="flex items-center gap-1.5 font-black text-white">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span>🏁 4. Selesai Batch</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-300">Target Tercapai</span>
                 </button>
               </div>
             </div>
