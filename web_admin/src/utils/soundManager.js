@@ -202,6 +202,17 @@ class SoundManager {
     this.notify();
   }
 
+  // --- HENTIKAN SUARA ALARM CACAT (NG LOOP) ---
+  stopNg() {
+    if (this.activeNgAudio) {
+      try {
+        this.activeNgAudio.pause();
+        this.activeNgAudio.currentTime = 0;
+      } catch {}
+      this.activeNgAudio = null;
+    }
+  }
+
   // --- HENTIKAN SELURUH SUARA SECARA INSTAN ---
   stopAll() {
     if (this.activeAudio) {
@@ -211,13 +222,7 @@ class SoundManager {
       } catch {}
       this.activeAudio = null;
     }
-    if (this.activeNgAudio) {
-      try {
-        this.activeNgAudio.pause();
-        this.activeNgAudio.currentTime = 0;
-      } catch {}
-      this.activeNgAudio = null;
-    }
+    this.stopNg();
     if (window.speechSynthesis) {
       try {
         window.speechSynthesis.cancel();
@@ -225,15 +230,18 @@ class SoundManager {
     }
   }
 
-  stopNg() {
-    this.stopAll();
-  }
-
   // --- PEMUTAR FILE AUDIO (AI VOICE / UPLOAD) ---
   playAudioFile(url) {
     if (!this.isEnabled || this.volume <= 0 || !url) return;
-    // Potong/matikan suara sebelumnya agar tidak bertabrakan
-    this.stopAll();
+    // Potong suara ucapan sebelumnya jika masih aktif agar tidak saling tumpang tindih
+    if (this.activeAudio) {
+      try {
+        this.activeAudio.pause();
+        this.activeAudio.currentTime = 0;
+      } catch {}
+      this.activeAudio = null;
+    }
+    this.stopNg();
     try {
       const audio = new Audio(url);
       audio.volume = this.volume;
@@ -246,9 +254,12 @@ class SoundManager {
           this.activeAudio = null;
         }
       };
-      audio.play().catch((err) => {
-        console.warn('[SoundManager] Play audio error:', err);
-      });
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('[SoundManager] Play audio error (Autoplay/Device):', err);
+        });
+      }
       this.activeAudio = audio;
     } catch (err) {
       console.warn('[SoundManager] Audio initialization error:', err);

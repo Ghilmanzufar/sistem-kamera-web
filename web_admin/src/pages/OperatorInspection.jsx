@@ -433,6 +433,21 @@ export default function OperatorInspection() {
     return () => clearInterval(sessionTimer);
   }, [navigate]);
 
+  // Browser Audio Unlock Handler pada interaksi pertama operator
+  useEffect(() => {
+    const unlockAudio = () => {
+      soundManager.initContext();
+    };
+    window.addEventListener('click', unlockAudio, { capture: true, passive: true });
+    window.addEventListener('keydown', unlockAudio, { capture: true, passive: true });
+    window.addEventListener('touchstart', unlockAudio, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener('click', unlockAudio, { capture: true });
+      window.removeEventListener('keydown', unlockAudio, { capture: true });
+      window.removeEventListener('touchstart', unlockAudio, { capture: true });
+    };
+  }, []);
+
   // 2. Tangani Perubahan Popups & Audio Notifikasi
   const prevPopupsRef = useRef({});
   useEffect(() => {
@@ -474,7 +489,9 @@ export default function OperatorInspection() {
         setShowNgModal(true);
       } else {
         setShowNgModal(false);
-        soundManager.stopNg();
+        if (prev.ng_active || prev.status === 'NG') {
+          soundManager.stopNg();
+        }
       }
 
       prevPopupsRef.current = { 
