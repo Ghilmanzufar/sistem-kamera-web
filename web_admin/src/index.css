@@ -58,50 +58,58 @@ table td {
 }
 
 /* ==============================================================
-   🌟 FLAWLESS HIGH-CONTRAST LIGHT THEME SYSTEM
-   Ultra-clean contrast, soft shadows & perfect readability
+   🍎 APPLE DESIGN SYSTEM: LIGHT MODE (DESIGN.md)
+   Photography-first, parchment canvas, SF Pro typography, 
+   translucent frosted chrome, and signature Action Blue (#0071e3)
 ============================================================== */
+
 html.light,
 html.light body {
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
+  background-color: #f5f5f7 !important;
+  color: #1d1d1f !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html.light .app-bg-gradient,
 html.light .min-h-screen {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
+  background: #f5f5f7 !important;
+  color: #1d1d1f !important;
 }
 
-/* Light Mode Glassmorphism, Containers & Popups */
+/* Apple Translucent Frosted Glass & Containers */
 html.light .glass-container {
-  background: #ffffff !important;
-  border: 1.5px solid #e2e8f0 !important;
-  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05) !important;
-  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  color: #1d1d1f !important;
 }
 
 html.light .glass-card {
   background: #ffffff !important;
-  border: 1.5px solid #e2e8f0 !important;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
-  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  color: #1d1d1f !important;
 }
 
-/* Background Layers & HUD Containers in Light Mode */
+/* Apple Background Surface Levels */
 html.light .bg-slate-900\/90,
 html.light .bg-slate-900\/80,
 html.light .bg-slate-900\/60,
 html.light .bg-slate-900\/40,
 html.light .bg-slate-900,
+html.light .bg-slate-850,
 html.light .bg-slate-800,
 html.light .bg-slate-800\/80,
 html.light .bg-black\/40,
 html.light .bg-black\/30,
 html.light .bg-black\/20 {
   background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  border-color: #e5e5ea !important;
+  color: #1d1d1f !important;
 }
 
 html.light .bg-slate-950,
@@ -110,12 +118,12 @@ html.light .bg-slate-950\/90,
 html.light .bg-slate-950\/85,
 html.light .bg-slate-950\/80,
 html.light .bg-slate-950\/60 {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  background-color: #f5f5f7 !important;
+  border-color: #e5e5ea !important;
+  color: #1d1d1f !important;
 }
 
-/* Border Enhancements */
+/* Apple Hairline Borders & Dividers */
 html.light .border-white\/20,
 html.light .border-white\/15,
 html.light .border-white\/10,
@@ -123,211 +131,212 @@ html.light .border-white\/5,
 html.light .border-2.border-white\/10,
 html.light .border-2.border-white\/15,
 html.light .border-slate-800,
-html.light .border-slate-700 {
-  border-color: #e2e8f0 !important;
+html.light .border-slate-700,
+html.light .border-slate-600 {
+  border-color: #e5e5ea !important;
 }
 
-/* Typography Hierarchy in Light Mode */
+/* Apple Typography Hierarchy (Ink: #1d1d1f & Ink Muted: #86868b) */
 html.light h1,
 html.light h2,
 html.light h3,
 html.light h4,
 html.light strong,
 html.light b {
-  color: #0f172a !important;
+  color: #1d1d1f !important;
+  letter-spacing: -0.015em !important;
+  font-weight: 600 !important;
 }
 
 html.light p,
 html.light label {
-  color: #334155 !important;
+  color: #6e6e73 !important;
 }
 
 html.light .text-white {
-  color: #0f172a !important;
+  color: #1d1d1f !important;
 }
 
 html.light .text-slate-100,
 html.light .text-slate-200,
 html.light .text-slate-300 {
-  color: #334155 !important;
+  color: #333336 !important;
 }
 
 html.light .text-slate-400 {
-  color: #475569 !important;
-  font-weight: 600;
+  color: #86868b !important;
+  font-weight: 500 !important;
 }
 
 html.light .text-slate-500 {
-  color: #64748b !important;
+  color: #a1a1a6 !important;
 }
 
-html.light header .text-slate-400,
-html.light header div.text-slate-400 {
-  color: #475569 !important;
-  font-weight: 700 !important;
+html.light .font-mono {
+  font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  letter-spacing: -0.01em !important;
 }
 
-/* Accent Text Colors in Light Mode */
+/* Apple Accent Colors */
 html.light .text-blue-400,
-html.light .text-blue-300 {
-  color: #2563eb !important;
+html.light .text-blue-300,
+html.light .text-sky-400,
+html.light .text-sky-300 {
+  color: #0071e3 !important;
 }
 
 html.light .text-emerald-400,
-html.light .text-emerald-300 {
-  color: #059669 !important;
+html.light .text-emerald-300,
+html.light .text-green-400 {
+  color: #34c759 !important;
 }
 
 html.light .text-rose-400,
-html.light .text-rose-300 {
-  color: #e11d48 !important;
+html.light .text-rose-300,
+html.light .text-red-400 {
+  color: #ff3b30 !important;
 }
 
 html.light .text-amber-400,
-html.light .text-amber-300 {
-  color: #d97706 !important;
+html.light .text-amber-300,
+html.light .text-orange-400 {
+  color: #ff9500 !important;
 }
 
 html.light .text-teal-400,
 html.light .text-teal-300 {
-  color: #0d9488 !important;
+  color: #30b0c7 !important;
 }
 
-html.light .text-sky-400,
-html.light .text-sky-300 {
-  color: #0284c7 !important;
+html.light .text-indigo-400,
+html.light .text-indigo-300 {
+  color: #5856d6 !important;
 }
 
 /* ==============================================================
-   📹 CAMERA HUD & STATUS BANNER IN LIGHT MODE
+   🧭 SIDEBAR & NAVBAR IN APPLE LIGHT MODE
 ============================================================== */
+html.light aside,
+html.light .sidebar-container {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-right: 1px solid #e5e5ea !important;
+}
+
+html.light nav a {
+  color: #6e6e73 !important;
+}
+
+html.light nav a:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  color: #1d1d1f !important;
+}
+
+html.light a.bg-blue-600,
+html.light nav a.bg-blue-600 {
+  background-color: #0071e3 !important;
+  color: #ffffff !important;
+  border-color: #0071e3 !important;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25) !important;
+}
+
+html.light header.navbar,
 html.light header.bg-slate-900\/90,
 html.light header.bg-slate-900 {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06) !important;
-}
-
-html.light header.bg-emerald-950\/80,
-html.light header.bg-emerald-900\/90,
-html.light .bg-emerald-950\/80 {
-  background-color: #f0fdf4 !important;
-  border-color: #86efac !important;
-  color: #166534 !important;
-}
-
-html.light header.bg-rose-950\/80,
-html.light header.bg-rose-900\/90,
-html.light .bg-rose-950\/80 {
-  background-color: #fff1f2 !important;
-  border-color: #fca5a5 !important;
-  color: #9f1239 !important;
-}
-
-html.light header.bg-amber-950\/80,
-html.light .bg-amber-950\/80 {
-  background-color: #fffbeb !important;
-  border-color: #fde68a !important;
-  color: #92400e !important;
-}
-
-html.light header.bg-teal-950\/90,
-html.light .bg-teal-950\/90 {
-  background-color: #f0fdfa !important;
-  border-color: #99f6e4 !important;
-  color: #115e59 !important;
-}
-
-html.light header.bg-sky-950\/80,
-html.light .bg-sky-950\/80 {
-  background-color: #f0f9ff !important;
-  border-color: #bae6fd !important;
-  color: #075985 !important;
-}
-
-/* Inspection Side Badge */
-html.light .bg-emerald-950\/60 {
-  background-color: #dcfce7 !important;
-  border-color: #86efac !important;
-  color: #15803d !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid #e5e5ea !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 
 /* ==============================================================
-   📦 DRAGGABLE POPUPS IN LIGHT MODE (Part OK, Flip Side, NG Alarm)
+   📊 APPLE STAT CARDS & METRIC TILES
 ============================================================== */
-html.light .fixed.z-40.bg-slate-950\/95,
-html.light .fixed.z-40 {
-  background-color: #ffffff !important;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.2) !important;
-  color: #0f172a !important;
+html.light .bg-gradient-to-br.from-blue-500\/20,
+html.light [class*="bg-gradient-to-br from-blue-500"] {
+  background: #ffffff !important;
+  border-color: #e5e5ea !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html.light .bg-gradient-to-br.from-blue-500\/20 p,
+html.light .bg-gradient-to-br.from-blue-500\/20 .text-slate-400 {
+  color: #86868b !important;
+}
+html.light .bg-gradient-to-br.from-blue-500\/20 h3,
+html.light .bg-gradient-to-br.from-blue-500\/20 .text-white {
+  color: #1d1d1f !important;
+}
+html.light .bg-gradient-to-br.from-blue-500\/20 .bg-white\/10 {
+  background-color: rgba(0, 113, 227, 0.08) !important;
+  border-color: rgba(0, 113, 227, 0.15) !important;
+  color: #0071e3 !important;
 }
 
-/* Draggable Header Handles */
-html.light .bg-emerald-950\/95 {
-  background-color: #ecfdf5 !important;
-  border-color: #a7f3d0 !important;
-  color: #065f46 !important;
+html.light .bg-gradient-to-br.from-emerald-500\/20,
+html.light [class*="bg-gradient-to-br from-emerald-500"] {
+  background: #ffffff !important;
+  border-color: #e5e5ea !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html.light .bg-gradient-to-br.from-emerald-500\/20 p,
+html.light .bg-gradient-to-br.from-emerald-500\/20 .text-slate-400 {
+  color: #86868b !important;
+}
+html.light .bg-gradient-to-br.from-emerald-500\/20 h3,
+html.light .bg-gradient-to-br.from-emerald-500\/20 .text-white {
+  color: #1d1d1f !important;
+}
+html.light .bg-gradient-to-br.from-emerald-500\/20 .bg-white\/10 {
+  background-color: rgba(52, 199, 89, 0.08) !important;
+  border-color: rgba(52, 199, 89, 0.15) !important;
+  color: #34c759 !important;
 }
 
-html.light .bg-rose-950\/95 {
-  background-color: #fff1f2 !important;
-  border-color: #fecdd3 !important;
-  color: #881337 !important;
+html.light .bg-gradient-to-br.from-rose-500\/20,
+html.light [class*="bg-gradient-to-br from-rose-500"] {
+  background: #ffffff !important;
+  border-color: #e5e5ea !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html.light .bg-gradient-to-br.from-rose-500\/20 p,
+html.light .bg-gradient-to-br.from-rose-500\/20 .text-slate-400 {
+  color: #86868b !important;
+}
+html.light .bg-gradient-to-br.from-rose-500\/20 h3,
+html.light .bg-gradient-to-br.from-rose-500\/20 .text-white {
+  color: #1d1d1f !important;
+}
+html.light .bg-gradient-to-br.from-rose-500\/20 .bg-white\/10 {
+  background-color: rgba(255, 59, 48, 0.08) !important;
+  border-color: rgba(255, 59, 48, 0.15) !important;
+  color: #ff3b30 !important;
 }
 
-html.light .bg-amber-950\/95 {
-  background-color: #fffbeb !important;
-  border-color: #fde68a !important;
-  color: #78350f !important;
+html.light .bg-gradient-to-br.from-amber-500\/20,
+html.light [class*="bg-gradient-to-br from-amber-500"] {
+  background: #ffffff !important;
+  border-color: #e5e5ea !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html.light .bg-gradient-to-br.from-amber-500\/20 p,
+html.light .bg-gradient-to-br.from-amber-500\/20 .text-slate-400 {
+  color: #86868b !important;
+}
+html.light .bg-gradient-to-br.from-amber-500\/20 h3,
+html.light .bg-gradient-to-br.from-amber-500\/20 .text-white {
+  color: #1d1d1f !important;
+}
+html.light .bg-gradient-to-br.from-amber-500\/20 .bg-white\/10 {
+  background-color: rgba(255, 149, 0, 0.08) !important;
+  border-color: rgba(255, 149, 0, 0.15) !important;
+  color: #ff9500 !important;
 }
 
-/* Draggable Handle Badge ("✥ Geser") */
-html.light .bg-black\/50 {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-  color: #334155 !important;
-}
-
-/* Popup Inner Detail Grid */
-html.light .grid.bg-slate-900\/90,
-html.light .p-4.bg-slate-900\/90,
-html.light .p-2\.5.bg-slate-900\/90,
-html.light .p-3.bg-slate-900\/90 {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
-}
-
-/* Verified Labels in Popups */
-html.light .bg-emerald-950\/80.text-emerald-200 {
-  background-color: #ecfdf5 !important;
-  border-color: #a7f3d0 !important;
-  color: #065f46 !important;
-}
-
-/* Inputs, Textareas & Selects in Light Mode */
-html.light input,
-html.light select,
-html.light textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border: 1.5px solid #cbd5e1 !important;
-}
-
-html.light input::placeholder,
-html.light textarea::placeholder {
-  color: #94a3b8 !important;
-}
-
-html.light input:focus,
-html.light select:focus,
-html.light textarea:focus {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-  color: #0f172a !important;
-}
-
-/* Table in Light Mode */
+/* ==============================================================
+   📋 APPLE TABLES & DATA LISTS
+============================================================== */
 html.light table {
   background-color: #ffffff !important;
 }
@@ -336,186 +345,272 @@ html.light thead,
 html.light thead tr,
 html.light th,
 html.light .bg-white\/5 {
-  background-color: #f8fafc !important;
-  color: #334155 !important;
-  border-bottom: 2px solid #e2e8f0 !important;
+  background-color: #fafafc !important;
+  color: #86868b !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  border-bottom: 1px solid #e5e5ea !important;
 }
 
 html.light tbody tr {
   background-color: #ffffff !important;
-  border-bottom: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid #f0f0f2 !important;
 }
 
 html.light tbody tr:hover {
-  background-color: #f8fafc !important;
+  background-color: #fafafc !important;
 }
 
 html.light tbody td {
-  color: #1e293b !important;
+  color: #1d1d1f !important;
 }
 
 html.light tbody td .text-white {
-  color: #0f172a !important;
+  color: #1d1d1f !important;
 }
 
 html.light tbody td .font-mono {
-  color: #334155 !important;
+  color: #1d1d1f !important;
 }
 
-/* Stat Cards in Light Mode */
-html.light .bg-gradient-to-br.from-blue-500\/20 {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
-  border-color: #bfdbfe !important;
-}
-html.light .bg-gradient-to-br.from-blue-500\/20 p,
-html.light .bg-gradient-to-br.from-blue-500\/20 .text-slate-400 {
-  color: #1d4ed8 !important;
-}
-html.light .bg-gradient-to-br.from-blue-500\/20 h3,
-html.light .bg-gradient-to-br.from-blue-500\/20 .text-white {
-  color: #1e3a8a !important;
-}
-html.light .bg-gradient-to-br.from-blue-500\/20 .bg-white\/10 {
-  background-color: #dbeafe !important;
-  border-color: #93c5fd !important;
-  color: #2563eb !important;
-}
-
-html.light .bg-gradient-to-br.from-emerald-500\/20 {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
-  border-color: #a7f3d0 !important;
-}
-html.light .bg-gradient-to-br.from-emerald-500\/20 p,
-html.light .bg-gradient-to-br.from-emerald-500\/20 .text-slate-400 {
-  color: #047857 !important;
-}
-html.light .bg-gradient-to-br.from-emerald-500\/20 h3,
-html.light .bg-gradient-to-br.from-emerald-500\/20 .text-white {
-  color: #064e3b !important;
-}
-html.light .bg-gradient-to-br.from-emerald-500\/20 .bg-white\/10 {
-  background-color: #d1fae5 !important;
-  border-color: #6ee7b7 !important;
-  color: #059669 !important;
-}
-
-html.light .bg-gradient-to-br.from-rose-500\/20 {
-  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%) !important;
-  border-color: #fecdd3 !important;
-}
-html.light .bg-gradient-to-br.from-rose-500\/20 p,
-html.light .bg-gradient-to-br.from-rose-500\/20 .text-slate-400 {
-  color: #be123c !important;
-}
-html.light .bg-gradient-to-br.from-rose-500\/20 h3,
-html.light .bg-gradient-to-br.from-rose-500\/20 .text-white {
-  color: #881337 !important;
-}
-html.light .bg-gradient-to-br.from-rose-500\/20 .bg-white\/10 {
-  background-color: #ffe4e6 !important;
-  border-color: #fda4af !important;
-  color: #e11d48 !important;
-}
-
-/* MUST-HAVE: Pure White Text on Action Buttons */
+/* ==============================================================
+   🔘 APPLE BUTTONS & ACTIONS
+============================================================== */
+/* Action Blue Primary Button */
 html.light button.bg-blue-600,
 html.light button.bg-blue-600 *,
-html.light button.bg-emerald-600,
-html.light button.bg-emerald-600 *,
-html.light button.bg-rose-600,
-html.light button.bg-rose-600 *,
-html.light button.bg-indigo-600,
-html.light button.bg-indigo-600 *,
-html.light button[class*="bg-gradient"],
-html.light button[class*="bg-gradient"] *,
-html.light a[class*="bg-gradient"],
-html.light a[class*="bg-gradient"] *,
-html.light .video-badge,
-html.light .video-badge * {
+html.light button.bg-sky-600,
+html.light button.bg-sky-600 * {
+  background-color: #0071e3 !important;
   color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 6px rgba(0, 113, 227, 0.25) !important;
 }
 
-/* Secondary Action Buttons in Light Mode */
+html.light button.bg-blue-600:hover,
+html.light button.bg-sky-600:hover {
+  background-color: #0077ed !important;
+}
+
+/* Apple Green Success Button */
+html.light button.bg-emerald-600,
+html.light button.bg-emerald-600 * {
+  background-color: #34c759 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 6px rgba(52, 199, 89, 0.25) !important;
+}
+
+/* Apple Red Danger Button */
+html.light button.bg-rose-600,
+html.light button.bg-rose-600 * {
+  background-color: #ff3b30 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.25) !important;
+}
+
+/* Apple Secondary Pill / Outline Buttons */
 html.light button.bg-slate-800,
 html.light button.bg-slate-800 *,
+html.light button.bg-slate-900,
 html.light button.bg-black\/20,
 html.light button.bg-black\/20 * {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+  background-color: #f5f5f7 !important;
+  border-color: #d2d2d7 !important;
+  color: #1d1d1f !important;
 }
 
 html.light button.bg-slate-800:hover,
 html.light button.bg-slate-800:hover *,
+html.light button.bg-slate-900:hover,
 html.light button.bg-black\/20:hover,
 html.light button.bg-black\/20:hover * {
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  background-color: #e8e8ed !important;
+  color: #1d1d1f !important;
 }
 
-/* Active tab button in filter */
-html.light button.bg-blue-600,
-html.light button.bg-blue-600 * {
-  background-color: #2563eb !important;
-  color: #ffffff !important;
+/* Apple Form Controls & Inputs */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #1d1d1f !important;
+  border: 1px solid #d2d2d7 !important;
+  border-radius: 10px !important;
 }
 
-/* Pagination numbers */
-html.light span.bg-slate-900 {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #86868b !important;
 }
 
-/* Status Badges in Light Mode */
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #0071e3 !important;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15) !important;
+  color: #1d1d1f !important;
+}
+
+/* ==============================================================
+   🏷️ APPLE STATUS BADGES (CAPSULES)
+============================================================== */
 html.light .bg-emerald-500\/20,
 html.light .bg-emerald-500\/15 {
-  background-color: #dcfce7 !important;
-  border-color: #86efac !important;
-  color: #15803d !important;
+  background-color: rgba(52, 199, 89, 0.12) !important;
+  border-color: rgba(52, 199, 89, 0.25) !important;
+  color: #1e7e34 !important;
 }
 
 html.light .bg-rose-500\/20,
 html.light .bg-rose-500\/15 {
-  background-color: #ffe4e6 !important;
-  border-color: #fca5a5 !important;
-  color: #be123c !important;
+  background-color: rgba(255, 59, 48, 0.12) !important;
+  border-color: rgba(255, 59, 48, 0.25) !important;
+  color: #d70015 !important;
 }
 
 html.light .bg-blue-500\/20,
 html.light .bg-blue-500\/15 {
-  background-color: #dbeafe !important;
-  border-color: #93c5fd !important;
-  color: #1d4ed8 !important;
+  background-color: rgba(0, 113, 227, 0.1) !important;
+  border-color: rgba(0, 113, 227, 0.25) !important;
+  color: #0071e3 !important;
 }
 
 html.light .bg-amber-500\/20,
 html.light .bg-amber-500\/15 {
-  background-color: #fef3c7 !important;
-  border-color: #fde68a !important;
-  color: #b45309 !important;
+  background-color: rgba(255, 149, 0, 0.12) !important;
+  border-color: rgba(255, 149, 0, 0.25) !important;
+  color: #b25000 !important;
 }
 
-/* Modal Dialogs in Light Mode */
+/* ==============================================================
+   📹 OPERATOR KIOSK & CAMERA INSPECTION IN LIGHT MODE
+============================================================== */
+html.light header.bg-emerald-950\/80,
+html.light header.bg-emerald-900\/90,
+html.light .bg-emerald-950\/80 {
+  background-color: #eafaf1 !important;
+  border-color: #a3e9c4 !important;
+  color: #1e7e34 !important;
+}
+
+html.light header.bg-rose-950\/80,
+html.light header.bg-rose-900\/90,
+html.light .bg-rose-950\/80 {
+  background-color: #fef0f0 !important;
+  border-color: #fcc2c3 !important;
+  color: #d70015 !important;
+}
+
+html.light header.bg-amber-950\/80,
+html.light .bg-amber-950\/80 {
+  background-color: #fef7ec !important;
+  border-color: #fdd8a5 !important;
+  color: #b25000 !important;
+}
+
+html.light header.bg-teal-950\/90,
+html.light .bg-teal-950\/90 {
+  background-color: #e6f7f8 !important;
+  border-color: #9fe2e6 !important;
+  color: #0f6674 !important;
+}
+
+html.light header.bg-sky-950\/80,
+html.light .bg-sky-950\/80 {
+  background-color: #eef6fc !important;
+  border-color: #b3d7f5 !important;
+  color: #005691 !important;
+}
+
+/* Inspection Side Badge */
+html.light .bg-emerald-950\/60 {
+  background-color: rgba(52, 199, 89, 0.15) !important;
+  border-color: rgba(52, 199, 89, 0.3) !important;
+  color: #1e7e34 !important;
+}
+
+/* Draggable Floating Cards (Part OK, Flip Side, NG Alarm) */
+html.light .fixed.z-40.bg-slate-950\/95,
+html.light .fixed.z-40 {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 20px !important;
+  color: #1d1d1f !important;
+}
+
+/* Draggable Header Handles */
+html.light .bg-emerald-950\/95 {
+  background-color: #eafaf1 !important;
+  border-color: #a3e9c4 !important;
+  color: #1e7e34 !important;
+}
+
+html.light .bg-rose-950\/95 {
+  background-color: #fef0f0 !important;
+  border-color: #fcc2c3 !important;
+  color: #d70015 !important;
+}
+
+html.light .bg-amber-950\/95 {
+  background-color: #fef7ec !important;
+  border-color: #fdd8a5 !important;
+  color: #b25000 !important;
+}
+
+/* Draggable Handle Badge ("✥ Geser") */
+html.light .bg-black\/50 {
+  background-color: #f5f5f7 !important;
+  border-color: #d2d2d7 !important;
+  color: #6e6e73 !important;
+}
+
+/* Popup Inner Detail Grid */
+html.light .grid.bg-slate-900\/90,
+html.light .p-4.bg-slate-900\/90,
+html.light .p-2\.5.bg-slate-900\/90,
+html.light .p-3.bg-slate-900\/90 {
+  background-color: #f5f5f7 !important;
+  border-color: #e5e5ea !important;
+  color: #1d1d1f !important;
+}
+
+/* Verified Labels in Popups */
+html.light .bg-emerald-950\/80.text-emerald-200 {
+  background-color: #eafaf1 !important;
+  border-color: #a3e9c4 !important;
+  color: #1e7e34 !important;
+}
+
+/* ==============================================================
+   🪟 APPLE MODALS & OVERLAYS
+============================================================== */
 html.light .fixed.inset-0.bg-black\/80,
 html.light .fixed.inset-0.bg-black\/85,
 html.light .fixed.inset-0.bg-black\/75 {
-  background-color: rgba(15, 23, 42, 0.45) !important;
-  backdrop-filter: blur(8px) !important;
+  background-color: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
 }
 
 html.light .fixed.inset-0 .bg-slate-900,
 html.light .fixed.inset-0 .glass-card {
   background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15) !important;
-  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.18) !important;
+  border-radius: 20px !important;
+  color: #1d1d1f !important;
 }
 
 html.light .fixed.inset-0 .bg-black\/30,
 html.light .fixed.inset-0 .bg-black\/40 {
-  background-color: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+  background-color: #f5f5f7 !important;
+  border: 1px solid #e5e5ea !important;
 }
+
 
 
