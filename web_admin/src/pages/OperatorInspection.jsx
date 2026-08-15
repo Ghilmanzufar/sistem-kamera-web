@@ -676,20 +676,42 @@ export default function OperatorInspection() {
             )}
           </div>
 
-          {/* Right: Operator Badge & Actions (Riwayat Inspeksi + Keluar Shift) */}
+          {/* Right: Operator Badge, Audio Control & Actions (Riwayat Inspeksi + Keluar Shift) */}
           <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-2 min-w-0">
-            {/* Operator Name & Time (Terkunci ke user lokal browser) */}
-            <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-2xl border border-white/10 text-sky-300 text-xs sm:text-sm font-extrabold shadow-inner backdrop-blur-md">
-              <div className="w-6 h-6 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
-                <User className="w-3.5 h-3.5" />
+            {/* Row 1: Audio Control (Ditaruh di atas Riwayat Inspeksi) & Operator Info */}
+            <div className="flex items-center gap-2">
+              {/* Tombol Atur Audio Speaker USB */}
+              <button
+                type="button"
+                onClick={() => setShowAudioModal(true)}
+                className={`py-1.5 px-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center gap-2 border shadow-inner backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                  audioState.isEnabled 
+                    ? 'bg-slate-900/90 hover:bg-slate-800 text-sky-300 border-sky-500/30 shadow-sky-500/10' 
+                    : 'bg-rose-950/80 hover:bg-rose-900/90 text-rose-300 border-rose-500/40 shadow-rose-950/20'
+                }`}
+                title="Pengaturan Suara Speaker USB"
+              >
+                {audioState.isEnabled ? (
+                  <Volume2 className="w-3.5 h-3.5 text-sky-400" />
+                ) : (
+                  <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                )}
+                <span>{audioState.isEnabled ? `Audio ${audioState.volume}%` : 'Audio Mute'}</span>
+              </button>
+
+              {/* Operator Name & Time (Terkunci ke user lokal browser) */}
+              <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-2xl border border-white/10 text-sky-300 text-xs sm:text-sm font-extrabold shadow-inner backdrop-blur-md">
+                <div className="w-6 h-6 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+                <span className="truncate max-w-[140px] text-white">{localOperatorName}</span>
+                <span className="text-slate-600 font-normal">|</span>
+                <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="font-mono text-slate-300">{loginTimeStr}</span>
               </div>
-              <span className="truncate max-w-[140px] text-white">{localOperatorName}</span>
-              <span className="text-slate-600 font-normal">|</span>
-              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="font-mono text-slate-300">{loginTimeStr}</span>
             </div>
 
-            {/* Sub-Actions: Riwayat Inspeksi & Keluar Shift */}
+            {/* Row 2: Sub-Actions: Riwayat Inspeksi & Keluar Shift */}
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
@@ -763,25 +785,6 @@ export default function OperatorInspection() {
           >
             <Camera className="w-4 h-4 text-amber-400" />
             <span>📷 MOCK DETECT</span>
-          </button>
-
-          {/* Tombol Atur Audio Speaker USB */}
-          <button
-            type="button"
-            onClick={() => setShowAudioModal(true)}
-            className={`py-2 px-3.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 border transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95 ${
-              audioState.isEnabled 
-                ? 'bg-slate-800/90 hover:bg-slate-700 text-sky-300 border-sky-500/30 shadow-sky-500/10' 
-                : 'bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border-rose-500/40 shadow-rose-950/20'
-            }`}
-            title="Pengaturan Suara Speaker USB"
-          >
-            {audioState.isEnabled ? (
-              <Volume2 className="w-4 h-4 text-sky-400" />
-            ) : (
-              <VolumeX className="w-4 h-4 text-rose-400" />
-            )}
-            <span>{audioState.isEnabled ? `Audio ${audioState.volume}%` : 'Audio Mute'}</span>
           </button>
         </div>
 
