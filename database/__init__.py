@@ -7,17 +7,19 @@ from .models import (
     PartRule,
     GlobalSettings,
     SisonConfig,
+    AudioConfig,
     AuditLog,
     log_audit_event
 )
 from .security import hash_password, verify_password
 from .migrations import auto_migrate_schema
-from .seeder import seed_default_users, auto_seed_camera_hardware
+from .seeder import seed_default_users, auto_seed_camera_hardware, seed_default_audio_config
 
 # Inisialisasi otomatis skema & data awal
 auto_migrate_schema()
 seed_default_users()
 auto_seed_camera_hardware()
+seed_default_audio_config()
 
 __all__ = [
     "engine",
@@ -31,6 +33,7 @@ __all__ = [
     "PartRule",
     "GlobalSettings",
     "SisonConfig",
+    "AudioConfig",
     "AuditLog",
     "log_audit_event",
     "hash_password",

@@ -72,7 +72,11 @@ def create_app() -> FastAPI:
 
     # 4. Mount Static Files
     os.makedirs("web_admin/dist", exist_ok=True)
+    os.makedirs("uploads/audio", exist_ok=True)
     
+    # Mount Uploaded Audio Files
+    app.mount("/uploads/audio", StaticFiles(directory="uploads/audio"), name="uploaded_audio")
+
     # Mount SPA Static Files di Root ('/')
     app.mount("/", SPAStaticFiles(directory="web_admin/dist", html=True), name="spa")
 

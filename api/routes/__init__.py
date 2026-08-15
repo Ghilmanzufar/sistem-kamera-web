@@ -10,12 +10,14 @@ from .model_routes import router as model_router
 from .rule_routes import router as rule_router
 from .user_routes import router as user_router
 from .sison_config_routes import router as sison_config_router
+from .audio_routes import router as audio_router
 from .system_routes import router as system_router
 
 # Router publik (tanpa token / token operator)
 public_router = APIRouter()
 public_router.include_router(auth_router)
 public_router.include_router(operator_router)
+public_router.include_router(audio_router)
 
 # Router terproteksi admin (dengan dependency verify_admin_auth)
 admin_protected_router = APIRouter(dependencies=[Depends(verify_admin_auth)])
@@ -27,6 +29,7 @@ admin_protected_router.include_router(model_router) # /models, /models/{part_no}
 admin_protected_router.include_router(user_router) # /users
 admin_protected_router.include_router(camera_router) # /cameras, /cameras/scan, /cameras/{id}/*
 admin_protected_router.include_router(sison_config_router) # /sison-config, /sison-test-ping
+admin_protected_router.include_router(audio_router) # /audio/config, /audio/upload, /audio/presets
 
 __all__ = [
     "sison_inbound_router",

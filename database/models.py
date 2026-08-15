@@ -69,6 +69,18 @@ class SisonConfig(Base):
     callback_url = Column(String, default="http://localhost:3000/api/kamera/callback")
     api_key = Column(String, default="kamera-secret-key")
 
+class AudioConfig(Base):
+    __tablename__ = "audio_config"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    is_enabled = Column(Boolean, default=True)
+    volume = Column(Integer, default=80)  # 0 - 100
+    ok_sound_type = Column(String, default="chime")  # 'chime', 'bell', 'voice_id', 'custom'
+    ok_custom_url = Column(String, nullable=True)
+    flip_sound_type = Column(String, default="beep")  # 'beep', 'ding', 'voice_id', 'custom'
+    flip_custom_url = Column(String, nullable=True)
+    ng_sound_type = Column(String, default="siren")  # 'siren', 'buzzer', 'alarm', 'voice_id', 'custom'
+    ng_custom_url = Column(String, nullable=True)
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)

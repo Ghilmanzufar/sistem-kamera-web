@@ -15,6 +15,7 @@ import History from './pages/History';
 import Rules from './pages/Rules';
 import Models from './pages/Models';
 import Users from './pages/Users';
+import AudioSettings from './pages/AudioSettings';
 import SisonConfig from './pages/SisonConfig';
 import Logs from './pages/Logs';
 import SystemHealth from './pages/SystemHealth';
@@ -220,6 +221,7 @@ export default function App() {
               <Route path="/rules" element={<Rules />} />
               <Route path="/models" element={<Models />} />
               <Route path="/users" element={<Users />} />
+              <Route path="/audio-config" element={<AudioSettings />} />
               <Route path="/system-health" element={<SystemHealth />} />
             </Route>
 

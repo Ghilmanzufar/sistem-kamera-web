@@ -19,7 +19,8 @@ import {
   Sun,
   Moon,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Volume2
 } from 'lucide-react';
 import api from '../api/client';
 import ConfirmModal from './ConfirmModal';
@@ -75,6 +76,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
     { to: "/models", label: "Masterdata Model", icon: BrainCircuit, roles: ['pengawas', 'admin'] },
     { to: "/rules", label: "Setting Rule", icon: Sliders, roles: ['pengawas', 'admin'] },
     { to: "/users", label: "User Manajemen", icon: Users, roles: ['pengawas', 'admin'] },
+    { to: "/audio-config", label: "Audio & Suara", icon: Volume2, roles: ['pengawas', 'admin'] },
     { to: "/sison-config", label: "Config Sison", icon: Settings, roles: ['pengawas', 'admin'] },
     { to: "/system-health", label: "Status Sistem", icon: Activity, roles: ['pengawas', 'admin'] },
     { to: "/logs", label: "Audit Logs", icon: FileText, roles: ['pengawas', 'admin'] },

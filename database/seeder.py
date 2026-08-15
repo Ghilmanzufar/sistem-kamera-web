@@ -1,7 +1,25 @@
 import subprocess
 from .connection import SessionLocal
-from .models import User, CameraConfig
+from .models import User, CameraConfig, AudioConfig
 from .security import hash_password
+
+def seed_default_audio_config():
+    """Seeding konfigurasi audio default jika belum ada di database."""
+    try:
+        with SessionLocal() as db:
+            if db.query(AudioConfig).count() == 0:
+                default_audio = AudioConfig(
+                    is_enabled=True,
+                    volume=80,
+                    ok_sound_type="chime",
+                    flip_sound_type="beep",
+                    ng_sound_type="siren"
+                )
+                db.add(default_audio)
+                db.commit()
+                print("[SYSTEM] Default audio configuration seeded (volume: 80%, OK: chime, Flip: beep, NG: siren).")
+    except Exception as e:
+        print(f"[WARN] Auto-seed audio config: {e}")
 
 def seed_default_users():
     """Seeding akun pengawas default & migrasi role admin lama."""

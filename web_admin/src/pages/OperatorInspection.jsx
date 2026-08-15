@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Camera, CheckCircle2, XCircle, Play, History, LogOut, 
   AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
-  Layers, User, Clock, Eye, GripHorizontal, WifiOff, Wifi
+  Layers, User, Clock, Eye, GripHorizontal, WifiOff, Wifi,
+  Volume2, VolumeX, Volume1, Sliders
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
+import soundManager from '../utils/soundManager';
 import ConfirmModal from '../components/ConfirmModal';
 import { applyTheme } from '../utils/theme';
 
@@ -192,6 +194,14 @@ export default function OperatorInspection() {
   const [showNgModal, setShowNgModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showAudioModal, setShowAudioModal] = useState(false);
+
+  // Audio State Reactivity
+  const [audioState, setAudioState] = useState({
+    isEnabled: soundManager.isEnabled,
+    volume: Math.round(soundManager.volume * 100),
+    config: soundManager.config
+  });
 
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
@@ -220,17 +230,30 @@ export default function OperatorInspection() {
     } catch {}
   };
 
-  // Web Audio Synth Siren reference
-  const sirenOscillatorRef = useRef(null);
-  const sirenGainRef = useRef(null);
-  const audioCtxRef = useRef(null);
-
   // Reference to pause SSE updates briefly after actions to prevent state flicker
   const ignoreSseRef = useRef(0);
 
   // State Jaringan & Auto-Reconnect
   const [isNetworkOffline, setIsNetworkOffline] = useState(false);
   const offlineErrorsRef = useRef(0);
+
+  // Sinkronisasi Konfigurasi Audio Backend
+  useEffect(() => {
+    const fetchAudioConfig = async () => {
+      try {
+        const res = await api.get('/api/audio/config');
+        if (res.data) {
+          soundManager.syncConfig(res.data);
+        }
+      } catch {}
+    };
+    fetchAudioConfig();
+
+    const unsub = soundManager.subscribe((state) => {
+      setAudioState(state);
+    });
+    return () => unsub();
+  }, []);
 
   // 1. Sinkronisasi Real-Time via SSE (Server-Sent Events) dengan Fallback Polling & Network Recovery
   useEffect(() => {
@@ -359,82 +382,50 @@ export default function OperatorInspection() {
     return () => clearInterval(sessionTimer);
   }, [navigate]);
 
-  // 2. Tangani Perubahan Popups & NG Alarm
+  // 2. Tangani Perubahan Popups & Audio Notifikasi
+  const prevPopupsRef = useRef({});
   useEffect(() => {
     if (telemetry.popups) {
+      const prev = prevPopupsRef.current || {};
+
+      // Trigger Part OK Sound
       if (telemetry.popups.part_ok && telemetry.status !== 'STANDBY') {
+        if (!prev.part_ok) {
+          soundManager.playOk();
+        }
         setShowPartOkModal(true);
       } else {
         setShowPartOkModal(false);
       }
+
+      // Trigger Flip Part Sound
       if (telemetry.popups.flip_part && telemetry.status !== 'STANDBY') {
+        if (!prev.flip_part) {
+          soundManager.playFlip();
+        }
         setShowFlipModal(true);
       } else {
         setShowFlipModal(false);
       }
+
+      // Trigger NG Siren Alert
       if (telemetry.popups.ng_active || telemetry.status === 'NG') {
+        if (!prev.ng_active && telemetry.status !== 'STANDBY') {
+          soundManager.startNg();
+        }
         setShowNgModal(true);
-        startSirenAlert();
       } else {
         setShowNgModal(false);
-        stopSirenAlert();
+        soundManager.stopNg();
       }
+
+      prevPopupsRef.current = { ...telemetry.popups };
     }
   }, [telemetry.popups, telemetry.status, telemetry.qty_remaining]);
 
-  // Audio Sirene Synth Web Audio
-  const startSirenAlert = () => {
-    try {
-      if (!audioCtxRef.current) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtxRef.current = new AudioContext();
-      }
-      if (audioCtxRef.current.state === 'suspended') {
-        audioCtxRef.current.resume();
-      }
-      if (!sirenOscillatorRef.current) {
-        const ctx = audioCtxRef.current;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, ctx.currentTime);
-        
-        const now = ctx.currentTime;
-        for (let i = 0; i < 60; i++) {
-          osc.frequency.linearRampToValueAtTime(1200, now + i * 0.8 + 0.4);
-          osc.frequency.linearRampToValueAtTime(800, now + i * 0.8 + 0.8);
-        }
-
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-
-        sirenOscillatorRef.current = osc;
-        sirenGainRef.current = gain;
-      }
-    } catch (e) {
-      console.warn('AudioContext alert error:', e);
-    }
-  };
-
-  const stopSirenAlert = () => {
-    try {
-      if (sirenOscillatorRef.current) {
-        sirenOscillatorRef.current.stop();
-        sirenOscillatorRef.current.disconnect();
-        sirenOscillatorRef.current = null;
-      }
-    } catch {}
-  };
-
   useEffect(() => {
     return () => {
-      stopSirenAlert();
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close().catch(() => {});
-      }
+      soundManager.stopNg();
     };
   }, []);
 
@@ -772,6 +763,25 @@ export default function OperatorInspection() {
           >
             <Camera className="w-4 h-4 text-amber-400" />
             <span>📷 MOCK DETECT</span>
+          </button>
+
+          {/* Tombol Atur Audio Speaker USB */}
+          <button
+            type="button"
+            onClick={() => setShowAudioModal(true)}
+            className={`py-2 px-3.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 border transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95 ${
+              audioState.isEnabled 
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-sky-300 border-sky-500/30 shadow-sky-500/10' 
+                : 'bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border-rose-500/40 shadow-rose-950/20'
+            }`}
+            title="Pengaturan Suara Speaker USB"
+          >
+            {audioState.isEnabled ? (
+              <Volume2 className="w-4 h-4 text-sky-400" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-rose-400" />
+            )}
+            <span>{audioState.isEnabled ? `Audio ${audioState.volume}%` : 'Audio Mute'}</span>
           </button>
         </div>
 
@@ -1135,6 +1145,125 @@ export default function OperatorInspection() {
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutModal(false)}
       />
+
+      {/* 9. MODAL PENGATURAN AUDIO & SPEAKER USB OPERATOR */}
+      {showAudioModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shadow-md">
+                  <Volume2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white leading-tight">Pengaturan Audio & Suara</h3>
+                  <p className="text-xs text-sky-300 font-medium">Output Speaker USB / Komputer</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { soundManager.stopNg(); setShowAudioModal(false); }}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Master Switch On/Off */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950/80 border border-white/10">
+              <div className="flex items-center gap-2.5">
+                {audioState.isEnabled ? (
+                  <Volume2 className="w-5 h-5 text-emerald-400" />
+                ) : (
+                  <VolumeX className="w-5 h-5 text-rose-400" />
+                )}
+                <div>
+                  <div className="text-xs font-black text-white">Status Suara Speaker</div>
+                  <div className="text-[11px] text-slate-400">{audioState.isEnabled ? 'Aktif (Berbunyi saat deteksi)' : 'Senyap / Mute'}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => soundManager.setEnabled(!audioState.isEnabled)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow ${
+                  audioState.isEnabled
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10'
+                }`}
+              >
+                {audioState.isEnabled ? 'ON (AKTIF)' : 'MUTE'}
+              </button>
+            </div>
+
+            {/* Master Volume Slider */}
+            <div className="space-y-2 p-3.5 rounded-2xl bg-slate-950/80 border border-white/10">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-slate-300 uppercase tracking-wider">Level Volume:</span>
+                <span className="font-mono text-sky-400 font-black text-sm">{audioState.volume}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={audioState.volume}
+                onChange={(e) => soundManager.setVolume(parseInt(e.target.value))}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
+              />
+              <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                <span>0% (Hening)</span>
+                <span>50%</span>
+                <span>100% (Maksimal)</span>
+              </div>
+            </div>
+
+            {/* Uji Coba Suara (Test Buttons) */}
+            <div className="space-y-2">
+              <div className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                Uji Coba Nada Notifikasi:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => soundManager.testSound('ok', soundManager.config.ok_sound_type, soundManager.config.ok_custom_url)}
+                  className="py-2.5 px-3 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-200 font-black text-xs transition-all shadow cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                >
+                  <span>▶ Part OK</span>
+                  <span className="text-[10px] font-normal text-emerald-400">Chime Sukses</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => soundManager.testSound('flip', soundManager.config.flip_sound_type, soundManager.config.flip_custom_url)}
+                  className="py-2.5 px-3 rounded-xl bg-teal-950/70 hover:bg-teal-900 border border-teal-500/40 text-teal-200 font-black text-xs transition-all shadow cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                >
+                  <span>▶ Balik Part</span>
+                  <span className="text-[10px] font-normal text-teal-400">Dual Beep</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => soundManager.testSound('ng', soundManager.config.ng_sound_type, soundManager.config.ng_custom_url)}
+                  className="py-2.5 px-3 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-rose-200 font-black text-xs transition-all shadow cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
+                >
+                  <span>▶ Alarm NG</span>
+                  <span className="text-[10px] font-normal text-rose-400">Sirene Cacat</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-1 flex justify-end">
+              <button
+                type="button"
+                onClick={() => { soundManager.stopNg(); setShowAudioModal(false); }}
+                className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
+              >
+                Tutup & Terapkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
