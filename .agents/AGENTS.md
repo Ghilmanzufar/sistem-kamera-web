@@ -4,8 +4,7 @@
 
 <!-- antislop: auto-managed block, do not edit -->
 ## antislop
-For UI, copy, people, or mobile layout work, read `antislop.md` (core) and then the skill for the task:
-- UI / visual: `antislop-ui.md`
+For copy, people, or mobile layout work, read `antislop.md` (core) and then the skill for the task:
 - Copy & text: `antislop-copywriting.md`
 - People: `antislop-human.md`
 - Mobile / responsive: `antislop-layoutmobile.md`
