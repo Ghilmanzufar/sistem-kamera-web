@@ -150,8 +150,34 @@ def get_model_detail(part_no: str, db: Session = Depends(get_db)):
             "raw_sisi": sisi_val,
             "nama_komponen": r.nama_komponen,
             "qty": r.qty or 1,
-            "min_confidence": r.min_confidence or 0.70
+            "min_confidence": r.min_confidence or 0.75
         })
+
+    # Fallback jika PartRule di DB belum terisi tapi file .pt ada
+    if not components and os.path.exists(pt_path):
+        try:
+            import torch
+            ckpt = torch.load(pt_path, map_location="cpu", weights_only=False)
+            names = None
+            if isinstance(ckpt, dict) and 'model' in ckpt:
+                raw = getattr(ckpt['model'], 'names', None)
+                if raw is not None:
+                    names = [str(v) for k, v in sorted(raw.items(), key=lambda x: int(x[0]))]
+            if names:
+                for label in names:
+                    raw_lbl = str(label).strip()
+                    first_tok = raw_lbl.split('-')[0].strip().upper() if '-' in raw_lbl else (raw_lbl.split('_')[0].strip().upper() if '_' in raw_lbl else raw_lbl[:1].upper())
+                    sisi_val = first_tok if first_tok in ['F', 'R', 'FRONT', 'REAR'] else (first_tok or "-")
+                    display_sisi = "FRONT (F)" if sisi_val in ["F", "FRONT"] else ("REAR (R)" if sisi_val in ["R", "REAR"] else sisi_val)
+                    components.append({
+                        "sisi": display_sisi,
+                        "raw_sisi": sisi_val,
+                        "nama_komponen": label,
+                        "qty": 1,
+                        "min_confidence": 0.75
+                    })
+        except Exception as e_detail:
+            print(f"[DETAIL MODEL FALLBACK ERROR] {e_detail}")
 
     mtime = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
     size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 2)
