@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, UserCheck, Shield, Search, Filter, RotateCcw, Lock, AlertTriangle } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import PageHeader from '../components/PageHeader';
-import DataTable from '../components/DataTable';
+import UserFilterCard from '../components/users/UserFilterCard';
+import UserTable from '../components/users/UserTable';
+import UserFormModal from '../components/users/UserFormModal';
+import UserDeleteModal from '../components/users/UserDeleteModal';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -35,7 +38,7 @@ export default function Users() {
     try {
       const res = await api.get('/api/admin/users');
       setUsers(res.data || []);
-    } catch (err) {
+    } catch {
       if (!isSilent) toast.error('Gagal mengambil data user');
     } finally {
       if (!isSilent) setLoading(false);
@@ -167,319 +170,57 @@ export default function Users() {
       />
 
       {/* Filter Toolbar Card */}
-      <div className="glass-card p-5 border border-white/10 rounded-2xl shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <Filter className="w-4 h-4 text-blue-400" />
-            <h3 className="font-extrabold text-white text-sm sm:text-base">Filter Pengguna</h3>
-          </div>
-          <span className="text-xs font-bold text-slate-400">
-            Ditemukan: <strong className="text-white">{filteredUsers.length}</strong> dari {users.length} pengguna
-          </span>
-        </div>
+      <UserFilterCard
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        roleFilter={roleFilter}
+        setRoleFilter={setRoleFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        totalCount={users.length}
+        filteredCount={filteredUsers.length}
+        onResetFilters={handleResetFilters}
+      />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {/* Pencarian Username / Nama / NIK */}
-          <div className="sm:col-span-2 lg:col-span-2 relative">
-            <input
-              type="text"
-              placeholder="Cari username, nama lengkap, atau NIK..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 transition-colors"
-            />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          </div>
-
-          {/* Filter Role */}
-          <div>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-blue-400 transition-colors"
-            >
-              <option value="ALL">Semua Role</option>
-              <option value="pengawas">Pengawas</option>
-              <option value="operator">Operator</option>
-            </select>
-          </div>
-
-          {/* Filter Status & Reset */}
-          <div className="flex items-center gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 px-3.5 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-blue-400 transition-colors"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="ACTIVE">Aktif Saja</option>
-              <option value="INACTIVE">Non-Aktif Saja</option>
-            </select>
-
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-white/10 transition-all cursor-pointer shadow-md"
-              title="Reset Filter"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-card p-6 border border-white/10 rounded-2xl">
-        <DataTable headers={headers} isLoading={loading} emptyMessage="Tidak ada data user yang sesuai dengan filter.">
-          {filteredUsers.map((u) => (
-            <tr key={u.id} className="hover:bg-white/5 transition-colors">
-              <td className="p-4 text-xs font-mono text-slate-400 text-center">#{u.id}</td>
-              <td className="p-4 text-xs font-mono font-bold text-sky-300 text-center">
-                {u.nik ? (
-                  <span className="px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-400/30">
-                    {u.nik}
-                  </span>
-                ) : (
-                  <span className="text-slate-500">-</span>
-                )}
-              </td>
-              <td className="p-4 font-bold text-white text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <UserCheck className="w-4 h-4 text-blue-400 shrink-0" />
-                  <span>{u.username}</span>
-                </div>
-              </td>
-              <td className="p-4 text-slate-200 text-sm text-center">{u.fullname || '-'}</td>
-              <td className="p-4 text-center">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase border ${
-                  u.role === 'pengawas'
-                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                }`}>
-                  <Shield className="w-3 h-3" />
-                  {u.role}
-                </span>
-              </td>
-              <td className="p-4 text-center">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  u.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                }`}>
-                  {u.is_active ? 'Aktif' : 'Non-Aktif'}
-                </span>
-              </td>
-              <td className="p-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => openEditModal(u)}
-                    className="p-2 text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:bg-blue-500 hover:text-white transition-all cursor-pointer"
-                    title="Edit User"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(u)}
-                    className="p-2 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
-                    title="Hapus User"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </DataTable>
-      </div>
+      {/* User Table */}
+      <UserTable
+        headers={headers}
+        loading={loading}
+        users={filteredUsers}
+        onEdit={openEditModal}
+        onDelete={openDeleteModal}
+      />
 
       {/* User Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-xl p-8 glass-card border border-white/15 rounded-3xl shadow-2xl space-y-6">
-            <h3 className="text-2xl font-bold text-white mb-6">
-              {editingUser ? `Edit User: ${editingUser.username}` : 'Tambah User Baru'}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Contoh: op_budi"
-                    className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    NIK (Nomor Induk Karyawan)
-                  </label>
-                  <input
-                    type="text"
-                    value={nik}
-                    onChange={(e) => setNik(e.target.value)}
-                    placeholder="Contoh: 2026-0812"
-                    className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Nama Lengkap
-                </label>
-                <input
-                  type="text"
-                  value={fullname}
-                  onChange={(e) => setFullname(e.target.value)}
-                  placeholder="Contoh: Budi Santoso"
-                  className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  PIN / Password {editingUser && '(Biarkan kosong jika tidak diubah)'}
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Role Sistem
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-                >
-                  <option value="pengawas">Pengawas (Akses Penuh)</option>
-                  <option value="operator">Operator (History Inspeksi Only)</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="isActiveCheck"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-5 h-5 rounded bg-black/30 border-white/10 text-blue-600 focus:ring-0 cursor-pointer"
-                />
-                <label htmlFor="isActiveCheck" className="text-sm font-semibold text-slate-300 cursor-pointer">
-                  Status Akun Aktif
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-5 py-2.5 text-sm font-semibold text-slate-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-600/30 disabled:opacity-50 cursor-pointer"
-                >
-                  {submitting ? 'Memproses...' : 'Simpan User'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <UserFormModal
+        show={showModal}
+        editingUser={editingUser}
+        username={username}
+        setUsername={setUsername}
+        nik={nik}
+        setNik={setNik}
+        password={password}
+        setPassword={setPassword}
+        role={role}
+        setRole={setRole}
+        fullname={fullname}
+        setFullname={setFullname}
+        isActive={isActive}
+        setIsActive={setIsActive}
+        submitting={submitting}
+        onSubmit={handleSubmit}
+        onClose={() => setShowModal(false)}
+      />
 
       {/* SECURE ADMIN PASSWORD CONFIRMATION MODAL FOR DELETING USER */}
-      {deleteUserTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md p-7 glass-card border-2 border-rose-500/40 rounded-3xl shadow-2xl space-y-5">
-            <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-              <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-lg">
-                <Lock className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white leading-tight">Konfirmasi Hapus User</h3>
-                <p className="text-xs text-rose-300 font-medium">Otorisasi admin diperlukan</p>
-              </div>
-            </div>
-
-            {/* Detail Target User */}
-            <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-white/10 space-y-1.5 text-xs text-slate-300">
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold">Target User:</span>
-                <span className="font-extrabold text-white">{deleteUserTarget.username}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold">Nama Lengkap:</span>
-                <span className="font-bold text-slate-200">{deleteUserTarget.fullname || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold">NIK:</span>
-                <span className="font-mono font-bold text-sky-300">{deleteUserTarget.nik || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold">Role:</span>
-                <span className="font-extrabold uppercase text-amber-400">{deleteUserTarget.role}</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleDeleteUser} className="space-y-4">
-              <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Password Admin Anda (Akun Login) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    required
-                    autoFocus
-                    placeholder="Masukkan password admin Anda..."
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border-2 border-rose-500/40 rounded-xl text-white text-sm focus:outline-none focus:border-rose-400 transition-colors"
-                  />
-                  <Lock className="w-4 h-4 text-rose-400 absolute left-3.5 top-3" />
-                </div>
-                <div className="flex items-center gap-1.5 mt-2 text-[11px] text-amber-300 font-semibold">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  <span>Aksi penghapusan akan dicatat permanen di Log Audit sistem.</span>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={() => { setDeleteUserTarget(null); setAdminPassword(''); }}
-                  className="px-5 py-2.5 text-xs font-extrabold text-slate-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 cursor-pointer disabled:opacity-50"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={deleting || !adminPassword}
-                  className="px-5 py-2.5 text-xs font-black text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 rounded-xl shadow-lg shadow-rose-600/30 disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>{deleting ? 'Memverifikasi...' : 'Hapus User Permanen'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <UserDeleteModal
+        targetUser={deleteUserTarget}
+        adminPassword={adminPassword}
+        setAdminPassword={setAdminPassword}
+        deleting={deleting}
+        onDelete={handleDeleteUser}
+        onClose={() => { setDeleteUserTarget(null); setAdminPassword(''); }}
+      />
     </div>
   );
 }
