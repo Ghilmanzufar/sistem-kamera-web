@@ -188,16 +188,30 @@ export default function Models() {
     }
   };
 
+  const DEFECT_KEYWORDS = ["ng", "defect", "cacat", "reject", "broken", "patah", "scratch", "dent", "missing", "crack"];
+
   const getLabelValidation = (labelName) => {
     if (!labelName) return { status: 'invalid', message: 'Kosong', color: 'text-rose-400 bg-rose-500/10 border-rose-500/30' };
     const raw = String(labelName).trim().toLowerCase();
-    if (raw.startsWith('f-') || raw.startsWith('f_') || raw.startsWith('front-') || raw.startsWith('front_')) {
-      return { status: 'front', side: 'FRONT (F)', color: 'text-sky-300 bg-sky-500/20 border-sky-400/30', icon: 'F' };
+    const tokens = raw.split(/[-_\s]+/);
+    const isDefect = tokens.some(t => DEFECT_KEYWORDS.includes(t));
+
+    const isFront = raw.startsWith('f-') || raw.startsWith('f_') || raw.startsWith('front-') || raw.startsWith('front_');
+    const isRear = raw.startsWith('r-') || raw.startsWith('r_') || raw.startsWith('rear-') || raw.startsWith('rear_');
+
+    if (isFront) {
+      if (isDefect) {
+        return { status: 'front_defect', isDefect: true, side: 'FRONT (F) • DEFECT / NG', color: 'text-rose-300 bg-rose-500/20 border-rose-400/40', icon: '⚠️' };
+      }
+      return { status: 'front', isDefect: false, side: 'FRONT (F)', color: 'text-sky-300 bg-sky-500/20 border-sky-400/30', icon: 'F' };
     }
-    if (raw.startsWith('r-') || raw.startsWith('r_') || raw.startsWith('rear-') || raw.startsWith('rear_')) {
-      return { status: 'rear', side: 'REAR (R)', color: 'text-amber-300 bg-amber-500/20 border-amber-400/30', icon: 'R' };
+    if (isRear) {
+      if (isDefect) {
+        return { status: 'rear_defect', isDefect: true, side: 'REAR (R) • DEFECT / NG', color: 'text-rose-300 bg-rose-500/20 border-rose-400/40', icon: '⚠️' };
+      }
+      return { status: 'rear', isDefect: false, side: 'REAR (R)', color: 'text-amber-300 bg-amber-500/20 border-amber-400/30', icon: 'R' };
     }
-    return { status: 'warning', side: '⚠️ Non-Standar', color: 'text-rose-300 bg-rose-500/20 border-rose-400/40', icon: '!' };
+    return { status: 'warning', isDefect: isDefect, side: isDefect ? '⚠️ Non-Standar (Defect NG)' : '⚠️ Non-Standar', color: 'text-rose-300 bg-rose-500/20 border-rose-400/40', icon: '!' };
   };
 
   const headers = ["Part Number", "Format & Engine", "Waktu Update", "Status", "Aksi"];
@@ -720,9 +734,51 @@ export default function Models() {
                 </div>
               </div>
 
-              {/* Section 3: Do's and Don'ts Table */}
+              {/* Section 3: Defect & NG Label Rules */}
+              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-rose-300 text-base flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-rose-400" />
+                    2. Standarisasi Label Kecacatan (Defect / NG)
+                  </h4>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-rose-500/20 text-rose-300 font-mono font-bold text-xs border border-rose-500/30">
+                    Auto NG Trigger
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Engine AI mengenali kecacatan menggunakan pencocokan kata kunci (<em>token exact-match</em>). 
+                  Jika model Anda mendeteksi cacat fisik, gunakan salah satu kata kunci defect yang terdaftar: 
+                  <span className="font-mono text-amber-300 font-semibold"> ng, defect, cacat, reject, broken, patah, scratch, dent, missing, crack</span>.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1.5 font-mono">
+                    <span className="text-sky-300 font-bold font-sans block">Defect Sisi Depan (Front):</span>
+                    <div className="text-emerald-400">✓ f-ng</div>
+                    <div className="text-emerald-400">✓ f-ng_scratch</div>
+                    <div className="text-emerald-400">✓ f-defect_konektor</div>
+                    <div className="text-emerald-400">✓ f-crack</div>
+                  </div>
+                  <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1.5 font-mono">
+                    <span className="text-amber-300 font-bold font-sans block">Defect Sisi Belakang (Rear):</span>
+                    <div className="text-emerald-400">✓ r-ng</div>
+                    <div className="text-emerald-400">✓ r-ng_seal_robek</div>
+                    <div className="text-emerald-400">✓ r-defect_pad</div>
+                    <div className="text-emerald-400">✓ r-scratch</div>
+                  </div>
+                </div>
+
+                <div className="text-[11.5px] text-slate-300 bg-rose-950/30 p-2.5 rounded-xl border border-rose-500/20 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Catatan Logika:</strong> Begitu AI mendeteksi 1 saja bounding box label defect (NG), sistem <strong>langsung memutus timer OK</strong>, membunyikan alarm suara NG, dan mencatat event cacat ke database / offline buffer.
+                  </span>
+                </div>
+              </div>
+
+              {/* Section 4: Do's and Don'ts Table */}
               <div className="space-y-3">
-                <h4 className="font-bold text-white text-base">2. Contoh Benar vs Contoh Salah</h4>
+                <h4 className="font-bold text-white text-base">3. Contoh Benar vs Contoh Salah</h4>
                 <div className="overflow-x-auto rounded-2xl border border-white/10">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-white/5 text-slate-400 uppercase font-mono text-[11px] border-b border-white/10">
@@ -734,12 +790,17 @@ export default function Models() {
                     </thead>
                     <tbody className="divide-y divide-white/5 font-mono text-slate-300">
                       <tr className="hover:bg-white/5">
-                        <td className="p-3 font-sans font-semibold text-white">Prefix Sisi</td>
+                        <td className="p-3 font-sans font-semibold text-white">Komponen Normal (OK)</td>
                         <td className="p-3 text-emerald-400"><code>f-label</code>, <code>r-seal</code></td>
                         <td className="p-3 text-rose-400"><code>label</code>, <code>seal</code> (Tanpa prefix)</td>
                       </tr>
                       <tr className="hover:bg-white/5">
-                        <td className="p-3 font-sans font-semibold text-white">Spasi Kata</td>
+                        <td className="p-3 font-sans font-semibold text-white">Kecacatan / Defect (NG)</td>
+                        <td className="p-3 text-emerald-400"><code>f-ng_scratch</code>, <code>r-defect_seal</code></td>
+                        <td className="p-3 text-rose-400"><code>scratch</code>, <code>ng_baut</code> (Tanpa f-/r-)</td>
+                      </tr>
+                      <tr className="hover:bg-white/5">
+                        <td className="p-3 font-sans font-semibold text-white">Pemisah Kata</td>
                         <td className="p-3 text-emerald-400"><code>f-baut_panjang</code> atau <code>f-baut-panjang</code></td>
                         <td className="p-3 text-rose-400"><code>f-baut panjang</code> (Mengandung spasi)</td>
                       </tr>
