@@ -289,16 +289,16 @@ export default function Models() {
                   1. Sisi Depan (Front)
                 </span>
                 <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold text-[11px]">
-                  Prefix: f-
+                  Prefix: F-
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed text-[11.5px]">
-                Semua komponen tampak depan <strong>WAJIB</strong> diawali prefix <code className="text-sky-300 font-mono font-bold">f-</code>.
+                Semua komponen tampak depan <strong>WAJIB</strong> diawali prefix <code className="text-sky-300 font-mono font-bold">F-</code>.
               </p>
-              <div className="bg-black/40 p-2 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
-                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> f-label</div>
-                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> f-screw_1</div>
-                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> f-connector</div>
+              <div className="bg-black/40 p-2.5 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> F-74231-0K550-00</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> F-HOLE</div>
+                <div className="text-rose-400 flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-rose-400" /> F-NG_SCRATCH <span className="text-[9px] text-rose-300 font-sans">(Defect)</span></div>
               </div>
             </div>
 
@@ -310,16 +310,17 @@ export default function Models() {
                   2. Sisi Belakang (Rear)
                 </span>
                 <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold text-[11px]">
-                  Prefix: r-
+                  Prefix: R-
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed text-[11.5px]">
-                Semua komponen tampak belakang <strong>WAJIB</strong> diawali prefix <code className="text-amber-300 font-mono font-bold">r-</code>.
+                Semua komponen tampak belakang <strong>WAJIB</strong> diawali prefix <code className="text-amber-300 font-mono font-bold">R-</code>.
               </p>
-              <div className="bg-black/40 p-2 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
-                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> r-barcode</div>
-                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> r-pad_foam</div>
-                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> r-seal</div>
+              <div className="bg-black/40 p-2.5 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> R-74231-0K550-00</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> R-HOLE</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> R-KLIP-KUNING-01</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> R-KLIP-KUNING-02</div>
               </div>
             </div>
 
@@ -335,12 +336,12 @@ export default function Models() {
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed text-[11.5px]">
-                Jangan gunakan spasi, huruf kapital acak, atau nama tanpa prefix sisi.
+                Jangan gunakan spasi atau nama tanpa prefix sisi.
               </p>
-              <div className="bg-black/40 p-2 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
-                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> label_depan (Tanpa f-)</div>
-                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> Baut Belakang (Ada spasi)</div>
-                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> f-label#1 (Simbol aneh)</div>
+              <div className="bg-black/40 p-2.5 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
+                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> HOLE (Tanpa F-/R-)</div>
+                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> R-KLIP KUNING 01 (Ada spasi)</div>
+                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> F-HOLE#1 (Simbol terlarang)</div>
               </div>
             </div>
           </div>
@@ -819,11 +820,73 @@ export default function Models() {
                 </div>
               </div>
 
-              {/* Section 4: Auto-Generation Rule Workflow */}
+              {/* Section 4: Real Case Study Example */}
+              <div className="p-5 rounded-2xl bg-black/40 border border-emerald-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-emerald-400 text-base flex items-center gap-2">
+                    <FileCode className="w-5 h-5" />
+                    4. Studi Kasus Nyata: Model Part <span className="font-mono text-white underline">74231-0K550-00.pt</span>
+                  </h4>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs border border-emerald-500/30">
+                    Contoh Ideal Production
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">
+                  Berikut adalah contoh struktur dataset & labelname yang sudah terbukti lolos uji inspeksi pada lini produksi:
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  {/* Front Side Card */}
+                  <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 space-y-2 font-mono text-xs">
+                    <div className="flex items-center justify-between pb-1 border-b border-white/5 font-sans">
+                      <span className="font-bold text-sky-300">Sisi: FRONT (F)</span>
+                      <span className="text-[11px] text-slate-400">Min Conf: 75%</span>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">F-74231-0K550-00</span>
+                        <span className="text-[10px] text-sky-300 bg-sky-500/20 px-1.5 py-0.5 rounded font-sans">Label Part</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">F-HOLE</span>
+                        <span className="text-[10px] text-sky-300 bg-sky-500/20 px-1.5 py-0.5 rounded font-sans">Lubang Depan</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rear Side Card */}
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 font-mono text-xs">
+                    <div className="flex items-center justify-between pb-1 border-b border-white/5 font-sans">
+                      <span className="font-bold text-amber-300">Sisi: REAR (R)</span>
+                      <span className="text-[11px] text-slate-400">Min Conf: 75%</span>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">R-74231-0K550-00</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Body Belakang</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">R-HOLE</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Lubang Baut</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">R-KLIP-KUNING-01</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Klip 1</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">R-KLIP-KUNING-02</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Klip 2</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 5: Auto-Generation Rule Workflow */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-slate-900/60 border border-blue-500/20 space-y-2">
                 <h4 className="font-bold text-white text-sm flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-400" />
-                  Alur Otomatisasi Saat Model Diupload
+                  5. Alur Otomatisasi Saat Model Diupload
                 </h4>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Ketika Anda mengunggah file model <code className="text-white">.pt</code>, server akan langsung mengekstrak seluruh class name pada model tersebut. 
