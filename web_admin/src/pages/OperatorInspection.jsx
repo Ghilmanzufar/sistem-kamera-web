@@ -1,160 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Camera, CheckCircle2, XCircle, Play, History, LogOut, 
-  AlertTriangle, RotateCcw, Send, Check, X, ShieldAlert, 
-  Layers, User, Clock, Eye, GripHorizontal, WifiOff, Wifi,
-  Volume2, VolumeX, Volume1, Sliders, Speaker, RefreshCw, Trophy
-} from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import soundManager from '../utils/soundManager';
 import ConfirmModal from '../components/ConfirmModal';
-import { applyTheme } from '../utils/theme';
-
-// Komponen Popup Melayang yang Dapat Digeser (Draggable Floating Popup - Compact Zero-Scroll)
-function DraggableFloatingCard({ title, icon: Icon, badge, color = 'emerald', onClose, children }) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
-
-  // Selalu reset posisi ke titik tengah (0,0) saat popup muncul/berganti
-  useEffect(() => {
-    setPosition({ x: 0, y: 0 });
-  }, [title]);
-
-  const handleMouseDown = (e) => {
-    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea')) return;
-    setIsDragging(true);
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      initialX: position.x,
-      initialY: position.y,
-    };
-  };
-
-  const handleTouchStart = (e) => {
-    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea')) return;
-    if (e.touches.length === 1) {
-      setIsDragging(true);
-      dragRef.current = {
-        startX: e.touches[0].clientX,
-        startY: e.touches[0].clientY,
-        initialX: position.x,
-        initialY: position.y,
-      };
-    }
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - dragRef.current.startX;
-      const dy = e.clientY - dragRef.current.startY;
-      setPosition({
-        x: dragRef.current.initialX + dx,
-        y: dragRef.current.initialY + dy,
-      });
-    };
-
-    const handleTouchMove = (e) => {
-      if (!isDragging || e.touches.length !== 1) return;
-      const dx = e.touches[0].clientX - dragRef.current.startX;
-      const dy = e.touches[0].clientY - dragRef.current.startY;
-      setPosition({
-        x: dragRef.current.initialX + dx,
-        y: dragRef.current.initialY + dy,
-      });
-    };
-
-    const handleMouseUp = () => setIsDragging(false);
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove, { passive: false });
-      window.addEventListener('touchend', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [isDragging]);
-
-  const colorStyles = {
-    emerald: {
-      border: 'border-emerald-500',
-      glow: 'shadow-emerald-950/80',
-      headerBg: 'bg-emerald-950/95 border-emerald-500/40 text-emerald-300',
-      badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
-    },
-    amber: {
-      border: 'border-amber-500',
-      glow: 'shadow-amber-950/80',
-      headerBg: 'bg-amber-950/95 border-amber-500/40 text-amber-300',
-      badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
-    },
-    rose: {
-      border: 'border-rose-500',
-      glow: 'shadow-rose-950/80',
-      headerBg: 'bg-rose-950/95 border-rose-500/40 text-rose-300',
-      badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
-    }
-  }[color] || {
-    border: 'border-slate-700',
-    glow: 'shadow-black/80',
-    headerBg: 'bg-slate-900 border-slate-700 text-slate-200',
-    badgeBg: 'bg-slate-800 text-slate-300 border-slate-600',
-  };
-
-  return (
-    <div
-      style={{
-        transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
-      }}
-      className={`absolute z-40 top-1/2 left-1/2 w-[94%] max-w-lg sm:max-w-xl bg-slate-950/95 backdrop-blur-xl rounded-2xl border-3 ${colorStyles.border} shadow-2xl ${colorStyles.glow} select-none animate-fadeIn`}
-    >
-      {/* Draggable Header Handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        className={`px-4 py-2.5 rounded-t-[14px] border-b flex items-center justify-between cursor-grab active:cursor-grabbing ${colorStyles.headerBg}`}
-      >
-        <div className="flex items-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider">
-          {Icon && <Icon className="w-4 h-4 shrink-0" />}
-          <span className="truncate">{title}</span>
-          {badge && (
-            <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-black ${colorStyles.badgeBg} shrink-0`}>
-              {badge}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <span className="text-[10px] sm:text-xs font-bold text-slate-300 bg-black/50 px-2.5 py-1 rounded-lg flex items-center gap-1 border border-white/10">
-            <GripHorizontal className="w-3.5 h-3.5 text-emerald-400" /> <span>✥ Geser</span>
-          </span>
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1 rounded-md hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Popup Body (Form-Fitting Zero Scroll) */}
-      <div className="p-4 sm:p-5">
-        {children}
-      </div>
-    </div>
-  );
-}
+import InspectionHeader from '../components/operator/InspectionHeader';
+import InspectionToolbar from '../components/operator/InspectionToolbar';
+import InspectionCameraFeed from '../components/operator/InspectionCameraFeed';
+import PartOkModal from '../components/operator/PartOkModal';
+import FlipPartModal from '../components/operator/FlipPartModal';
+import NgAlarmModal from '../components/operator/NgAlarmModal';
+import DemoSisonModal from '../components/operator/DemoSisonModal';
+import AudioSettingsModal from '../components/operator/AudioSettingsModal';
 
 export default function OperatorInspection() {
   const navigate = useNavigate();
@@ -231,7 +89,7 @@ export default function OperatorInspection() {
 
   const handleAudioDeviceChange = async (e) => {
     const chosenId = e.target.value;
-    const chosenDev = audioDevices.find(d => d.id === chosenId) || { id: chosenId, name: 'Audio Output' };
+    const chosenDev = audioDevices.find((d) => d.id === chosenId) || { id: chosenId, name: 'Audio Output' };
     await soundManager.setAudioOutputDevice(chosenDev.id, chosenDev.name);
     soundManager.testSound('ok', 'chime');
     toast.success(`Output audio dialihkan ke: ${chosenDev.name}`, { icon: '🎧' });
@@ -276,7 +134,6 @@ export default function OperatorInspection() {
   // State Jaringan & Auto-Reconnect
   const [isNetworkOffline, setIsNetworkOffline] = useState(false);
   const offlineErrorsRef = useRef(0);
-  const [isStreamingActive, setIsStreamingActive] = useState(false);
 
   // Sinkronisasi Konfigurasi Audio Backend Real-time
   useEffect(() => {
@@ -335,7 +192,6 @@ export default function OperatorInspection() {
               ...prev,
               ...data
             }));
-            setIsStreamingActive(true);
             setIsNetworkOffline(false);
             offlineErrorsRef.current = 0;
           } catch {}
@@ -697,531 +553,64 @@ export default function OperatorInspection() {
       )}
 
       {/* 1. TOP HUD (HEADS-UP DISPLAY) HEADER */}
-      <header className={`rounded-2xl p-3 sm:p-4 border-2 shadow-xl backdrop-blur-xl transition-all duration-300 shrink-0 ${statusBg}`}>
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4">
-          
-          {/* Part Number & QTY Target */}
-          <div className="flex-1 text-center lg:text-left min-w-0">
-            <div className="text-xs sm:text-sm font-black tracking-widest text-amber-400 uppercase flex items-center justify-center lg:justify-start gap-1.5">
-              <Layers className="w-4 h-4" />
-              <span>PART NUMBER</span>
-            </div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-wide mt-0.5 truncate">
-              {telemetry.p_no || 'MENUNGGU SISON...'}
-            </div>
-            {telemetry.p_no ? (
-              <div className="text-sm sm:text-base font-bold text-emerald-400 mt-0.5">
-                Target: <span className="text-white font-extrabold">{telemetry.target_qty} PCS</span> | Selesai: <span className="text-white font-extrabold">{telemetry.qty_completed} PCS</span>
-              </div>
-            ) : (
-              <div className="text-xs sm:text-sm font-bold text-slate-400 mt-0.5">Siap menerima trigger transaksi inspeksi</div>
-            )}
-          </div>
-
-          {/* Center Status Banner (Besar & Kontras Tinggi) */}
-          <div className="flex-1 text-center px-4 py-2 rounded-2xl bg-slate-900/80 border border-white/15 shadow-inner min-w-0">
-            <div className="text-xs sm:text-sm font-black text-slate-400 tracking-wider uppercase">
-              STATUS KAMERA
-            </div>
-            <div className={`text-xl sm:text-2xl lg:text-3xl tracking-wide font-black ${statusTextColor}`}>
-              {statusText}
-            </div>
-
-            {/* Verification Hold Progress Bar */}
-            {telemetry.live_metrics?.is_stabilizing && (
-              <div className="w-full max-w-xs mx-auto mt-2 bg-slate-950/80 rounded-full h-2 overflow-hidden border border-teal-500/40">
-                <div 
-                  className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(20,184,166,0.8)]"
-                  style={{ width: `${telemetry.live_metrics.hold_progress || 0}%` }}
-                />
-              </div>
-            )}
-
-            {telemetry.status !== 'STANDBY' && telemetry.status !== 'IDLE' && (
-              <div className="text-xs sm:text-sm text-slate-200 font-bold truncate max-w-lg mx-auto mt-0.5">
-                {telemetry.live_metrics?.total_count > 0 ? (
-                  <span>
-                    Inspeksi: Labels{' '}
-                    <span className={telemetry.live_metrics.labels_complete ? 'text-emerald-400 font-black' : 'text-rose-400 font-black'}>
-                      {telemetry.live_metrics.detected_count}/{telemetry.live_metrics.total_count}
-                    </span>
-                    {' '}(Min {telemetry.live_metrics.min_coverage || 100}%) | AvgConf:{' '}
-                    <span className={telemetry.live_metrics.avg_conf_ok ? 'text-emerald-400 font-black' : 'text-rose-400 font-black'}>
-                      {telemetry.live_metrics.current_avg_conf}%/{telemetry.live_metrics.target_avg_conf}%
-                    </span>
-                  </span>
-                ) : (
-                  <span>{telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : '-'}</span>
-                )}
-              </div>
-            )}
-            {telemetry.p_no && telemetry.status !== 'STANDBY' && telemetry.status !== 'COMPLETED' && (
-              <div className="text-xs sm:text-sm font-black text-emerald-300 mt-1 bg-emerald-950/60 py-0.5 px-3 rounded-full inline-block border border-emerald-500/30">
-                SISI: {telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : telemetry.current_side === 'R' ? 'REAR (BELAKANG)' : telemetry.current_side}
-              </div>
-            )}
-          </div>
-
-          {/* Right: Operator Badge, Audio Control & Actions (Riwayat Inspeksi + Keluar Shift) */}
-          <div className="flex-1 flex flex-col items-center lg:items-end justify-center gap-2 min-w-0">
-            {/* Row 1: Audio Control (Ditaruh di atas Riwayat Inspeksi) & Operator Info */}
-            <div className="flex items-center gap-2">
-              {/* Tombol Atur Audio Speaker USB */}
-              <button
-                type="button"
-                onClick={() => setShowAudioModal(true)}
-                className={`py-1.5 px-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center gap-2 border shadow-inner backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 ${
-                  audioState.isEnabled 
-                    ? 'bg-slate-900/90 hover:bg-slate-800 text-sky-300 border-sky-500/30 shadow-sky-500/10' 
-                    : 'bg-rose-950/80 hover:bg-rose-900/90 text-rose-300 border-rose-500/40 shadow-rose-950/20'
-                }`}
-                title="Pengaturan Suara Speaker USB"
-              >
-                {audioState.isEnabled ? (
-                  <Volume2 className="w-3.5 h-3.5 text-sky-400" />
-                ) : (
-                  <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-                )}
-                <span>{audioState.isEnabled ? `Audio ${audioState.volume}%` : 'Audio Mute'}</span>
-              </button>
-
-              {/* Operator Name & Time (Terkunci ke user lokal browser) */}
-              <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-2xl border border-white/10 text-sky-300 text-xs sm:text-sm font-extrabold shadow-inner backdrop-blur-md">
-                <div className="w-6 h-6 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
-                  <User className="w-3.5 h-3.5" />
-                </div>
-                <span className="truncate max-w-[140px] text-white">{localOperatorName}</span>
-                <span className="text-slate-600 font-normal">|</span>
-                <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="font-mono text-slate-300">{loginTimeStr}</span>
-              </div>
-            </div>
-
-            {/* Row 2: Sub-Actions: Riwayat Inspeksi & Keluar Shift */}
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => navigate('/operator/history')}
-                className="group relative overflow-hidden py-2 px-3.5 rounded-2xl bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-blue-700/90 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-blue-400/30 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/40 backdrop-blur-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-              >
-                <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-sky-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
-                  <History className="w-3.5 h-3.5" />
-                </div>
-                <span className="tracking-wide">Riwayat Inspeksi</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowLogoutModal(true)}
-                className="group relative overflow-hidden py-2 px-3.5 rounded-2xl bg-gradient-to-r from-rose-600/90 via-red-600/90 to-rose-700/90 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/30 shadow-lg shadow-rose-600/25 hover:shadow-rose-500/40 backdrop-blur-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-              >
-                <div className="w-6 h-6 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-rose-200 group-hover:scale-110 group-hover:bg-white/25 transition-transform duration-200 shrink-0">
-                  <LogOut className="w-3.5 h-3.5" />
-                </div>
-                <span className="tracking-wide">Keluar</span>
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </header>
+      <InspectionHeader
+        telemetry={telemetry}
+        statusBg={statusBg}
+        statusTextColor={statusTextColor}
+        statusText={statusText}
+        audioState={audioState}
+        onOpenAudioModal={() => setShowAudioModal(true)}
+        localOperatorName={localOperatorName}
+        loginTimeStr={loginTimeStr}
+        onNavigateHistory={() => navigate('/operator/history')}
+        onOpenLogoutModal={() => setShowLogoutModal(true)}
+      />
 
       {/* 2. ACTION TOOLBAR (Ukuran Nyaman untuk Touch & Klik) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 px-3.5 py-2 rounded-xl border border-white/10 backdrop-blur-md shadow-md shrink-0">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Tombol PASS MANUAL (Hanya muncul di Mode Manual) */}
-          {isManualMode && (
-            <button
-              type="button"
-              onClick={handleManualPass}
-              className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer animate-bounce"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>✅ PASS MANUAL (OK)</span>
-            </button>
-          )}
+      <InspectionToolbar
+        isManualMode={isManualMode}
+        onManualPass={handleManualPass}
+        onManualReject={handleManualReject}
+        onOpenDemoModal={() => setShowDemoModal(true)}
+        onMockDetect={handleMockDetect}
+      />
 
-          {/* Tombol REJECT MANUAL (Hanya muncul di Mode Manual) */}
-          {isManualMode && (
-            <button
-              type="button"
-              onClick={handleManualReject}
-              className="py-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
-            >
-              <XCircle className="w-4 h-4" />
-              <span>❌ REJECT (NG)</span>
-            </button>
-          )}
+      {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER WITH FLOATING POPUPS */}
+      <InspectionCameraFeed telemetry={telemetry}>
+        {/* DRAGGABLE FLOATING POPUP: PART OK / INSPEKSI SELESAI */}
+        <PartOkModal
+          isOpen={showPartOkModal}
+          telemetry={telemetry}
+          onClose={handleClosePartOkModal}
+          onFinishBatch={handleFinishBatch}
+        />
 
-          {/* Tombol Simulator Demo SISON */}
-          <button
-            type="button"
-            onClick={() => setShowDemoModal(true)}
-            className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-white/15 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
-          >
-            <Send className="w-4 h-4 text-indigo-400" />
-            <span>🚀 DEMO SISON</span>
-          </button>
+        {/* DRAGGABLE FLOATING POPUP: SISI DEPAN OK */}
+        <FlipPartModal
+          isOpen={showFlipModal}
+          telemetry={telemetry}
+          onClose={handleCloseFlipModal}
+        />
 
-          {/* Tombol Mock Detect */}
-          <button
-            type="button"
-            onClick={handleMockDetect}
-            className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-white/15 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
-          >
-            <Camera className="w-4 h-4 text-amber-400" />
-            <span>📷 MOCK DETECT</span>
-          </button>
-        </div>
-
-        <div className="text-xs text-slate-400 font-bold hidden sm:block">
-          Sistem Kamera Inspeksi AI Real-Time
-        </div>
-      </div>
-
-      {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER */}
-      <main className="flex-1 min-h-0 w-full relative flex items-center justify-center bg-black rounded-2xl border-2 border-slate-800 shadow-2xl overflow-hidden">
-        {/* Floating Hold Progress Indicator */}
-        {telemetry.live_metrics?.is_stabilizing && (
-          <div className="absolute top-4 left-4 z-20 px-3.5 py-2 bg-slate-950/85 border border-teal-400/60 rounded-xl backdrop-blur-md text-teal-300 shadow-2xl flex items-center gap-3 animate-fadeIn pointer-events-none">
-            <div className="w-3 h-3 rounded-full bg-teal-400 animate-ping shrink-0" />
-            <div>
-              <div className="text-[11px] font-black uppercase tracking-wider text-teal-200">
-                Memverifikasi Stabilitas ({telemetry.live_metrics.hold_progress || 0}%)
-              </div>
-              <div className="w-32 bg-slate-800 rounded-full h-1.5 mt-1 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-teal-400 to-emerald-400 h-full transition-all duration-100 ease-out"
-                  style={{ width: `${telemetry.live_metrics.hold_progress || 0}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {telemetry.is_cam_active ? (
-          <img
-            src="/api/video_feed"
-            alt="Live Camera Inspection AI Stream"
-            className="w-full h-full object-contain max-h-full max-w-full block"
-          />
-        ) : (
-          <div className="text-center p-6">
-            <Camera className="w-16 h-16 text-slate-600 mx-auto mb-3 animate-pulse" />
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-200">KAMERA STANDBY (OFF)</h2>
-            <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto font-medium">
-              Kamera saat ini dimatikan dari pengaturan perangkat. Nyalakan saklar kamera untuk melihat live video stream.
-            </p>
-          </div>
-        )}
-        {/* 4. DRAGGABLE FLOATING POPUP: PART OK / INSPEKSI SELESAI (CENTERED OVER CAMERA) */}
-        {showPartOkModal && (() => {
-          const isFinalPart = telemetry.qty_remaining <= 0 || telemetry.status === 'COMPLETED';
-          const currentPartNum = isFinalPart ? (telemetry.target_qty || 2) : ((telemetry.qty_completed || 0) + 1);
-
-          return (
-            <DraggableFloatingCard
-              title={isFinalPart ? "INSPEKSI SELESAI" : `PART #${currentPartNum} SELESAI`}
-              badge={isFinalPart ? "SELESAI (100% OK)" : `SISA ${telemetry.qty_remaining} PCS`}
-              color="emerald"
-              icon={Check}
-              onClose={isFinalPart ? handleFinishBatch : handleClosePartOkModal}
-            >
-              <div className="space-y-3 text-left">
-                {/* Judul Rata Kiri */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
-                    <Check className="w-5 h-5 stroke-[3]" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-black text-white leading-tight">
-                      {isFinalPart ? "Seluruh Part Selesai Diinspeksi!" : "Part berhasil terdeteksi!"}
-                    </h3>
-                    <p className="text-xs text-emerald-300 font-bold mt-0.5 truncate">
-                      {isFinalPart
-                        ? `Semua sisi part (${telemetry.target_qty || 2} PCS) terdeteksi dengan status OK.`
-                        : `Sisi Depan & Belakang OK. Sisa: ${telemetry.qty_remaining} PCS.`}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 1. Metrik Kelengkapan Label & Rata-rata Akurasi (Di atas) */}
-                <div className="grid grid-cols-2 gap-2.5 bg-slate-900/90 p-2.5 sm:p-3 rounded-2xl border border-white/15 text-xs shadow-inner">
-                  <div className="px-1">
-                    <span className="text-slate-400 block text-[11px] uppercase font-extrabold tracking-wide mb-0.5">Label Terdeteksi:</span>
-                    <span className="font-black text-white text-sm sm:text-base">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
-                  </div>
-                  <div className="border-l border-white/15 pl-3">
-                    <span className="text-slate-400 block text-[11px] uppercase font-extrabold tracking-wide mb-0.5">Rata-rata Akurasi:</span>
-                    <span className="font-black text-emerald-400 text-sm sm:text-base">{telemetry.popups?.details?.avg_confidence || '95%'}</span>
-                  </div>
-                </div>
-
-                {/* 2. Nama Label Terverifikasi */}
-                <div>
-                  <span className="text-[11px] uppercase font-extrabold text-slate-300 block mb-1.5 tracking-wide">
-                    Nama Label Terverifikasi {isFinalPart ? "(Sisi Belakang Akhir):" : ":"}
-                  </span>
-                  <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-2xl border border-white/15 shadow-inner">
-                    {telemetry.popups?.details?.found_labels ? (
-                      telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
-                        <div 
-                          key={idx} 
-                          className="flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs font-mono font-bold text-emerald-200 shadow-sm"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            <span className="truncate">{lbl.replace(/^-\s*/, '').split(':')[0]?.trim() || lbl.replace(/^-\s*/, '')}</span>
-                          </div>
-                          {lbl.includes(':') && (
-                            <span className="text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-xs shrink-0 border border-emerald-500/30">
-                              {lbl.split(':')[1]?.trim()}
-                            </span>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-xs text-slate-400 font-bold p-1">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tombol Aksi Dinamis */}
-                {isFinalPart ? (
-                  <button
-                    type="button"
-                    onClick={handleFinishBatch}
-                    className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-0.5"
-                  >
-                    ✅ SELESAI & STANDBY
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleClosePartOkModal}
-                    className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-0.5"
-                  >
-                    ✅ LANJUTKAN KE PART BERIKUTNYA ({currentPartNum + 1}/{telemetry.target_qty}) →
-                  </button>
-                )}
-              </div>
-            </DraggableFloatingCard>
-          );
-        })()}
-
-        {/* 5. DRAGGABLE FLOATING POPUP: SISI DEPAN OK (CENTERED OVER CAMERA) */}
-        {showFlipModal && (
-          <DraggableFloatingCard
-            title={`PART #${(telemetry.qty_completed || 0) + 1} - SISI DEPAN (FRONT) OK`}
-            badge="BALIK KE REAR"
-            color="emerald"
-            icon={Check}
-            onClose={handleCloseFlipModal}
-          >
-            <div className="space-y-3 text-left">
-              {/* Judul Rata Kiri */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-md shrink-0 animate-pulse">
-                  <Check className="w-5 h-5 stroke-[3]" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg font-black text-white leading-tight">
-                    Part berhasil terdeteksi!
-                  </h3>
-                  <p className="text-xs text-emerald-300 font-bold mt-0.5 truncate">
-                    Silakan balik part ke <span className="underline decoration-emerald-400 decoration-2 font-black">SISI BELAKANG (REAR)</span>.
-                  </p>
-                </div>
-              </div>
-
-              {/* 1. Metrik Kelengkapan Label & Rata-rata Akurasi (Di atas) */}
-              <div className="grid grid-cols-2 gap-2.5 bg-slate-900/90 p-2.5 sm:p-3 rounded-2xl border border-white/15 text-xs shadow-inner">
-                <div className="px-1">
-                  <span className="text-slate-400 block text-[11px] uppercase font-extrabold tracking-wide mb-0.5">Label Terdeteksi:</span>
-                  <span className="font-black text-white text-sm sm:text-base">{telemetry.popups?.details?.label_terdeteksi || '3/3'}</span>
-                </div>
-                <div className="border-l border-white/15 pl-3">
-                  <span className="text-slate-400 block text-[11px] uppercase font-extrabold tracking-wide mb-0.5">Rata-rata Akurasi:</span>
-                  <span className="font-black text-emerald-400 text-sm sm:text-base">{telemetry.popups?.details?.avg_confidence || '96%'}</span>
-                </div>
-              </div>
-
-              {/* 2. Nama Label */}
-              <div>
-                <span className="text-[11px] uppercase font-extrabold text-slate-300 block mb-1.5 tracking-wide">
-                  Nama Label Terverifikasi:
-                </span>
-                <div className="flex flex-col gap-1.5 p-2 bg-slate-900/90 rounded-2xl border border-white/15 shadow-inner">
-                  {telemetry.popups?.details?.found_labels ? (
-                    telemetry.popups.details.found_labels.split('\n').filter(Boolean).map((lbl, idx) => (
-                      <div 
-                        key={idx} 
-                        className="flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs font-mono font-bold text-emerald-200 shadow-sm"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          <span className="truncate">{lbl.replace(/^-\s*/, '').split(':')[0]?.trim() || lbl.replace(/^-\s*/, '')}</span>
-                        </div>
-                        {lbl.includes(':') && (
-                          <span className="text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-xs shrink-0 border border-emerald-500/30">
-                            {lbl.split(':')[1]?.trim()}
-                          </span>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400 font-bold p-1">{telemetry.popups?.details?.label_terdeteksi || 'Semua label lengkap'}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Tombol Lanjutkan */}
-              <button
-                type="button"
-                onClick={handleCloseFlipModal}
-                className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black rounded-xl shadow-lg shadow-emerald-600/40 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] text-center mt-0.5"
-              >
-                LANJUTKAN KE SISI BELAKANG →
-              </button>
-            </div>
-          </DraggableFloatingCard>
-        )}
-
-        {/* 6. DRAGGABLE FLOATING POPUP: NG ABNORMALITY & KONFIRMASI (CENTERED OVER CAMERA) */}
-        {showNgModal && (
-          <DraggableFloatingCard
-            title="ALARM CACAT (NG) AKTIF"
-            badge="KONFIRMASI CACAT"
-            color="rose"
-            icon={ShieldAlert}
-            onClose={() => handleResolveNg('DISMISS')}
-          >
-            <div className="space-y-2.5">
-              <div className="text-center">
-                <div className="inline-flex items-center gap-1.5 bg-rose-500/30 border border-rose-400 px-3 py-0.5 rounded-full text-rose-200 font-black text-xs uppercase tracking-wider animate-pulse mb-1">
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>SIRENE & ALARM NG AKTIF!</span>
-                </div>
-                <h2 className="text-base sm:text-lg font-black text-white">
-                  ⚠️ CACAT / NG TERDETEKSI! ⚠️
-                </h2>
-                <p className="text-xs text-rose-300 font-medium mt-0.5">
-                  Periksa fisik part pada line inspeksi, lalu tentukan konfirmasi di bawah.
-                </p>
-              </div>
-
-              {/* Kotak Informasi Cacat NG */}
-              <div className="p-3 rounded-2xl bg-slate-900/90 border-2 border-rose-500/40 text-left space-y-2 shadow-inner">
-                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-1.5">
-                  <span className="text-slate-400 font-bold uppercase">Part Number:</span>
-                  <span className="font-mono font-black text-white text-sm">{telemetry.p_no || 'STANDBY'}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-1.5">
-                  <span className="text-slate-400 font-bold uppercase">Sisi Terdeteksi:</span>
-                  <span className="font-bold text-amber-300">{telemetry.current_side === 'F' ? 'FRONT (DEPAN)' : 'REAR (BELAKANG)'}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-bold uppercase">Pesan Sistem / AI:</span>
-                  <span className="font-bold text-rose-300 truncate max-w-[200px]">
-                    {telemetry.pesan_ui ? String(telemetry.pesan_ui).replace(/<[^>]+>/g, '') : 'Abnormalitas / Cacat terdeteksi'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tombol Konfirmasi NG / False Alarm */}
-              <div className="grid grid-cols-2 gap-2.5 pt-0.5">
-                <button
-                  type="button"
-                  disabled={ngResolving}
-                  onClick={() => handleResolveNg('DISMISS')}
-                  className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-white/20 text-slate-200 font-bold rounded-xl shadow text-xs uppercase tracking-wide transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <span>❌ BUKAN NG (ABAIKAN)</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={ngResolving}
-                  onClick={() => handleResolveNg('CONFIRM_NG')}
-                  className="w-full py-2.5 px-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-rose-600/50 text-xs uppercase tracking-wide transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <span>🚨 YA, KONFIRMASI NG</span>
-                </button>
-              </div>
-            </div>
-          </DraggableFloatingCard>
-        )}
-      </main>
+        {/* DRAGGABLE FLOATING POPUP: NG ABNORMALITY & KONFIRMASI */}
+        <NgAlarmModal
+          isOpen={showNgModal}
+          telemetry={telemetry}
+          ngResolving={ngResolving}
+          onResolveNg={handleResolveNg}
+        />
+      </InspectionCameraFeed>
 
       {/* 7. MODAL POPUP: SIMULATOR DEMO SISON DENGAN PRESET QTY */}
-      {showDemoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-xl bg-slate-900 border-2 border-indigo-500/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-              <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5">
-                <Send className="w-5 h-5 text-indigo-400" />
-                <span>Simulator Transaksi SISON (Demo Multi-Sisi)</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowDemoModal(false)}
-                className="text-slate-400 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Quick Preset Buttons */}
-            <div className="mb-3">
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase">
-                Pilih Target QTY Cepat:
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 5, 10].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setDemoQtyPreset(num)}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-indigo-600 border border-white/15 text-white font-black text-xs sm:text-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
-                  >
-                    {num} PCS
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-300 mb-2 font-medium">
-              Payload JSON Transaksi SISON:
-            </p>
-
-            <textarea
-              rows={7}
-              value={demoJson}
-              onChange={(e) => setDemoJson(e.target.value)}
-              className="w-full p-3.5 bg-slate-950 border-2 border-white/15 rounded-xl font-mono text-xs text-emerald-300 focus:outline-none focus:border-indigo-400 leading-relaxed"
-            />
-
-            <div className="mt-4 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDemoModal(false)}
-                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleSendDemoSison}
-                disabled={sendingDemo}
-                className="py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
-              >
-                <Send className="w-4 h-4" />
-                <span>{sendingDemo ? 'Mengirim...' : '🚀 Kirim Simulasi SISON'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DemoSisonModal
+        isOpen={showDemoModal}
+        demoJson={demoJson}
+        setDemoJson={setDemoJson}
+        onSetPresetQty={setDemoQtyPreset}
+        sendingDemo={sendingDemo}
+        onSendDemo={handleSendDemoSison}
+        onClose={() => setShowDemoModal(false)}
+      />
 
       {/* 8. MODAL KONFIRMASI LOGOUT OPERATOR */}
       <ConfirmModal
@@ -1235,239 +624,19 @@ export default function OperatorInspection() {
         onCancel={() => setShowLogoutModal(false)}
       />
 
-      {/* 9. MODAL PENGATURAN AUDIO & SPEAKER USB OPERATOR (Spacious, High-Contrast & Clear) */}
-      {showAudioModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-lg animate-fadeIn overflow-y-auto">
-          <div className="w-full max-w-2xl lg:max-w-3xl my-auto bg-slate-900/98 border-2 border-sky-500/50 rounded-3xl p-5 sm:p-7 lg:p-8 shadow-2xl shadow-sky-950/60 space-y-5 sm:space-y-6 text-slate-100 max-h-[92vh] overflow-y-auto">
-            
-            {/* Header Modal */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-3.5 sm:gap-4">
-                <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-sky-500/20 border-2 border-sky-400 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/30 shrink-0">
-                  <Volume2 className="w-6 h-6 sm:w-7 sm:h-7" />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-2xl font-black text-white leading-tight tracking-wide">
-                    Pengaturan Suara & Speaker USB
-                  </h3>
-                  <p className="text-xs sm:text-sm text-sky-300 font-semibold mt-0.5">
-                    Pilih perangkat speaker aktif, kelola volume suara, dan uji coba nada notifikasi
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => { soundManager.stopNg(); setShowAudioModal(false); }}
-                className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                title="Tutup Modal"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* SECTION 1: PILIH & CARI PERANGKAT SPEAKER (DROPDOWN COMPACT & CLEAR) */}
-            <div className="space-y-3 bg-slate-950/80 p-4 sm:p-5 rounded-2xl border border-white/10 shadow-inner">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label htmlFor="audio-device-select" className="flex items-center gap-2 font-black text-xs sm:text-sm text-white uppercase tracking-wider">
-                  <Speaker className="w-4 h-4 text-sky-400" />
-                  <span>PILIH PERANGKAT SPEAKER / HEADSET:</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => fetchOrScanAudioDevices(true)}
-                  disabled={scanningAudioDevices}
-                  className="py-1.5 px-3.5 rounded-xl bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-400/40 text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
-                  title="Pindai ulang perangkat audio (Headset / USB Speaker)"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${scanningAudioDevices ? 'animate-spin' : ''}`} />
-                  <span>{scanningAudioDevices ? 'Memindai...' : '🔍 Pindai Ulang'}</span>
-                </button>
-              </div>
-
-              {/* Dropdown Select Box */}
-              <div className="relative">
-                <select
-                  id="audio-device-select"
-                  value={audioState.selectedDeviceId || 'default'}
-                  onChange={handleAudioDeviceChange}
-                  className="w-full py-3.5 px-4 pr-10 bg-slate-900 border-2 border-sky-500/40 focus:border-sky-400 rounded-2xl text-white font-extrabold text-xs sm:text-sm shadow-inner appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400/30 transition-all leading-normal"
-                >
-                  {audioDevices.map((dev, idx) => (
-                    <option 
-                      key={dev.id || idx} 
-                      value={dev.id}
-                      className="bg-slate-900 text-white font-bold py-2"
-                    >
-                      {dev.is_headset ? '🎧 ' : dev.is_usb ? '🔊 [USB] ' : '🔈 '}
-                      {dev.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-sky-400">
-                  <Sliders className="w-4 h-4" />
-                </div>
-              </div>
-
-              {/* Status Banner Output Terkoneksi */}
-              <div className="flex flex-wrap items-center justify-between gap-1 text-xs pt-1 px-1 text-slate-300">
-                <span className="flex items-center gap-1.5 font-bold text-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Output Aktif: <strong className="text-white">{audioState.selectedDeviceName || 'Default Sistem'}</strong></span>
-                </span>
-                <span className="text-slate-500 text-[11px] font-medium hidden sm:inline">
-                  Pilih Headset atau Speaker lalu klik uji suara di bawah
-                </span>
-              </div>
-            </div>
-
-            {/* SECTION 2: MASTER ON/OFF & VOLUME CONTROLS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
-              {/* Card Master On/Mute */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-white/10 flex flex-col justify-between gap-3 shadow-inner">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {audioState.isEnabled ? (
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
-                        <Volume2 className="w-5 h-5" />
-                      </div>
-                    ) : (
-                      <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-400">
-                        <VolumeX className="w-5 h-5" />
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-xs font-black text-white uppercase tracking-wide">Status Suara</div>
-                      <div className="text-xs sm:text-sm font-bold text-slate-300">
-                        {audioState.isEnabled ? 'Aktif (Berbunyi)' : 'Senyap / Mute'}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => soundManager.setEnabled(!audioState.isEnabled)}
-                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95 ${
-                      audioState.isEnabled
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
-                        : 'bg-rose-700 hover:bg-rose-600 text-white shadow-rose-700/30'
-                    }`}
-                  >
-                    {audioState.isEnabled ? '🔊 ON (AKTIF)' : '🔇 MUTE'}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                  {audioState.isEnabled 
-                    ? 'Speaker akan mengeluarkan bunyi notifikasi otomatis saat part OK, balik part, atau terjadi NG.' 
-                    : 'Semua suara notifikasi dinonaktifkan sementara.'}
-                </p>
-              </div>
-
-              {/* Card Master Volume */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3 shadow-inner">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-white uppercase tracking-wide">Level Volume Speaker</span>
-                  <span className="font-mono text-sky-400 font-black text-base sm:text-lg bg-sky-950 px-2.5 py-0.5 rounded-lg border border-sky-500/30">
-                    {audioState.volume}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  value={audioState.volume}
-                  onChange={(e) => soundManager.setVolume(parseInt(e.target.value))}
-                  className="w-full h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
-                />
-                <div className="flex items-center justify-between gap-1.5 pt-1">
-                  {[0, 25, 50, 75, 100].map((vol) => (
-                    <button
-                      key={vol}
-                      type="button"
-                      onClick={() => soundManager.setVolume(vol)}
-                      className={`flex-1 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer border ${
-                        audioState.volume === vol 
-                          ? 'bg-sky-500 text-slate-950 border-sky-400 shadow'
-                          : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/10'
-                      }`}
-                    >
-                      {vol}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 3: UJI COBA NADA NOTIFIKASI */}
-            <div className="space-y-2.5">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <span>UJI COBA NADA SUARA PADA SPEAKER TERPILIH:</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => soundManager.testSound('ok')}
-                  className="py-3 px-3 rounded-2xl bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/50 text-emerald-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-emerald-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
-                >
-                  <div className="flex items-center gap-1.5 font-black text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>▶ 1. Part OK</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-300">Lolos Inspeksi</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => soundManager.testSound('flip')}
-                  className="py-3 px-3 rounded-2xl bg-teal-950/80 hover:bg-teal-900 border-2 border-teal-500/50 text-teal-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-teal-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
-                >
-                  <div className="flex items-center gap-1.5 font-black text-white">
-                    <RotateCcw className="w-4 h-4 text-teal-400" />
-                    <span>▶ 2. Balik Part</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-teal-300">Balik Sisi Belakang</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => soundManager.testSound('ng')}
-                  className="py-3 px-3 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border-2 border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-rose-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
-                >
-                  <div className="flex items-center gap-1.5 font-black text-white">
-                    <ShieldAlert className="w-4 h-4 text-rose-400" />
-                    <span>🚨 3. Alarm NG</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-rose-300">Peringatan Cacat</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => soundManager.testSound('finish')}
-                  className="py-3 px-3 rounded-2xl bg-indigo-950/80 hover:bg-indigo-900 border-2 border-indigo-500/50 text-indigo-200 font-black text-xs sm:text-sm transition-all shadow-lg hover:shadow-indigo-500/20 cursor-pointer flex flex-col items-center gap-1 hover:scale-105 active:scale-95 text-center"
-                >
-                  <div className="flex items-center gap-1.5 font-black text-white">
-                    <Trophy className="w-4 h-4 text-amber-400" />
-                    <span>🏁 4. Selesai Batch</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-indigo-300">Target Tercapai</span>
-                </button>
-              </div>
-            </div>
-
-            {/* SECTION 4: FOOTER ACTION */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => { soundManager.stopNg(); setShowAudioModal(false); }}
-                className="w-full py-3.5 px-6 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-black text-xs sm:text-base rounded-2xl shadow-xl shadow-sky-600/30 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-              >
-                <Check className="w-5 h-5 stroke-[3]" />
-                <span>Simpan & Terapkan Pengaturan Speaker</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* 9. MODAL PENGATURAN AUDIO & SPEAKER USB OPERATOR */}
+      <AudioSettingsModal
+        isOpen={showAudioModal}
+        audioState={audioState}
+        audioDevices={audioDevices}
+        scanningAudioDevices={scanningAudioDevices}
+        onFetchOrScanAudioDevices={fetchOrScanAudioDevices}
+        onAudioDeviceChange={handleAudioDeviceChange}
+        onClose={() => {
+          soundManager.stopNg();
+          setShowAudioModal(false);
+        }}
+      />
     </div>
   );
 }
