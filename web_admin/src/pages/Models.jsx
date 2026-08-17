@@ -795,48 +795,79 @@ export default function Models() {
                 </p>
               </div>
 
-              {/* Section 2: Prefix Rules Table */}
+              {/* Section 2: Prefix Rules Table with Real Case Study */}
               <div className="space-y-3">
-                <h4 className="font-bold text-white text-base flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-emerald-400" />
-                  1. Ketentuan Prefix Sisi (Side Prefix)
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-white text-base flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-emerald-400" />
+                    1. Ketentuan Prefix Sisi (Studi Kasus Nyata: Part <span className="font-mono text-emerald-300">74231-0K550-00</span>)
+                  </h4>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs border border-emerald-500/30">
+                    Standar Produksi
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-sky-300">Sisi Depan / Front</span>
-                      <span className="px-2.5 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 font-mono font-bold text-xs border border-sky-500/30">f-</span>
+                  {/* Front Card */}
+                  <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 space-y-3 font-mono text-xs">
+                    <div className="flex items-center justify-between font-sans">
+                      <span className="font-bold text-sky-300 text-sm">Sisi Depan / FRONT (F)</span>
+                      <span className="px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 font-mono font-bold text-xs border border-sky-500/30">F-</span>
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Gunakan prefix <code className="text-sky-300 font-bold font-mono">f-</code> untuk setiap komponen atau defect yang hanya terlihat dari arah depan benda.
+                    <p className="text-slate-300 font-sans text-xs leading-relaxed">
+                      Komponen atau defect yang terlihat dari arah depan wajib diawali prefix <code className="text-sky-300 font-bold font-mono">F-</code>.
                     </p>
-                    <div className="space-y-1 font-mono text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
-                      <div className="text-emerald-400">✓ f-label</div>
-                      <div className="text-emerald-400">✓ f-baut_kiri</div>
-                      <div className="text-emerald-400">✓ f-konektor_usb</div>
-                      <div className="text-emerald-400">✓ f-clip_pengunci</div>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">✓ F-74231-0K550-00</span>
+                        <span className="text-[10px] text-sky-300 bg-sky-500/20 px-1.5 py-0.5 rounded font-sans">Label Part (OK)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">✓ F-HOLE</span>
+                        <span className="text-[10px] text-sky-300 bg-sky-500/20 px-1.5 py-0.5 rounded font-sans">Lubang Depan (OK)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-rose-400 font-bold">⚠️ F-NG_SCRATCH</span>
+                        <span className="text-[10px] text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded font-sans">Goresan Depan (NG)</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-amber-300">Sisi Belakang / Rear</span>
-                      <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-bold text-xs border border-amber-500/30">r-</span>
+                  {/* Rear Card */}
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3 font-mono text-xs">
+                    <div className="flex items-center justify-between font-sans">
+                      <span className="font-bold text-amber-300 text-sm">Sisi Belakang / REAR (R)</span>
+                      <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-bold text-xs border border-amber-500/30">R-</span>
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Gunakan prefix <code className="text-amber-300 font-bold font-mono">r-</code> untuk setiap komponen atau defect yang hanya terlihat dari arah belakang benda.
+                    <p className="text-slate-300 font-sans text-xs leading-relaxed">
+                      Komponen atau defect yang terlihat dari arah belakang wajib diawali prefix <code className="text-amber-300 font-bold font-mono">R-</code>.
                     </p>
-                    <div className="space-y-1 font-mono text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
-                      <div className="text-emerald-400">✓ r-barcode</div>
-                      <div className="text-emerald-400">✓ r-pad_foam</div>
-                      <div className="text-emerald-400">✓ r-seal_karet</div>
-                      <div className="text-emerald-400">✓ r-baut_chassis</div>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">✓ R-74231-0K550-00</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Body Belakang (OK)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">✓ R-HOLE</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Lubang Baut (OK)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">✓ R-KLIP-KUNING-01</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Klip 1 (OK)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-emerald-400 font-bold">✓ R-KLIP-KUNING-02</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Klip 2 (OK)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                        <span className="text-rose-400 font-bold">⚠️ R-NG_KLIP_PATAH</span>
+                        <span className="text-[10px] text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded font-sans">Klip Rusak (NG)</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Section 3: Defect & NG Label Rules */}
+              {/* Section 2: Defect & NG Label Rules */}
               <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-rose-300 text-base flex items-center gap-2">
@@ -856,17 +887,17 @@ export default function Models() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1.5 font-mono">
                     <span className="text-sky-300 font-bold font-sans block">Defect Sisi Depan (Front):</span>
-                    <div className="text-emerald-400">✓ f-ng</div>
-                    <div className="text-emerald-400">✓ f-ng_scratch</div>
-                    <div className="text-emerald-400">✓ f-defect_konektor</div>
-                    <div className="text-emerald-400">✓ f-crack</div>
+                    <div className="text-emerald-400">✓ F-NG</div>
+                    <div className="text-emerald-400">✓ F-NG_SCRATCH</div>
+                    <div className="text-emerald-400">✓ F-DEFECT_KONEKTOR</div>
+                    <div className="text-emerald-400">✓ F-CRACK</div>
                   </div>
                   <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1.5 font-mono">
                     <span className="text-amber-300 font-bold font-sans block">Defect Sisi Belakang (Rear):</span>
-                    <div className="text-emerald-400">✓ r-ng</div>
-                    <div className="text-emerald-400">✓ r-ng_seal_robek</div>
-                    <div className="text-emerald-400">✓ r-defect_pad</div>
-                    <div className="text-emerald-400">✓ r-scratch</div>
+                    <div className="text-emerald-400">✓ R-NG</div>
+                    <div className="text-emerald-400">✓ R-NG_KLIP_PATAH</div>
+                    <div className="text-emerald-400">✓ R-DEFECT_PAD</div>
+                    <div className="text-emerald-400">✓ R-SCRATCH</div>
                   </div>
                 </div>
 
@@ -878,7 +909,7 @@ export default function Models() {
                 </div>
               </div>
 
-              {/* Section 4: Do's and Don'ts Table */}
+              {/* Section 3: Do's and Don'ts Table */}
               <div className="space-y-3">
                 <h4 className="font-bold text-white text-base">3. Contoh Benar vs Contoh Salah</h4>
                 <div className="overflow-x-auto rounded-2xl border border-white/10">
@@ -893,23 +924,23 @@ export default function Models() {
                     <tbody className="divide-y divide-white/5 font-mono text-slate-300">
                       <tr className="hover:bg-white/5">
                         <td className="p-3 font-sans font-semibold text-white">Komponen Normal (OK)</td>
-                        <td className="p-3 text-emerald-400"><code>f-label</code>, <code>r-seal</code></td>
-                        <td className="p-3 text-rose-400"><code>label</code>, <code>seal</code> (Tanpa prefix)</td>
+                        <td className="p-3 text-emerald-400"><code>F-74231-0K550-00</code>, <code>R-HOLE</code></td>
+                        <td className="p-3 text-rose-400"><code>74231-0K550-00</code>, <code>HOLE</code> (Tanpa prefix)</td>
                       </tr>
                       <tr className="hover:bg-white/5">
                         <td className="p-3 font-sans font-semibold text-white">Kecacatan / Defect (NG)</td>
-                        <td className="p-3 text-emerald-400"><code>f-ng_scratch</code>, <code>r-defect_seal</code></td>
-                        <td className="p-3 text-rose-400"><code>scratch</code>, <code>ng_baut</code> (Tanpa f-/r-)</td>
+                        <td className="p-3 text-emerald-400"><code>F-NG_SCRATCH</code>, <code>R-NG_KLIP_PATAH</code></td>
+                        <td className="p-3 text-rose-400"><code>SCRATCH</code>, <code>NG_BAUT</code> (Tanpa F-/R-)</td>
                       </tr>
                       <tr className="hover:bg-white/5">
                         <td className="p-3 font-sans font-semibold text-white">Pemisah Kata</td>
-                        <td className="p-3 text-emerald-400"><code>f-baut_panjang</code> atau <code>f-baut-panjang</code></td>
-                        <td className="p-3 text-rose-400"><code>f-baut panjang</code> (Mengandung spasi)</td>
+                        <td className="p-3 text-emerald-400"><code>R-KLIP-KUNING-01</code> atau <code>R-KLIP_KUNING_01</code></td>
+                        <td className="p-3 text-rose-400"><code>R-KLIP KUNING 01</code> (Mengandung spasi)</td>
                       </tr>
                       <tr className="hover:bg-white/5">
                         <td className="p-3 font-sans font-semibold text-white">Karakter Simbol</td>
-                        <td className="p-3 text-emerald-400"><code>f-pin_1</code>, <code>r-cover_2</code></td>
-                        <td className="p-3 text-rose-400"><code>f-pin#1</code>, <code>r-cover@2</code> (Simbol dilarang)</td>
+                        <td className="p-3 text-emerald-400"><code>F-PIN_1</code>, <code>R-COVER_2</code></td>
+                        <td className="p-3 text-rose-400"><code>F-PIN#1</code>, <code>R-COVER@2</code> (Simbol dilarang)</td>
                       </tr>
                       <tr className="hover:bg-white/5">
                         <td className="p-3 font-sans font-semibold text-white">Nama File Model</td>
@@ -921,73 +952,11 @@ export default function Models() {
                 </div>
               </div>
 
-              {/* Section 4: Real Case Study Example */}
-              <div className="p-5 rounded-2xl bg-black/40 border border-emerald-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-emerald-400 text-base flex items-center gap-2">
-                    <FileCode className="w-5 h-5" />
-                    4. Studi Kasus Nyata: Model Part <span className="font-mono text-white underline">74231-0K550-00.pt</span>
-                  </h4>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs border border-emerald-500/30">
-                    Contoh Ideal Production
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Berikut adalah contoh struktur dataset & labelname yang sudah terbukti lolos uji inspeksi pada lini produksi:
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                  {/* Front Side Card */}
-                  <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 space-y-2 font-mono text-xs">
-                    <div className="flex items-center justify-between pb-1 border-b border-white/5 font-sans">
-                      <span className="font-bold text-sky-300">Sisi: FRONT (F)</span>
-                      <span className="text-[11px] text-slate-400">Min Conf: 75%</span>
-                    </div>
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
-                        <span className="text-emerald-400 font-bold">F-74231-0K550-00</span>
-                        <span className="text-[10px] text-sky-300 bg-sky-500/20 px-1.5 py-0.5 rounded font-sans">Label Part</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
-                        <span className="text-emerald-400 font-bold">F-HOLE</span>
-                        <span className="text-[10px] text-sky-300 bg-sky-500/20 px-1.5 py-0.5 rounded font-sans">Lubang Depan</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rear Side Card */}
-                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 font-mono text-xs">
-                    <div className="flex items-center justify-between pb-1 border-b border-white/5 font-sans">
-                      <span className="font-bold text-amber-300">Sisi: REAR (R)</span>
-                      <span className="text-[11px] text-slate-400">Min Conf: 75%</span>
-                    </div>
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
-                        <span className="text-emerald-400 font-bold">R-74231-0K550-00</span>
-                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Body Belakang</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
-                        <span className="text-emerald-400 font-bold">R-HOLE</span>
-                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Lubang Baut</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
-                        <span className="text-emerald-400 font-bold">R-KLIP-KUNING-01</span>
-                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Klip 1</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
-                        <span className="text-emerald-400 font-bold">R-KLIP-KUNING-02</span>
-                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded font-sans">Klip 2</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 5: Auto-Generation Rule Workflow */}
+              {/* Section 4: Auto-Generation Rule Workflow */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-slate-900/60 border border-blue-500/20 space-y-2">
                 <h4 className="font-bold text-white text-sm flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-400" />
-                  5. Alur Otomatisasi Saat Model Diupload
+                  4. Alur Otomatisasi Saat Model Diupload
                 </h4>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Ketika Anda mengunggah file model <code className="text-white">.pt</code>, server akan langsung mengekstrak seluruh class name pada model tersebut. 
