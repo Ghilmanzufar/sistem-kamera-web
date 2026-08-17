@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Edit2, Trash2, Plus, FileCode, CheckCircle, Eye, Download, Info, Zap, RefreshCw } from 'lucide-react';
+import { 
+  Upload, Edit2, Trash2, Plus, FileCode, CheckCircle, Eye, Download, 
+  Info, Zap, RefreshCw, BookOpen, AlertTriangle, Check, X, ShieldAlert, ChevronDown, ChevronUp, Tag
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import PageHeader from '../components/PageHeader';
@@ -10,6 +13,8 @@ export default function Models() {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showGuideBanner, setShowGuideBanner] = useState(true);
   const [editingPartNo, setEditingPartNo] = useState(null);
 
   // Form State
@@ -183,6 +188,18 @@ export default function Models() {
     }
   };
 
+  const getLabelValidation = (labelName) => {
+    if (!labelName) return { status: 'invalid', message: 'Kosong', color: 'text-rose-400 bg-rose-500/10 border-rose-500/30' };
+    const raw = String(labelName).trim().toLowerCase();
+    if (raw.startsWith('f-') || raw.startsWith('f_') || raw.startsWith('front-') || raw.startsWith('front_')) {
+      return { status: 'front', side: 'FRONT (F)', color: 'text-sky-300 bg-sky-500/20 border-sky-400/30', icon: 'F' };
+    }
+    if (raw.startsWith('r-') || raw.startsWith('r_') || raw.startsWith('rear-') || raw.startsWith('rear_')) {
+      return { status: 'rear', side: 'REAR (R)', color: 'text-amber-300 bg-amber-500/20 border-amber-400/30', icon: 'R' };
+    }
+    return { status: 'warning', side: '⚠️ Non-Standar', color: 'text-rose-300 bg-rose-500/20 border-rose-400/40', icon: '!' };
+  };
+
   const headers = ["Part Number", "Format & Engine", "Waktu Update", "Status", "Aksi"];
 
   return (
@@ -190,17 +207,131 @@ export default function Models() {
       <PageHeader
         title="Masterdata"
         highlightTitle="Model"
-        subtitle="Manajemen berkas bobot model deteksi YOLOv8 (.pt & .onnx)"
+        subtitle="Manajemen berkas bobot model deteksi YOLOv8 (.pt & .onnx) dan standarisasi label"
         actionButton={
-          <button
-            onClick={openUploadModal}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            Upload Model Baru
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2.5 bg-white/5 hover:bg-white/10 text-sky-300 font-semibold text-sm rounded-xl border border-sky-500/30 hover:border-sky-400/50 shadow-sm transition-all"
+              title="Buka Panduan Standarisasi Labeling"
+            >
+              <BookOpen className="w-4 h-4 text-sky-400" />
+              Panduan Standar Label
+            </button>
+            <button
+              onClick={openUploadModal}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Upload Model Baru
+            </button>
+          </div>
         }
       />
+
+      {/* Standarisasi Labeling Banner */}
+      <div className="glass-card border border-blue-500/20 rounded-2xl overflow-hidden shadow-xl bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/30">
+        <div className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <Tag className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                Standarisasi Penamaan Label Model YOLO
+                <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Wajib Diikuti
+                </span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Pastikan dataset training model AI Anda menggunakan format prefix sisi agar terdeteksi akurat oleh sistem QC.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end md:self-auto">
+            <button
+              onClick={() => setShowGuideModal(true)}
+              className="text-xs font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-4 mr-2"
+            >
+              Lihat Detail Lengkap →
+            </button>
+            <button
+              onClick={() => setShowGuideBanner(!showGuideBanner)}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+              title={showGuideBanner ? "Sembunyikan Ringkasan" : "Tampilkan Ringkasan"}
+            >
+              {showGuideBanner ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {showGuideBanner && (
+          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs animate-fadeIn bg-black/20">
+            {/* Front Side Rule */}
+            <div className="p-4 rounded-xl bg-sky-500/10 border border-sky-500/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sky-300 flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                  1. Sisi Depan (Front)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold text-[11px]">
+                  Prefix: f-
+                </span>
+              </div>
+              <p className="text-slate-300 leading-relaxed text-[11.5px]">
+                Semua komponen tampak depan <strong>WAJIB</strong> diawali prefix <code className="text-sky-300 font-mono font-bold">f-</code>.
+              </p>
+              <div className="bg-black/40 p-2 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> f-label</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> f-screw_1</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> f-connector</div>
+              </div>
+            </div>
+
+            {/* Rear Side Rule */}
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300 flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  2. Sisi Belakang (Rear)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold text-[11px]">
+                  Prefix: r-
+                </span>
+              </div>
+              <p className="text-slate-300 leading-relaxed text-[11.5px]">
+                Semua komponen tampak belakang <strong>WAJIB</strong> diawali prefix <code className="text-amber-300 font-mono font-bold">r-</code>.
+              </p>
+              <div className="bg-black/40 p-2 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> r-barcode</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> r-pad_foam</div>
+                <div className="text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> r-seal</div>
+              </div>
+            </div>
+
+            {/* Format Rule & Danger */}
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-rose-300 flex items-center gap-1.5 text-sm">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  3. Format Terlarang
+                </span>
+                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono font-bold text-[11px]">
+                  Hindari ⚠️
+                </span>
+              </div>
+              <p className="text-slate-300 leading-relaxed text-[11.5px]">
+                Jangan gunakan spasi, huruf kapital acak, atau nama tanpa prefix sisi.
+              </p>
+              <div className="bg-black/40 p-2 rounded-lg font-mono text-[11px] text-slate-200 space-y-1 border border-white/5">
+                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> label_depan (Tanpa f-)</div>
+                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> Baut Belakang (Ada spasi)</div>
+                <div className="text-rose-400 flex items-center gap-1"><X className="w-3 h-3" /> f-label#1 (Simbol aneh)</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="glass-card p-6 border border-white/10 rounded-2xl">
         <DataTable headers={headers} isLoading={loading} center={true}>
@@ -396,10 +527,26 @@ export default function Models() {
       {/* Upload/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-xl p-8 glass-card border border-white/15 rounded-3xl shadow-2xl space-y-6">
-            <h3 className="text-2xl font-bold text-white mb-6">
-              {editingPartNo ? 'Rename Model Part' : 'Upload Model AI (.pt / .onnx)'}
-            </h3>
+          <div className="w-full max-w-xl p-8 glass-card border border-white/15 rounded-3xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto scrollbar-thin">
+            <div className="flex justify-between items-center pb-2 border-b border-white/10">
+              <h3 className="text-2xl font-bold text-white">
+                {editingPartNo ? 'Rename Model Part' : 'Upload Model AI (.pt / .onnx)'}
+              </h3>
+              <button onClick={() => setShowModal(false)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+
+            {/* Standar Label Reminder Box */}
+            {!editingPartNo && (
+              <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-slate-300 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-sky-300">
+                  <ShieldAlert className="w-4 h-4 text-sky-400" />
+                  <span>Standar Labeling Wajib:</span>
+                </div>
+                <p className="text-[11.5px] leading-relaxed text-slate-300">
+                  Nama label pada model harus memiliki prefix <span className="font-mono text-sky-300 font-bold bg-sky-500/20 px-1 py-0.5 rounded">f-</span> untuk Sisi Depan dan <span className="font-mono text-amber-300 font-bold bg-amber-500/20 px-1 py-0.5 rounded">r-</span> untuk Sisi Belakang.
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {!editingPartNo && (
@@ -424,19 +571,40 @@ export default function Models() {
               )}
 
               {labelPreview && (
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/10 text-sm space-y-2 max-h-56 overflow-y-auto">
-                  <div className="font-bold text-blue-400 flex items-center gap-2 text-base">
-                    <CheckCircle className="w-5 h-5" />
-                    Preview Label ({labelPreview.label_count} label ditemukan)
+                <div className="p-4 rounded-2xl bg-black/40 border border-white/10 text-sm space-y-3 max-h-64 overflow-y-auto scrollbar-thin">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-blue-400 flex items-center gap-2 text-sm">
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      Preview Label ({labelPreview.label_count} label ditemukan)
+                    </div>
                   </div>
-                  <div className="font-mono text-slate-300 space-y-1.5 pt-1">
-                    {Object.entries(labelPreview.labels || {}).map(([idx, name]) => (
-                      <div key={idx} className="flex justify-between py-1 border-b border-white/5">
-                        <span className="text-slate-500">ID #{idx}</span>
-                        <span className="font-semibold text-emerald-400">{name}</span>
-                      </div>
-                    ))}
+                  
+                  <div className="space-y-1.5 pt-1">
+                    {Object.entries(labelPreview.labels || {}).map(([idx, name]) => {
+                      const validation = getLabelValidation(name);
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="text-slate-500 text-[11px]">#{idx}</span>
+                            <span className="font-bold text-white">{name}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[10.5px] font-mono font-bold border ${validation.color}`}>
+                            {validation.side}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  {/* Warning if any non-standard label detected */}
+                  {Object.values(labelPreview.labels || {}).some(lbl => getLabelValidation(lbl).status === 'warning') && (
+                    <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+                      <span>
+                        Ditemukan label tanpa prefix <code>f-</code> atau <code>r-</code>. Label ini tidak akan terkelompok otomatis ke sisi Front/Rear.
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -454,7 +622,7 @@ export default function Models() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-6">
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -471,6 +639,146 @@ export default function Models() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Labeling Standardization Guide Modal */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn" onClick={() => setShowGuideModal(false)}>
+          <div className="w-full max-w-3xl p-8 glass-card border border-white/15 rounded-3xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto scrollbar-thin text-slate-300 text-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    Standarisasi Labeling Model YOLO & Rule Inspeksi
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Panduan teknis pembuatan dataset dan penamaan label untuk sistem AI Quality Control
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowGuideModal(false)} className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+
+            {/* Content Body */}
+            <div className="space-y-6">
+              {/* Section 1: Overview */}
+              <div className="p-4 rounded-2xl bg-black/30 border border-white/5 space-y-2">
+                <h4 className="font-bold text-white text-base flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  Mengapa Standarisasi Label Wajib?
+                </h4>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  Sistem inspeksi kamera beroperasi dalam mode <strong>Dual-Side Inspection (Sisi Depan / Front dan Sisi Belakang / Rear)</strong>. 
+                  Sistem otomatis memfilter aturan pengecekan komponen berdasarkan awalan (prefix) nama label di model YOLOv8 Anda. 
+                  Jika label tidak mengikuti standar, sistem tidak dapat menentukan apakah komponen tersebut harus diperiksa di sisi Front atau Rear.
+                </p>
+              </div>
+
+              {/* Section 2: Prefix Rules Table */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white text-base flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-emerald-400" />
+                  1. Ketentuan Prefix Sisi (Side Prefix)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sky-300">Sisi Depan / Front</span>
+                      <span className="px-2.5 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 font-mono font-bold text-xs border border-sky-500/30">f-</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Gunakan prefix <code className="text-sky-300 font-bold font-mono">f-</code> untuk setiap komponen atau defect yang hanya terlihat dari arah depan benda.
+                    </p>
+                    <div className="space-y-1 font-mono text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                      <div className="text-emerald-400">✓ f-label</div>
+                      <div className="text-emerald-400">✓ f-baut_kiri</div>
+                      <div className="text-emerald-400">✓ f-konektor_usb</div>
+                      <div className="text-emerald-400">✓ f-clip_pengunci</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-amber-300">Sisi Belakang / Rear</span>
+                      <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-bold text-xs border border-amber-500/30">r-</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Gunakan prefix <code className="text-amber-300 font-bold font-mono">r-</code> untuk setiap komponen atau defect yang hanya terlihat dari arah belakang benda.
+                    </p>
+                    <div className="space-y-1 font-mono text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                      <div className="text-emerald-400">✓ r-barcode</div>
+                      <div className="text-emerald-400">✓ r-pad_foam</div>
+                      <div className="text-emerald-400">✓ r-seal_karet</div>
+                      <div className="text-emerald-400">✓ r-baut_chassis</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Do's and Don'ts Table */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white text-base">2. Contoh Benar vs Contoh Salah</h4>
+                <div className="overflow-x-auto rounded-2xl border border-white/10">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-white/5 text-slate-400 uppercase font-mono text-[11px] border-b border-white/10">
+                      <tr>
+                        <th className="p-3">Kategori</th>
+                        <th className="p-3 text-emerald-400 font-bold">Format Benar (Sesuai Standar)</th>
+                        <th className="p-3 text-rose-400 font-bold">Format Salah (Jangan Dipakai)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-mono text-slate-300">
+                      <tr className="hover:bg-white/5">
+                        <td className="p-3 font-sans font-semibold text-white">Prefix Sisi</td>
+                        <td className="p-3 text-emerald-400"><code>f-label</code>, <code>r-seal</code></td>
+                        <td className="p-3 text-rose-400"><code>label</code>, <code>seal</code> (Tanpa prefix)</td>
+                      </tr>
+                      <tr className="hover:bg-white/5">
+                        <td className="p-3 font-sans font-semibold text-white">Spasi Kata</td>
+                        <td className="p-3 text-emerald-400"><code>f-baut_panjang</code> atau <code>f-baut-panjang</code></td>
+                        <td className="p-3 text-rose-400"><code>f-baut panjang</code> (Mengandung spasi)</td>
+                      </tr>
+                      <tr className="hover:bg-white/5">
+                        <td className="p-3 font-sans font-semibold text-white">Karakter Simbol</td>
+                        <td className="p-3 text-emerald-400"><code>f-pin_1</code>, <code>r-cover_2</code></td>
+                        <td className="p-3 text-rose-400"><code>f-pin#1</code>, <code>r-cover@2</code> (Simbol dilarang)</td>
+                      </tr>
+                      <tr className="hover:bg-white/5">
+                        <td className="p-3 font-sans font-semibold text-white">Nama File Model</td>
+                        <td className="p-3 text-emerald-400"><code>74231-0K550-00.pt</code></td>
+                        <td className="p-3 text-rose-400"><code>model_final_v2.pt</code> (Tidak sesuai Part No)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 4: Auto-Generation Rule Workflow */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-slate-900/60 border border-blue-500/20 space-y-2">
+                <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  Alur Otomatisasi Saat Model Diupload
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Ketika Anda mengunggah file model <code className="text-white">.pt</code>, server akan langsung mengekstrak seluruh class name pada model tersebut. 
+                  Sistem secara otomatis mendeteksi sisi Front/Rear dari prefix label dan menyimpannya ke tabel <strong>PartRule</strong> di database tanpa perlu input manual satu per satu.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end">
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="px-6 py-2.5 text-sm font-semibold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl transition-all"
+              >
+                Saya Mengerti
+              </button>
+            </div>
           </div>
         </div>
       )}

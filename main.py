@@ -53,7 +53,7 @@ def main():
     port = int(os.getenv("SERVER_PORT", "8000"))
     
     print("=" * 65)
-    print("   🚀 SISTEM KAMERA INSPEKSI (WEB EDITION)")
+    print("   🚀 SISTEM KAMERA INSPEKSI")
     print(f"   🌐 Web Application URL : http://localhost:{port}/")
     print("=" * 65)
 
