@@ -226,7 +226,7 @@ def admin_login(creds: LoginSchema, request: Request, db: Session = Depends(get_
     if not user or not verify_password(creds.password, user.password):
         record_failed_attempt(client_ip)
         raise HTTPException(status_code=401, detail="Username atau PIN/Password salah!")
-    if not getattr(user, 'is_active', True) or user.role not in ["pengawas", "operator", "admin"]:
+    if not getattr(user, 'is_active', True) or user.role not in ["pengawas", "operator", "admin", "sison"]:
         record_failed_attempt(client_ip)
         raise HTTPException(status_code=403, detail="Akun tidak berwenang mengakses sistem!")
     

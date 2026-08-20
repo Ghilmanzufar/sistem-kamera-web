@@ -8,9 +8,11 @@ from .auth_routes import get_local_ip
 
 router = APIRouter()
 
+from typing import Optional
+
 class SisonConfigUpdate(BaseModel):
     callback_url: str
-    api_key: str
+    api_key: Optional[str] = None
 
 class SisonTestPingRequest(BaseModel):
     callback_url: str
@@ -29,7 +31,7 @@ def get_sison_config(db: Session = Depends(get_db)):
     cfg = get_or_create_sison_config(db)
     return {
         "callback_url": cfg.callback_url,
-        "api_key": cfg.api_key,
+        "api_key": cfg.api_key or "",
         "server_ip": get_local_ip(),
         "server_port": 8000
     }
@@ -38,10 +40,11 @@ def get_sison_config(db: Session = Depends(get_db)):
 def update_sison_config(data: SisonConfigUpdate, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):
     cfg = get_or_create_sison_config(db)
     cfg.callback_url = data.callback_url
-    cfg.api_key = data.api_key
+    if data.api_key is not None:
+        cfg.api_key = data.api_key
     db.commit()
     log_audit_event(db, uname, "UPDATE_SISON_CONFIG", f"Mengubah konfigurasi Sison Callback ke {data.callback_url}")
-    return {"success": True, "message": "Konfigurasi Sison berhasil disimpan"}
+    return {"success": True, "message": "Konfigurasi Sison Callback berhasil disimpan"}
 
 @router.post("/sison-test-ping")
 def test_sison_ping(req: SisonTestPingRequest):

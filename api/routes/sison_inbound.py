@@ -13,38 +13,31 @@ from api.auth import decode_admin_token
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
-def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Validasi Bearer token dari Sison terhadap api_key di tabel SisonConfig ATAU JWT Token valid dari UI."""
+def verify_bearer_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Validasi dynamic Bearer token otentikasi (JWT / HMAC) dari SISON atau UI."""
     if not credentials or not credentials.credentials:
         raise HTTPException(
             status_code=401, 
-            detail="Header Authorization: Bearer <API_KEY_SISON / JWT_TOKEN> diperlukan!"
+            detail="Header Authorization: Bearer <TOKEN> diperlukan! Dapatkan token melalui endpoint POST /api/login."
         )
 
     token = credentials.credentials.strip()
-    db = SessionLocal()
     try:
-        cfg = db.query(SisonConfig).first()
-        valid_key = cfg.api_key if (cfg and cfg.api_key) else os.getenv("API_KEY_SISON", "kamera-secret-key")
-        
-        # 1. Validasi API Key SISON eksak
-        if token == valid_key:
-            return True
-        
-        # 2. Validasi jika token adalah JWT token dari operator/pengawas/admin yang terotentikasi
-        try:
-            payload = decode_admin_token(token)
-            if payload and payload.get("u") and payload.get("r") in ["operator", "pengawas", "admin"]:
-                return True
-        except Exception:
-            pass
+        payload = decode_admin_token(token)
+        if payload and payload.get("u") and payload.get("r") in ["operator", "pengawas", "admin", "sison"]:
+            return payload
+    except HTTPException:
+        raise
+    except Exception:
+        pass
 
-        raise HTTPException(
-            status_code=401, 
-            detail="API Key SISON atau Token otentikasi tidak valid atau telah kedaluwarsa!"
-        )
-    finally:
-        db.close()
+    raise HTTPException(
+        status_code=401, 
+        detail="Bearer Token tidak valid atau telah kedaluwarsa. Silakan login kembali melalui POST /api/login."
+    )
+
+# Alias untuk kompatibilitas
+verify_api_key = verify_bearer_token
 
 class StartRequest(BaseModel):
     id_trans: str

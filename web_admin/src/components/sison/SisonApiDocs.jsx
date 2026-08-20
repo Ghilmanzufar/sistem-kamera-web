@@ -1,64 +1,179 @@
-import React from 'react';
-import { Code2, Copy, Check, Terminal, HelpCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Code2, Copy, Check, Terminal, HelpCircle, KeyRound, PlayCircle, SendHorizontal, Server } from 'lucide-react';
 
 export default function SisonApiDocs({
-  apiKey,
+  generatedToken,
   jsonPayloadString,
-  curlCommand,
+  samplePayload,
   copiedPayload,
-  copiedCurl,
   onCopy
 }) {
+  const [copiedLoginCurl, setCopiedLoginCurl] = useState(false);
+  const [copiedStartCurl, setCopiedStartCurl] = useState(false);
+  const [copiedLoginBody, setCopiedLoginBody] = useState(false);
+
+  const activeToken = generatedToken || '<TOKEN_DARI_LOGIN>';
+
+  const loginSampleBody = JSON.stringify({
+    username: "sison_service",
+    password: "password_anda",
+    shift: "Shift 1"
+  }, null, 2);
+
+  const loginCurl = `curl.exe -X POST "http://localhost:8000/api/login" \\
+  -H "Content-Type: application/json" \\
+  -d '{"username": "sison_service", "password": "password_anda", "shift": "Shift 1"}'`;
+
+  const startCurl = `curl.exe -X POST "http://localhost:8000/api/start" \\
+  -H "Authorization: Bearer ${activeToken}" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(samplePayload)}'`;
+
+  const handleCopy = (text, type) => {
+    navigator.clipboard.writeText(text);
+    if (type === 'loginCurl') {
+      setCopiedLoginCurl(true);
+      setTimeout(() => setCopiedLoginCurl(false), 2000);
+    } else if (type === 'startCurl') {
+      setCopiedStartCurl(true);
+      setTimeout(() => setCopiedStartCurl(false), 2000);
+    } else if (type === 'loginBody') {
+      setCopiedLoginBody(true);
+      setTimeout(() => setCopiedLoginBody(false), 2000);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header Docs */}
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
           <Code2 className="w-6 h-6" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-white tracking-wide">
-            Dokumentasi Spesifikasi Endpoint API
+            Panduan Alur Integrasi API SISON (2 Langkah Otentikasi)
           </h2>
           <p className="text-xs text-slate-400">
-            Panduan format payload data transaksi, header keamanan, dan perintah pengujian
+            Standar otentikasi Bearer Token dinamis dan spesifikasi endpoint transaksi dua arah
           </p>
         </div>
       </div>
 
-      {/* 1. Endpoint Utama: POST /api/start */}
-      <div className="glass-card p-6 sm:p-8 border border-white/10 rounded-3xl shadow-2xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-600 text-white shadow-md shadow-emerald-600/30">
-              POST
-            </span>
-            <span className="text-base sm:text-lg font-mono font-bold text-white">
-              /api/start
-            </span>
-          </div>
-          <span className="text-xs font-semibold text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-lg">
-            Trigger Transaksi SISON
-          </span>
+      {/* LANGKAH 1: OTENTIKASI & PENGAMBILAN TOKEN */}
+      <div className="glass-card p-6 sm:p-8 border border-purple-500/20 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 px-6 py-1.5 bg-purple-600/30 border-b border-l border-purple-500/30 text-purple-200 text-xs font-bold rounded-bl-2xl">
+          LANGKAH 1: OAUTH2 / LOGIN
         </div>
 
-        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-          Endpoint ini dipanggil oleh sistem SISON ketika part baru masuk ke stasiun kerja kamera untuk memulai proses deteksi dan verifikasi komponen.
-        </p>
+        <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+          <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-black bg-emerald-600 text-white">POST</span>
+              <span className="text-base sm:text-lg font-mono font-bold text-white">/api/login</span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Dapatkan Bearer Token dinamis menggunakan kredensial akun SISON
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Request Payload Login */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Request Body (JSON):
+              </span>
+              <button
+                onClick={() => handleCopy(loginSampleBody, 'loginBody')}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-slate-300 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+              >
+                {copiedLoginBody ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLoginBody ? 'Tersalin!' : 'Salin JSON'}</span>
+              </button>
+            </div>
+            <pre className="p-3.5 bg-black/60 border border-white/5 rounded-2xl font-mono text-xs text-amber-300 overflow-x-auto scrollbar-thin">
+              {loginSampleBody}
+            </pre>
+          </div>
+
+          {/* Expected Response Token */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+              Response Sukses (HTTP 200):
+            </span>
+            <pre className="p-3.5 bg-black/60 border border-white/5 rounded-2xl font-mono text-xs text-emerald-300 overflow-x-auto scrollbar-thin">
+{`{
+  "token": "eyJ1IjoiYWRtaW4iLCJyIjoiYWRtaW4iLCJleHAiOjE3NzE1OTI4MDB9.xxxxxxxx...",
+  "role": "admin",
+  "username": "sison_service",
+  "fullname": "SISON Integration Account",
+  "shift": "Shift 1"
+}`}
+            </pre>
+          </div>
+        </div>
+
+        {/* cURL Login */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Terminal className="w-3.5 h-3.5 text-purple-400" />
+              Contoh Request cURL Login:
+            </span>
+            <button
+              onClick={() => handleCopy(loginCurl, 'loginCurl')}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-slate-300 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+            >
+              {copiedLoginCurl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedLoginCurl ? 'Tersalin!' : 'Salin cURL Login'}</span>
+            </button>
+          </div>
+          <pre className="p-3.5 bg-black/70 border border-white/10 rounded-2xl font-mono text-xs text-purple-300 overflow-x-auto scrollbar-thin leading-relaxed">
+            {loginCurl}
+          </pre>
+        </div>
+      </div>
+
+      {/* LANGKAH 2: EKSEKUSI TRANSAKSI DENGAN BEARER TOKEN */}
+      <div className="glass-card p-6 sm:p-8 border border-blue-500/20 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 px-6 py-1.5 bg-blue-600/30 border-b border-l border-blue-500/30 text-blue-200 text-xs font-bold rounded-bl-2xl">
+          LANGKAH 2: TRIGGER TRANSAKSI
+        </div>
+
+        <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+          <div className="p-2 rounded-xl bg-blue-500/20 text-blue-300">
+            <PlayCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-black bg-emerald-600 text-white">POST</span>
+              <span className="text-base sm:text-lg font-mono font-bold text-white">/api/start</span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Kirimkan instruksi mulai inspeksi part ke kamera dengan menyertakan Bearer Token di header
+            </p>
+          </div>
+        </div>
 
         {/* Headers Spec */}
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
-            Required Headers:
+            Required HTTP Headers:
           </span>
-          <div className="p-3.5 bg-black/40 border border-white/5 rounded-2xl font-mono text-xs text-slate-300 space-y-1">
+          <div className="p-3.5 bg-black/40 border border-white/5 rounded-2xl font-mono text-xs text-slate-300 space-y-1.5">
             <div><span className="text-slate-500">Content-Type  :</span> <span className="text-amber-300">application/json</span></div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-slate-500">Authorization :</span> <span className="text-emerald-400">Bearer {apiKey || 'kamera-secret-key'}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="truncate">
+                <span className="text-slate-500">Authorization :</span> <span className="text-emerald-400">Bearer {activeToken}</span>
               </div>
               <button
-                onClick={() => onCopy(`Bearer ${apiKey || 'kamera-secret-key'}`, 'key')}
-                className="text-[11px] font-sans font-semibold text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                onClick={() => onCopy(`Bearer ${activeToken}`, 'key')}
+                className="text-[11px] font-sans font-semibold text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer shrink-0 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10"
               >
                 <Copy className="w-3.5 h-3.5" /> Salin Header
               </button>
@@ -148,24 +263,59 @@ export default function SisonApiDocs({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <Terminal className="w-3.5 h-3.5 text-blue-400" />
-              Perintah Pengujian cURL (PowerShell / Terminal / Postman):
+              Perintah Pengujian cURL Transaksi (Otomatis menyertakan token):
             </span>
             <button
-              onClick={() => onCopy(curlCommand, 'curl')}
+              onClick={() => handleCopy(startCurl, 'startCurl')}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-all cursor-pointer"
             >
-              {copiedCurl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedCurl ? 'Tersalin!' : 'Salin Perintah cURL'}</span>
+              {copiedStartCurl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedStartCurl ? 'Tersalin!' : 'Salin cURL Transaksi'}</span>
             </button>
           </div>
 
           <pre className="p-4 bg-black/70 border border-white/10 rounded-2xl font-mono text-xs text-emerald-300 overflow-x-auto scrollbar-thin leading-relaxed">
-            {curlCommand}
+            {startCurl}
           </pre>
         </div>
       </div>
 
-      {/* 2. Endpoint Monitoring & System Health */}
+      {/* LANGKAH 3: WEBHOOK CALLBACK DARI KAMERA KE SISON */}
+      <div className="glass-card p-6 sm:p-8 border border-emerald-500/20 rounded-3xl shadow-xl space-y-4">
+        <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+          <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300">
+            <SendHorizontal className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white">
+              Webhook Callback Hasil Inspeksi (Kamera $\rightarrow$ Server SISON)
+            </h3>
+            <p className="text-xs text-slate-400">
+              Dikirimkan secara otomatis oleh kamera ke Callback URL saat inspeksi selesai (OK atau NG)
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="p-3.5 bg-black/40 border border-white/5 rounded-2xl space-y-2">
+            <span className="text-slate-400 font-sans font-bold block uppercase tracking-wider text-[11px]">Format Request Webhook:</span>
+            <div><span className="text-slate-500">Method :</span> <span className="text-emerald-400 font-bold">POST</span></div>
+            <div><span className="text-slate-500">URL    :</span> <span className="text-blue-300">&lt;Callback Webhook URL Anda&gt;</span></div>
+            <div><span className="text-slate-500">Body   :</span> <span className="text-amber-300">{`{ "id_trans": "TRX-101", "status": 1 }`}</span></div>
+          </div>
+
+          <div className="p-3.5 bg-black/40 border border-white/5 rounded-2xl space-y-2">
+            <span className="text-slate-400 font-sans font-bold block uppercase tracking-wider text-[11px]">Keterangan Nilai Status:</span>
+            <div className="space-y-1 font-sans text-xs text-slate-300">
+              <div><strong className="text-emerald-400 font-mono font-bold">status: 1</strong> = <span className="text-emerald-300 font-semibold">OK</span> (Seluruh komponen lengkap & sesuai standar)</div>
+              <div><strong className="text-rose-400 font-mono font-bold">status: 2</strong> = <span className="text-rose-300 font-semibold">NG</span> (Komponen cacat / ditolak / manual NG operator)</div>
+              <div className="text-slate-400 text-[11px] pt-1">Dilengkapi Auto-Retry 3x otomatis jika ada kendala jaringan.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Endpoint Monitoring & System Health */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* GET /health */}
         <div className="glass-card p-6 border border-white/10 rounded-3xl shadow-xl space-y-4">
@@ -202,7 +352,7 @@ export default function SisonApiDocs({
         </div>
       </div>
 
-      {/* 3. HTTP Response Status Reference Card */}
+      {/* 5. HTTP Response Status Reference Card */}
       <div className="glass-card p-6 sm:p-8 border border-white/10 rounded-3xl shadow-xl space-y-4">
         <h3 className="text-base font-bold text-white flex items-center gap-2">
           <HelpCircle className="w-5 h-5 text-blue-400" />
@@ -212,7 +362,7 @@ export default function SisonApiDocs({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
             <div className="font-mono font-bold text-emerald-400 text-sm">200 OK</div>
-            <p className="text-slate-300">Payload valid & transaksi inspeksi berhasil dimulai di kamera.</p>
+            <p className="text-slate-300">Payload & Bearer Token valid; transaksi inspeksi berhasil dimulai.</p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1">
@@ -222,7 +372,7 @@ export default function SisonApiDocs({
 
           <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-1">
             <div className="font-mono font-bold text-rose-400 text-sm">401 Unauthorized</div>
-            <p className="text-slate-300">API Key tidak disertakan atau tidak cocok dengan konfigurasi SISON.</p>
+            <p className="text-slate-300">Bearer Token tidak disertakan, tidak valid, atau telah kedaluwarsa.</p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 space-y-1">

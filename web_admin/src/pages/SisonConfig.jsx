@@ -9,18 +9,18 @@ import SisonApiDocs from '../components/sison/SisonApiDocs';
 
 export default function SisonConfig() {
   const [callbackUrl, setCallbackUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [serverIp, setServerIp] = useState('127.0.0.1');
-  const [showApiKey, setShowApiKey] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingPing, setTestingPing] = useState(false);
   const [pingResult, setPingResult] = useState(null);
 
+  // Dynamic Token Generator State
+  const [generatedToken, setGeneratedToken] = useState('');
+  const [tokenMetadata, setTokenMetadata] = useState(null);
+
   // Copy states
   const [copiedPayload, setCopiedPayload] = useState(false);
-  const [copiedCurl, setCopiedCurl] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(false);
   const [copiedIp, setCopiedIp] = useState(false);
 
   const fetchSisonConfig = async () => {
@@ -28,7 +28,6 @@ export default function SisonConfig() {
       const res = await api.get('/api/admin/sison-config');
       if (res.data) {
         setCallbackUrl(res.data.callback_url || '');
-        setApiKey(res.data.api_key || 'kamera-secret-key');
         if (res.data.server_ip) setServerIp(res.data.server_ip);
       }
     } catch {
@@ -48,10 +47,9 @@ export default function SisonConfig() {
 
     try {
       await api.put('/api/admin/sison-config', {
-        callback_url: callbackUrl,
-        api_key: apiKey,
+        callback_url: callbackUrl
       });
-      toast.success('Konfigurasi integrasi Sison berhasil disimpan!');
+      toast.success('Callback URL Sison berhasil disimpan!');
     } catch {
       toast.error('Gagal menyimpan konfigurasi Sison');
     } finally {
@@ -84,7 +82,7 @@ export default function SisonConfig() {
     }
   };
 
-  // Example Sample JSON payload
+  // Example Sample JSON payload for inspection start
   const samplePayload = {
     id_trans: "DEMO-1786211114",
     lot: "LOT-8821",
@@ -95,26 +93,14 @@ export default function SisonConfig() {
   };
   const jsonPayloadString = JSON.stringify(samplePayload, null, 2);
 
-  // Generated cURL Command
-  const curlCommand = `curl.exe -X POST "http://localhost:8000/api/start" \\
-  -H "Authorization: Bearer ${apiKey || 'kamera-secret-key'}" \\
-  -H "Content-Type: application/json" \\
-  -d '${JSON.stringify(samplePayload)}'`;
-
   const copyToClipboard = (text, type) => {
     navigator.clipboard.writeText(text);
     if (type === 'payload') {
       setCopiedPayload(true);
       toast.success('Template JSON berhasil disalin!');
       setTimeout(() => setCopiedPayload(false), 2000);
-    } else if (type === 'curl') {
-      setCopiedCurl(true);
-      toast.success('Perintah cURL berhasil disalin!');
-      setTimeout(() => setCopiedCurl(false), 2000);
     } else if (type === 'key') {
-      setCopiedKey(true);
-      toast.success('API Key berhasil disalin!');
-      setTimeout(() => setCopiedKey(false), 2000);
+      toast.success('Header Authorization disalin!');
     }
   };
 
@@ -130,8 +116,8 @@ export default function SisonConfig() {
       {/* Header */}
       <PageHeader
         title="Integrasi"
-        highlightTitle="Sison & API Reference"
-        subtitle="Pengaturan Webhook Callback, Kredensial API Key, dan Panduan Dokumentasi Endpoint Transaksi SISON"
+        highlightTitle="SISON & API Reference"
+        subtitle="Pengaturan Webhook Callback Hasil Inspeksi, Generator Dynamic Bearer Token, dan Panduan Spesifikasi API"
         actionButton={
           <a
             href="/docs"
@@ -147,22 +133,20 @@ export default function SisonConfig() {
 
       {/* Top Grid: Sison Settings Form & Status Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Form Konfigurasi SISON */}
+        {/* Left 2 Cols: Form Konfigurasi Webhook & Token Generator SISON */}
         <SisonSettingsCard
           callbackUrl={callbackUrl}
           setCallbackUrl={setCallbackUrl}
-          apiKey={apiKey}
-          setApiKey={setApiKey}
-          showApiKey={showApiKey}
-          setShowApiKey={setShowApiKey}
           loading={loading}
           saving={saving}
           testingPing={testingPing}
           pingResult={pingResult}
-          copiedKey={copiedKey}
           onTestPing={handleTestPing}
-          onCopyKey={() => copyToClipboard(apiKey, 'key')}
           onSubmit={handleSubmit}
+          generatedToken={generatedToken}
+          setGeneratedToken={setGeneratedToken}
+          tokenMetadata={tokenMetadata}
+          setTokenMetadata={setTokenMetadata}
         />
 
         {/* Right 1 Col: Status Integrasi & Ringkasan Server */}
@@ -175,11 +159,10 @@ export default function SisonConfig() {
 
       {/* BOTTOM SECTION: DOKUMENTASI LENGKAP ENDPOINT & INTEGRASI API */}
       <SisonApiDocs
-        apiKey={apiKey}
+        generatedToken={generatedToken}
         jsonPayloadString={jsonPayloadString}
-        curlCommand={curlCommand}
+        samplePayload={samplePayload}
         copiedPayload={copiedPayload}
-        copiedCurl={copiedCurl}
         onCopy={copyToClipboard}
       />
     </div>
