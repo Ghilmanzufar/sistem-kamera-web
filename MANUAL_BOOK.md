@@ -142,11 +142,11 @@ Dokumen Manual Book ini disusun sebagai panduan teknis dan operasional resmi bag
 ---
 
 ## 2.2 Clone Repository dari GitHub
-Buka **PowerShell** atau **Command Prompt**, lalu arahkan ke direktori proyek dan clone repository:
+Buka **PowerShell** atau **Command Prompt**, lalu arahkan ke direktori proyek dan clone repository resmi:
 ```powershell
 cd C:\Users\ghilman\Documents\Project
-git clone https://github.com/Ghilmanzufar/sistem-kamera-web.git
-cd sistem-kamera-web
+git clone https://github.com/scpackingdev/camera-inspection.git
+cd camera-inspection
 ```
 
 ---
