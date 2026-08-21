@@ -230,13 +230,13 @@ export default function SisonSettingsCard({
                 </div>
               </div>
               <div
-                className="p-3 bg-black/60 border border-white/10 rounded-xl font-mono text-xs text-emerald-300 leading-relaxed cursor-pointer select-all"
+                className="p-3 bg-black/60 border border-white/10 rounded-xl font-mono text-xs text-emerald-300 leading-relaxed cursor-pointer overflow-x-auto whitespace-nowrap scrollbar-thin"
                 onClick={handleCopyToken}
                 title="Klik untuk menyalin token"
               >
                 {showToken
                   ? serviceTokenInfo.token
-                  : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
+                  : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
               </div>
             </div>
 
