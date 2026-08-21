@@ -68,6 +68,9 @@ class SisonConfig(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     callback_url = Column(String, default="http://localhost:3000/api/kamera/callback")
     api_key = Column(String, default="kamera-secret-key")
+    service_token = Column(String, nullable=True)          # Service Token jangka panjang (30 hari)
+    service_token_expires_at = Column(DateTime, nullable=True)  # Tanggal kedaluwarsa service token
+
 
 class AudioConfig(Base):
     __tablename__ = "audio_config"

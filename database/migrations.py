@@ -42,7 +42,14 @@ def auto_migrate_schema():
                     conn.execute(text("ALTER TABLE audio_config ADD COLUMN IF NOT EXISTS finish_sound_type VARCHAR DEFAULT 'fanfare';"))
                 if "finish_custom_url" not in cols:
                     conn.execute(text("ALTER TABLE audio_config ADD COLUMN IF NOT EXISTS finish_custom_url VARCHAR;"))
-            
+
+            if "sison_config" in tables:
+                cols = [c["name"] for c in inspector.get_columns("sison_config")]
+                if "service_token" not in cols:
+                    conn.execute(text("ALTER TABLE sison_config ADD COLUMN IF NOT EXISTS service_token VARCHAR;"))
+                if "service_token_expires_at" not in cols:
+                    conn.execute(text("ALTER TABLE sison_config ADD COLUMN IF NOT EXISTS service_token_expires_at TIMESTAMP;"))
+
             conn.commit()
     except Exception as e:
         print(f"[WARN] Auto-migrate schema: {e}")

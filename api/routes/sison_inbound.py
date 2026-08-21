@@ -14,14 +14,36 @@ router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
 def verify_bearer_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Validasi dynamic Bearer token otentikasi (JWT / HMAC) dari SISON atau UI."""
+    """
+    Validasi Bearer token dari SISON atau UI.
+    Menerima dua jenis token:
+    1. Service Token tersimpan di DB (berlaku 30 hari) — digunakan oleh sistem SISON.
+    2. Dynamic JWT Token dari hasil login akun pengawas/admin.
+    """
     if not credentials or not credentials.credentials:
         raise HTTPException(
-            status_code=401, 
-            detail="Header Authorization: Bearer <TOKEN> diperlukan! Dapatkan token melalui endpoint POST /api/login."
+            status_code=401,
+            detail="Header Authorization: Bearer <SERVICE_TOKEN> diperlukan! Hubungi Admin untuk mendapatkan Service Token SISON.",
         )
 
     token = credentials.credentials.strip()
+
+    # 1. Cek apakah cocok dengan Service Token tersimpan di DB (paling prioritas untuk SISON)
+    db = SessionLocal()
+    try:
+        cfg = db.query(SisonConfig).first()
+        if cfg and cfg.service_token and token == cfg.service_token:
+            from datetime import datetime
+            if cfg.service_token_expires_at and datetime.utcnow() > cfg.service_token_expires_at:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Service Token SISON telah kedaluwarsa. Minta Admin untuk menerbitkan Service Token baru."
+                )
+            return {"u": "sison_service", "r": "sison"}
+    finally:
+        db.close()
+
+    # 2. Fallback: Validasi dynamic JWT token dari login akun pengawas/admin
     try:
         payload = decode_admin_token(token)
         if payload and payload.get("u") and payload.get("r") in ["operator", "pengawas", "admin", "sison"]:
@@ -32,8 +54,8 @@ def verify_bearer_token(credentials: Optional[HTTPAuthorizationCredentials] = De
         pass
 
     raise HTTPException(
-        status_code=401, 
-        detail="Bearer Token tidak valid atau telah kedaluwarsa. Silakan login kembali melalui POST /api/login."
+        status_code=401,
+        detail="Bearer Token tidak valid atau telah kedaluwarsa. Hubungi Admin untuk mendapatkan Service Token SISON.",
     )
 
 # Alias untuk kompatibilitas

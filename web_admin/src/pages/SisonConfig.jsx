@@ -15,9 +15,8 @@ export default function SisonConfig() {
   const [testingPing, setTestingPing] = useState(false);
   const [pingResult, setPingResult] = useState(null);
 
-  // Dynamic Token Generator State
-  const [generatedToken, setGeneratedToken] = useState('');
-  const [tokenMetadata, setTokenMetadata] = useState(null);
+  // Service Token State (dari DB)
+  const [serviceTokenInfo, setServiceTokenInfo] = useState(null);
 
   // Copy states
   const [copiedPayload, setCopiedPayload] = useState(false);
@@ -29,6 +28,9 @@ export default function SisonConfig() {
       if (res.data) {
         setCallbackUrl(res.data.callback_url || '');
         if (res.data.server_ip) setServerIp(res.data.server_ip);
+        if (res.data.service_token_info) {
+          setServiceTokenInfo(res.data.service_token_info);
+        }
       }
     } catch {
       toast.error('Gagal memuat konfigurasi Sison');
@@ -44,14 +46,11 @@ export default function SisonConfig() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-
     try {
-      await api.put('/api/admin/sison-config', {
-        callback_url: callbackUrl
-      });
-      toast.success('Callback URL Sison berhasil disimpan!');
+      await api.put('/api/admin/sison-config', { callback_url: callbackUrl });
+      toast.success('Callback URL SISON berhasil disimpan!');
     } catch {
-      toast.error('Gagal menyimpan konfigurasi Sison');
+      toast.error('Gagal menyimpan konfigurasi SISON');
     } finally {
       setSaving(false);
     }
@@ -64,11 +63,10 @@ export default function SisonConfig() {
     }
     setTestingPing(true);
     setPingResult(null);
-
     try {
       const res = await api.post('/api/admin/sison-test-ping', { callback_url: callbackUrl });
       setPingResult(res.data);
-      if (res.data && res.data.success) {
+      if (res.data?.success) {
         toast.success(`Server SISON Terhubung! (Status: ${res.data.status_code}, Latency: ${res.data.latency_ms}ms)`);
       } else {
         toast.error(`Koneksi SISON Gagal: ${res.data?.error || 'Tidak ada respon'}`);
@@ -82,7 +80,7 @@ export default function SisonConfig() {
     }
   };
 
-  // Example Sample JSON payload for inspection start
+  // Sample JSON payload untuk dokumentasi
   const samplePayload = {
     id_trans: "DEMO-1786211114",
     lot: "LOT-8821",
@@ -117,7 +115,7 @@ export default function SisonConfig() {
       <PageHeader
         title="Integrasi"
         highlightTitle="SISON & API Reference"
-        subtitle="Pengaturan Webhook Callback Hasil Inspeksi, Generator Dynamic Bearer Token, dan Panduan Spesifikasi API"
+        subtitle="Konfigurasi Webhook Callback, Service Token Integrasi, dan Panduan API Endpoint SISON"
         actionButton={
           <a
             href="/docs"
@@ -126,14 +124,14 @@ export default function SisonConfig() {
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
           >
             <ExternalLink className="w-4 h-4" />
-            Buka Swagger Docs
+            Swagger Docs
           </a>
         }
       />
 
-      {/* Top Grid: Sison Settings Form & Status Summary */}
+      {/* Top Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Form Konfigurasi Webhook & Token Generator SISON */}
+        {/* Left 2 Cols: Webhook Config + Service Token */}
         <SisonSettingsCard
           callbackUrl={callbackUrl}
           setCallbackUrl={setCallbackUrl}
@@ -143,13 +141,11 @@ export default function SisonConfig() {
           pingResult={pingResult}
           onTestPing={handleTestPing}
           onSubmit={handleSubmit}
-          generatedToken={generatedToken}
-          setGeneratedToken={setGeneratedToken}
-          tokenMetadata={tokenMetadata}
-          setTokenMetadata={setTokenMetadata}
+          serviceTokenInfo={serviceTokenInfo}
+          setServiceTokenInfo={setServiceTokenInfo}
         />
 
-        {/* Right 1 Col: Status Integrasi & Ringkasan Server */}
+        {/* Right 1 Col: Status Server */}
         <SisonServerStatusCard
           serverIp={serverIp}
           copiedIp={copiedIp}
@@ -157,9 +153,9 @@ export default function SisonConfig() {
         />
       </div>
 
-      {/* BOTTOM SECTION: DOKUMENTASI LENGKAP ENDPOINT & INTEGRASI API */}
+      {/* API Documentation */}
       <SisonApiDocs
-        generatedToken={generatedToken}
+        generatedToken={serviceTokenInfo?.token || ''}
         jsonPayloadString={jsonPayloadString}
         samplePayload={samplePayload}
         copiedPayload={copiedPayload}
