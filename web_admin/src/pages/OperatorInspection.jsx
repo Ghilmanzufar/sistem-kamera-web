@@ -11,7 +11,6 @@ import InspectionCameraFeed from '../components/operator/InspectionCameraFeed';
 import PartOkModal from '../components/operator/PartOkModal';
 import FlipPartModal from '../components/operator/FlipPartModal';
 import NgAlarmModal from '../components/operator/NgAlarmModal';
-import DemoSisonModal from '../components/operator/DemoSisonModal';
 import AudioSettingsModal from '../components/operator/AudioSettingsModal';
 
 export default function OperatorInspection() {
@@ -50,7 +49,6 @@ export default function OperatorInspection() {
   const [showPartOkModal, setShowPartOkModal] = useState(false);
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
-  const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showAudioModal, setShowAudioModal] = useState(false);
 
@@ -103,30 +101,6 @@ export default function OperatorInspection() {
 
   // State NG Confirmation
   const [ngResolving, setNgResolving] = useState(false);
-
-  // Demo SISON JSON Form (Default: 2 PCS Multi-Sisi Front & Rear)
-  const [demoJson, setDemoJson] = useState(() => {
-    const timestamp = Math.floor(Date.now() / 1000);
-    return JSON.stringify({
-      id_trans: `DEMO-${timestamp}`,
-      lot: `LOT-${Math.floor(1000 + Math.random() * 9000)}`,
-      p_no: '74231-0K550-00',
-      unique_no: `UNQ-${Math.floor(1000 + Math.random() * 9000)}`,
-      p_name: 'Demo Part Multi-Sisi',
-      qty: 2
-    }, null, 2);
-  });
-  const [sendingDemo, setSendingDemo] = useState(false);
-
-  // Quick helper to change demo QTY
-  const setDemoQtyPreset = (qtyNum) => {
-    try {
-      const parsed = JSON.parse(demoJson);
-      parsed.qty = qtyNum;
-      parsed.id_trans = `DEMO-${Math.floor(Date.now() / 1000)}`;
-      setDemoJson(JSON.stringify(parsed, null, 2));
-    } catch {}
-  };
 
   // Reference to pause SSE updates briefly after actions to prevent state flicker
   const ignoreSseRef = useRef(0);
@@ -390,17 +364,6 @@ export default function OperatorInspection() {
     }
   };
 
-  const handleMockDetect = async () => {
-    try {
-      const res = await api.post('/api/operator/mock-detect');
-      toast.success(res.data?.message || 'Mock Detect Berhasil!', { icon: '📷' });
-      const stateRes = await api.get('/api/operator/state');
-      if (stateRes.data) setTelemetry(stateRes.data);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal trigger Mock Detect');
-    }
-  };
-
   const handleClosePartOkModal = async () => {
     soundManager.stopAll();
     ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
@@ -450,34 +413,6 @@ export default function OperatorInspection() {
       toast.error(err.response?.data?.detail || 'Gagal merespons alarm NG');
     } finally {
       setNgResolving(false);
-    }
-  };
-
-  const handleSendDemoSison = async () => {
-    setSendingDemo(true);
-    try {
-      let parsed;
-      try {
-        parsed = JSON.parse(demoJson);
-      } catch {
-        toast.error('Format JSON tidak valid!');
-        setSendingDemo(false);
-        return;
-      }
-
-      const res = await api.post('/api/operator/demo-start', parsed);
-      if (res.data?.status === 'SUCCESS' || res.status === 200) {
-        toast.success('Simulasi Transaksi SISON Berhasil Diterima!');
-        setShowDemoModal(false);
-        const stateRes = await api.get('/api/operator/state');
-        if (stateRes.data) setTelemetry(stateRes.data);
-      } else {
-        toast.error('Gagal mengirim simulasi SISON: ' + JSON.stringify(res.data));
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal mengirim webhook SISON');
-    } finally {
-      setSendingDemo(false);
     }
   };
 
@@ -568,11 +503,10 @@ export default function OperatorInspection() {
 
       {/* 2. ACTION TOOLBAR (Ukuran Nyaman untuk Touch & Klik) */}
       <InspectionToolbar
+        isRunning={isRunning}
         isManualMode={isManualMode}
         onManualPass={handleManualPass}
         onManualReject={handleManualReject}
-        onOpenDemoModal={() => setShowDemoModal(true)}
-        onMockDetect={handleMockDetect}
       />
 
       {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER WITH FLOATING POPUPS */}
@@ -600,17 +534,6 @@ export default function OperatorInspection() {
           onResolveNg={handleResolveNg}
         />
       </InspectionCameraFeed>
-
-      {/* 7. MODAL POPUP: SIMULATOR DEMO SISON DENGAN PRESET QTY */}
-      <DemoSisonModal
-        isOpen={showDemoModal}
-        demoJson={demoJson}
-        setDemoJson={setDemoJson}
-        onSetPresetQty={setDemoQtyPreset}
-        sendingDemo={sendingDemo}
-        onSendDemo={handleSendDemoSison}
-        onClose={() => setShowDemoModal(false)}
-      />
 
       {/* 8. MODAL KONFIRMASI LOGOUT OPERATOR */}
       <ConfirmModal

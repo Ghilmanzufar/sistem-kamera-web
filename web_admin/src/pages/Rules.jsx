@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Lock, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import PageHeader from '../components/PageHeader';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function Rules() {
-  const [minCoverage, setMinCoverage] = useState('');
+  const [minCoverage, setMinCoverage] = useState('100');
   const [avgConf, setAvgConf] = useState('');
   const [minConf, setMinConf] = useState('');
   const [totalParts, setTotalParts] = useState(0);
@@ -21,7 +21,7 @@ export default function Rules() {
       if (res.data) {
         setAvgConf(Math.round((res.data.default_avg_conf || 0.75) * 100));
         setMinConf(Math.round((res.data.default_min_conf || 0.70) * 100));
-        setMinCoverage(Math.round((res.data.default_min_coverage || 1.0) * 100));
+        setMinCoverage('100'); // Fixed default 100%
         setTotalParts(res.data.total_parts || 0);
       }
     } catch (err) {
@@ -43,7 +43,7 @@ export default function Rules() {
       const res = await api.post('/api/admin/global-rule', {
         default_avg_conf: parseFloat(avgConf) / 100,
         default_min_conf: parseFloat(minConf) / 100,
-        default_min_coverage: parseFloat(minCoverage) / 100,
+        default_min_coverage: 1.0, // Selalu 100% kelengkapan label
       });
 
       if (res.data && res.data.success) {
@@ -75,18 +75,30 @@ export default function Rules() {
         ) : (
           <form onSubmit={(e) => { e.preventDefault(); setShowConfirmModal(true); }} className="space-y-6">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Target Kelengkapan Labelname (0 - 100%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                required
-                value={minCoverage}
-                onChange={(e) => setMinCoverage(e.target.value)}
-                className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white font-mono text-lg focus:outline-none focus:border-amber-500 transition-all"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Target Kelengkapan Labelname (Coverage)
+                </label>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Lock className="w-3 h-3" />
+                  <span>Terkunci (Standar Wajib 100%)</span>
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value="100%"
+                  className="w-full px-4 py-3 bg-black/40 border border-white/15 rounded-xl text-emerald-400 font-mono text-lg cursor-not-allowed select-none font-bold"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">
+                ℹ️ Seluruh komponen yang terdaftar pada part wajib terdeteksi <strong>100% lengkap</strong> agar dinyatakan lolos inspeksi (OK).
+              </p>
             </div>
 
             <div>

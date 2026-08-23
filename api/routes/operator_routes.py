@@ -198,39 +198,66 @@ def operator_logout(req: Optional[OperatorLogoutPayload] = None, db: Session = D
 
 @router.post("/operator/manual-pass")
 def manual_pass():
-    """Trigger manual pass OK saat mode inspeksi manual atau part OK diverifikasi operator."""
+    """Trigger manual pass OK saat part diverifikasi secara visual oleh operator (Fallback jika AI tidak mendeteksi)."""
     with state.lock:
         curr_status = state.status
+        if curr_status == "COMPLETED" or (curr_status in ["RUNNING", "OK"] and state.qty <= 0 and state.target_qty > 0):
+            raise HTTPException(status_code=400, detail="Batch inspeksi sudah selesai (100% OK).")
         if curr_status not in ["RUNNING", "OK"]:
             raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Tidak ada transaksi aktif.")
         
-        state.qty -= 1
-        rem_qty = state.qty
+        cur_side = state.current_side
+        rules = state.aturan_sisi
         cur_pno = state.p_no
         cur_id = state.id_trans
-        op_name = state.operator_name
+        op_name = state.operator_name or state.operator_username or "Operator"
         
-        state.last_inspection_details = {
-            "label_terdeteksi": "Pemeriksaan Visual Manual",
-            "avg_confidence": "100% (Manual Pass)",
-            "found_labels": "- INSPEKSI VISUAL OPERATOR : OK"
-        }
-
-        if rem_qty <= 0:
-            state.status = "COMPLETED"
-            state.part_ok_popup = True
-            state.flip_part_popup = False
-            state.completed_time = time.time()
-            stream_worker.last_pesan_ui = "BATCH SELESAI (100% OK)! SILAKAN MULAI TRANSAKSI BARU."
+        # Cek apakah part memiliki dua sisi (Front & Rear)
+        has_rear = any(r.get("nama_komponen", "").lower().startswith("r-") for r in rules)
+        
+        if cur_side == "F" and has_rear:
+            state.current_side = "R"
+            state.flip_part_popup = True
+            state.part_ok_popup = False
+            
+            state.last_inspection_details = {
+                "label_terdeteksi": "Pemeriksaan Visual Sisi Depan",
+                "avg_confidence": "100% (Manual Pass Front)",
+                "found_labels": "- SISI DEPAN (FRONT) : OK (MANUAL PASS)"
+            }
+            stream_worker.last_pesan_ui = "Sisi Depan OK (Pass Manual)! Balik Part ke sisi Belakang."
+            return {"success": True, "action": "flip_part", "message": "Sisi Depan OK! Balik Part ke sisi Belakang."}
         else:
-            state.part_ok_popup = True
-            stream_worker.last_pesan_ui = f"Part Manual OK! Sisa: {rem_qty} PCS"
+            state.qty -= 1
+            rem_qty = state.qty
+            state.current_side = "F"
+            state.flip_part_popup = False
+            
+            state.last_inspection_details = {
+                "label_terdeteksi": "Pemeriksaan Visual Operator",
+                "avg_confidence": "100% (Manual Pass)",
+                "found_labels": "- INSPEKSI VISUAL OPERATOR : OK (MANUAL PASS)"
+            }
+
+            if rem_qty <= 0:
+                state.status = "COMPLETED"
+                state.part_ok_popup = True
+                state.flip_part_popup = False
+                state.completed_time = time.time()
+                stream_worker.last_pesan_ui = "BATCH SELESAI (100% OK)! SILAKAN MULAI TRANSAKSI BARU."
+            else:
+                state.part_ok_popup = True
+                stream_worker.last_pesan_ui = f"Part Manual OK! Sisa: {rem_qty} PCS. Lanjut part berikutnya."
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 1.0, "MANUAL", op_name), daemon=True).start()
     if rem_qty <= 0:
         threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1), daemon=True).start()
         
-    return {"success": True, "message": f"Part Manual OK! Sisa: {max(0, rem_qty)} PCS"}
+    return {
+        "success": True,
+        "action": "completed" if rem_qty <= 0 else "part_ok",
+        "message": "Batch inspeksi selesai (100% OK)!" if rem_qty <= 0 else f"Part Manual OK! Sisa: {max(0, rem_qty)} PCS"
+    }
 
 @router.post("/operator/manual-reject")
 def manual_reject():
@@ -243,83 +270,13 @@ def manual_reject():
         state.status = "NG"
         cur_pno = state.p_no
         cur_id = state.id_trans
-        op_name = state.operator_name
+        op_name = state.operator_name or state.operator_username or "Operator"
         stream_worker.last_pesan_ui = "STATUS: NG (MANUAL REJECT)! INPUT PIN UNTUK VALIDASI."
         stream_worker.ng_active = True
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "NG", 0.0, "MANUAL", op_name), daemon=True).start()
     threading.Thread(target=SisonSender.send_callback, args=(cur_id, 2), daemon=True).start()
     return {"success": True, "message": "Manual reject triggered. Status: NG."}
-
-@router.post("/operator/mock-detect")
-def mock_detect():
-    """Simulasi trigger deteksi AI untuk testing / demo inspeksi."""
-    with state.lock:
-        curr_status = state.status
-        if curr_status == "COMPLETED" or (curr_status in ["RUNNING", "OK"] and state.qty <= 0 and state.target_qty > 0):
-            raise HTTPException(status_code=400, detail="Batch inspeksi sudah selesai (100% OK). Klik [Selesai] atau mulai transaksi baru!")
-        if curr_status not in ["RUNNING", "OK"]:
-            raise HTTPException(status_code=400, detail="Sistem dalam posisi STANDBY. Mulai transaksi SISON terlebih dahulu!")
-        
-        cur_side = state.current_side
-        rules = state.aturan_sisi
-        cur_pno = state.p_no
-        cur_id = state.id_trans
-        op_name = state.operator_name
-        
-        # Cek apakah part memiliki dua sisi (Front & Rear)
-        has_rear = any(r.get("nama_komponen", "").lower().startswith("r-") for r in rules)
-        
-        if cur_side == "F" and has_rear:
-            state.current_side = "R"
-            state.flip_part_popup = True
-            state.part_ok_popup = False
-            
-            front_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("f-")]
-            found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 96%" for r in front_rules] if front_rules else ["- SISI DEPAN (FRONT) : 95%"]
-            state.last_inspection_details = {
-                "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100% Sisi Depan)",
-                "avg_confidence": "96%",
-                "found_labels": "\n".join(found_labels_list)
-            }
-            stream_worker.last_pesan_ui = "Sisi Depan OK! Balik Part ke sisi Belakang."
-            return {"success": True, "action": "flip_part", "message": "Sisi Depan OK! Balik Part ke sisi Belakang."}
-        else:
-            state.qty -= 1
-            rem_qty = state.qty
-            state.current_side = "F"
-            state.flip_part_popup = False
-            
-            rear_rules = [r for r in rules if r.get("nama_komponen", "").lower().startswith("r-")]
-            found_labels_list = [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rear_rules] if rear_rules else [f"- {r.get('nama_komponen', '').upper()} : 95%" for r in rules if r.get("nama_komponen")]
-            if not found_labels_list:
-                found_labels_list = ["- KOMPONEN TERVERIFIKASI : 95%"]
-
-            state.last_inspection_details = {
-                "label_terdeteksi": f"{len(found_labels_list)}/{len(found_labels_list)} (100%)",
-                "avg_confidence": "95%",
-                "found_labels": "\n".join(found_labels_list)
-            }
-
-            if rem_qty <= 0:
-                state.status = "COMPLETED"
-                state.part_ok_popup = True
-                state.flip_part_popup = False
-                state.completed_time = time.time()
-                stream_worker.last_pesan_ui = "BATCH SELESAI (100% OK)! SILAKAN MULAI TRANSAKSI BARU."
-            else:
-                state.part_ok_popup = True
-                stream_worker.last_pesan_ui = f"Part OK! Sisa: {rem_qty} PCS. Lanjut part berikutnya."
-
-    threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 0.95, "AI", op_name), daemon=True).start()
-    if rem_qty <= 0:
-        threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1), daemon=True).start()
-
-    return {
-        "success": True, 
-        "action": "completed" if rem_qty <= 0 else "part_ok", 
-        "message": "Batch inspeksi selesai (100% OK)!" if rem_qty <= 0 else f"Mock detect berhasil! Sisa: {max(0, rem_qty)} PCS"
-    }
 
 @router.api_route("/operator/resolve-ng", methods=["GET", "POST"])
 def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get_db)):
@@ -366,18 +323,3 @@ def clear_popup(req: ClearPopupRequest):
         stream_worker.last_pesan_ui = "STANDBY"
 
     return {"success": True}
-
-@router.post("/operator/demo-start")
-@router.post("/operator/start-demo")
-def operator_demo_start(req: dict, db: Session = Depends(get_db)):
-    """Memicu simulasi transaksi SISON khusus untuk antarmuka demo operator."""
-    from api.routes.sison_inbound import StartRequest, execute_sison_start
-    start_req = StartRequest(
-        id_trans=req.get("id_trans", f"DEMO-{int(time.time())}"),
-        p_no=req.get("p_no", "74231-0K550-00"),
-        lot=req.get("lot", "LOT-DEMO-01"),
-        unique_no=req.get("unique_no", f"UNQ-{int(time.time()) % 10000:04d}"),
-        p_name=req.get("p_name", "Demo Part Multi-Sisi"),
-        qty=max(1, int(req.get("qty", 2)))
-    )
-    return execute_sison_start(start_req, db)
