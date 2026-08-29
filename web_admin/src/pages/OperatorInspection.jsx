@@ -364,6 +364,18 @@ export default function OperatorInspection() {
     }
   };
 
+  const handleSimulateNg = async () => {
+    soundManager.stopAll();
+    try {
+      const res = await api.post('/api/operator/simulate-ng');
+      toast.error('🚨 SIMULASI NG DIAKTIFKAN: Tampilan Alarm Cacat Aktif!', { icon: '🚨', duration: 4000 });
+      const stateRes = await api.get('/api/operator/state');
+      if (stateRes.data) setTelemetry(stateRes.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Gagal mengaktifkan simulasi NG');
+    }
+  };
+
   const handleClosePartOkModal = async () => {
     soundManager.stopAll();
     ignoreSseRef.current = Date.now() + 1500; // Block stale SSE for 1.5s
@@ -507,6 +519,7 @@ export default function OperatorInspection() {
         isManualMode={isManualMode}
         onManualPass={handleManualPass}
         onManualReject={handleManualReject}
+        onSimulateNg={handleSimulateNg}
       />
 
       {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER WITH FLOATING POPUPS */}

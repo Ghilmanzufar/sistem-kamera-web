@@ -278,17 +278,46 @@ def manual_reject():
     threading.Thread(target=SisonSender.send_callback, args=(cur_id, 2), daemon=True).start()
     return {"success": True, "message": "Manual reject triggered. Status: NG."}
 
+@router.post("/operator/simulate-ng")
+def simulate_ng():
+    """Simulasi trigger abnormalitas NG untuk pengujian tampilan visual, modal popup, dan sirene alarm (Testing / Demo)."""
+    with state.lock:
+        state.status = "NG"
+        if not state.p_no or state.p_no in ["STANDBY", "-", ""]:
+            state.p_no = "SAMPLE-PART-NG-01"
+        if not state.id_trans or state.id_trans in ["STANDBY", "-", ""]:
+            state.id_trans = "SIMULASI-NG-999"
+        if not state.target_qty or state.target_qty <= 0:
+            state.target_qty = 1
+            state.qty = 1
+            
+        state.last_inspection_details = {
+            "label_terdeteksi": "Simulasi Abnormalitas Cacat Komponen (Testing)",
+            "avg_confidence": "99.9% (Simulasi NG)",
+            "found_labels": "- KOMPONEN CACAT / KURANG TERPASANG (SIMULASI)"
+        }
+        stream_worker.last_pesan_ui = "⚠️ SIMULASI NG: CACAT / ABNORMALITAS PART TERDETEKSI!"
+        stream_worker.ng_active = True
+
+    return {"success": True, "message": "Simulasi alarm NG berhasil diaktifkan!"}
+
 @router.api_route("/operator/resolve-ng", methods=["GET", "POST"])
 def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get_db)):
     """Konfirmasi abnormalitas NG (Cacat Terkonfirmasi atau False Alarm / Abaikan) langsung dari modal."""
     action_type = (req.action if req and req.action else "CONFIRM_NG").upper()
     
     with state.lock:
-        state.status = "RUNNING"
-        state.current_side = "F"
-        state.flip_part_popup = False
-        state.part_ok_popup = False
-        state.cooldown_until = time.time() + 2.0
+        is_simulation = bool(state.id_trans == "SIMULASI-NG-999")
+        if is_simulation:
+            state.reset_to_standby()
+            stream_worker.last_pesan_ui = "STANDBY"
+        else:
+            state.status = "RUNNING"
+            state.current_side = "F"
+            state.flip_part_popup = False
+            state.part_ok_popup = False
+            state.cooldown_until = time.time() + 2.0
+            
         cur_op = state.operator_name or state.operator_username or "Operator"
         cur_id = state.id_trans
         cur_pno = state.p_no
@@ -300,10 +329,11 @@ def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get
     else:
         msg = f"Alarm NG diabaikan / False Alarm oleh {cur_op}."
 
-    try:
-        log_audit_event(db, cur_op, "RESOLVE_NG", f"{msg} (Trans: {cur_id}, Part: {cur_pno})")
-    except Exception:
-        pass
+    if not is_simulation:
+        try:
+            log_audit_event(db, cur_op, "RESOLVE_NG", f"{msg} (Trans: {cur_id}, Part: {cur_pno})")
+        except Exception:
+            pass
 
     return {"success": True, "message": msg}
 
