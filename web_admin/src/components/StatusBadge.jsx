@@ -5,12 +5,18 @@ export default function StatusBadge({ status, className = "" }) {
   let text = status;
 
   if (typeof status === 'number') {
-    if (status === 1) {
+    if (status === 2) {
       badgeStyle = "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-emerald-950/20";
       text = "Selesai (OK)";
-    } else if (status === 2) {
+    } else if (status === 1) {
       badgeStyle = "bg-amber-500/15 text-amber-400 border-amber-500/40 animate-pulse";
-      text = "RUNNING";
+      text = "RUNNING / PROSES";
+    } else if (status === 99) {
+      badgeStyle = "bg-rose-500/15 text-rose-400 border-rose-500/40";
+      text = "BATAL (CANCEL)";
+    } else if (status === 0) {
+      badgeStyle = "bg-slate-800/90 text-slate-300 border-slate-600/50";
+      text = "STANDBY";
     } else {
       badgeStyle = "bg-rose-500/15 text-rose-400 border-rose-500/40";
       text = "NG / Gagal";

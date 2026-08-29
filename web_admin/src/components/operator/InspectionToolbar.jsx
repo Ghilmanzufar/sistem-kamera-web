@@ -1,42 +1,42 @@
 import React from 'react';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { Ban, Radio } from 'lucide-react';
 
 export default function InspectionToolbar({
   isRunning,
-  isManualMode,
-  onManualPass,
-  onManualReject
+  isNg,
+  onOpenCancelKanban
 }) {
+  const isTransactionActive = isRunning || isNg;
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 px-3.5 py-2 rounded-xl border border-white/10 backdrop-blur-md shadow-md shrink-0">
       <div className="flex flex-wrap items-center gap-2.5">
-        {/* Tombol PASS MANUAL (Tersedia saat transaksi aktif sebagai Fallback / Mode Manual) */}
-        {isRunning && (
-          <button
-            type="button"
-            onClick={onManualPass}
-            title="Klik jika part secara visual telah diverifikasi OK namun AI kesulitan mendeteksi"
-            className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer hover:scale-105 active:scale-95"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>✅ PASS MANUAL (OK)</span>
-          </button>
-        )}
+        {/* Tombol BATALKAN KANBAN (Permanen, Disabled saat Standby, Aktif saat Transaksi) */}
+        <button
+          type="button"
+          disabled={!isTransactionActive}
+          onClick={onOpenCancelKanban}
+          title={
+            isTransactionActive
+              ? "Klik untuk membatalkan transaksi Kanban saat ini (misal part pengganti habis)"
+              : "Tidak ada transaksi aktif yang dapat dibatalkan"
+          }
+          className={`py-2 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all select-none ${
+            isTransactionActive
+              ? "bg-gradient-to-r from-rose-700 via-red-600 to-rose-700 hover:from-rose-600 hover:to-red-500 text-white shadow-lg shadow-rose-900/40 border border-rose-400/40 cursor-pointer hover:scale-105 active:scale-95 animate-pulse"
+              : "bg-slate-800/80 border border-white/10 text-slate-500 opacity-50 cursor-not-allowed"
+          }`}
+        >
+          <Ban className="w-4 h-4" />
+          <span>⛔ BATALKAN KANBAN</span>
+        </button>
 
-        {/* Tombol REJECT MANUAL */}
-        {isRunning && (
-          <button
-            type="button"
-            onClick={onManualReject}
-            title="Klik jika part secara visual ditemukan cacat (NG) oleh operator"
-            className="py-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer hover:scale-105 active:scale-95"
-          >
-            <XCircle className="w-4 h-4" />
-            <span>❌ REJECT (NG)</span>
-          </button>
-        )}
-
-        {!isRunning && (
+        {isTransactionActive ? (
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 py-1 px-2">
+            <Radio className="w-3.5 h-3.5 animate-pulse" />
+            <span>Transaksi Inspeksi Aktif (AI Running)</span>
+          </div>
+        ) : (
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 py-1 px-2">
             <span className="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span>
             <span>Menunggu Transaksi SISON Dimulai...</span>
@@ -45,11 +45,7 @@ export default function InspectionToolbar({
       </div>
 
       <div className="text-xs text-slate-400 font-bold hidden sm:block">
-        {isManualMode ? (
-          <span className="text-amber-400 font-mono">⚠️ MODE INSPEKSI MANUAL AKTIF</span>
-        ) : (
-          <span>Sistem Kamera Inspeksi AI Real-Time</span>
-        )}
+        <span>Sistem Kamera Inspeksi AI Real-Time</span>
       </div>
     </div>
   );

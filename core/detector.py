@@ -29,9 +29,10 @@ def log_inspeksi_db(id_trans: str, part_no: str, status_deteksi: str, conf_score
             
             trans = db.query(Transaction).filter(Transaction.id_trans == id_trans).first()
             if trans:
-                trans.qty_actual += 1
+                if status_deteksi == "OK":
+                    trans.qty_actual += 1
                 if trans.qty_actual >= trans.target_qty:
-                    trans.status = 1
+                    trans.status = 2  # 2 = OK / SELESAI
                     trans.end_time = func.now()
             
             db.commit()
@@ -365,7 +366,7 @@ class KameraProses:
                                     state.part_ok_popup = True
                                     state.flip_part_popup = False
                                     state.completed_time = time.time()
-                                    threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
+                                    threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 2)).start()
                                     pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
                                     color_status = (0, 255, 0)
                                 else:
@@ -392,7 +393,7 @@ class KameraProses:
                 state.part_ok_popup = True
                 state.flip_part_popup = False
                 state.completed_time = time.time()
-                threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 1)).start()
+                threading.Thread(target=SisonSender.send_callback, args=(state.id_trans, 2)).start()
             pesan_ui = "INSPEKSI BATCH SELESAI (OK)!"
             color_status = (0, 255, 0)
             

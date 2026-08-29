@@ -48,12 +48,13 @@ export default function Dashboard() {
   };
 
   const totalCount = transactions.length;
-  const okCount = transactions.filter(t => t.status === 1).length;
-  const runningCount = transactions.filter(t => t.status === 2).length;
-  const ngCount = transactions.filter(t => t.status === 0 || t.status === 3).length;
+  const okCount = transactions.filter(t => t.status === 2).length;
+  const runningCount = transactions.filter(t => t.status === 1).length;
+  const cancelCount = transactions.filter(t => t.status === 99).length;
 
   // Calculate Yield Rate (% OK)
-  const passRateVal = totalCount > 0 ? (okCount / totalCount) * 100 : 100;
+  const completedTotal = okCount + cancelCount;
+  const passRateVal = completedTotal > 0 ? (okCount / completedTotal) * 100 : 100;
   const passRateStr = passRateVal.toFixed(1) + '%';
   const yieldColor = passRateVal >= 95 ? 'emerald' : (passRateVal >= 85 ? 'amber' : 'rose');
 
@@ -75,10 +76,10 @@ export default function Dashboard() {
       {/* Stat Cards (5 Cards Layout) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard title="Total Transaksi" value={totalCount} icon={Activity} color="blue" />
-        <StatCard title="Inspeksi OK" value={okCount} icon={CheckCircle} color="emerald" />
+        <StatCard title="Inspeksi OK (Status 2)" value={okCount} icon={CheckCircle} color="emerald" />
         <StatCard title="Yield Rate (% OK)" value={passRateStr} icon={TrendingUp} color={yieldColor} />
-        <StatCard title="Proses Running" value={runningCount} icon={Clock} color="amber" />
-        <StatCard title="Inspeksi NG" value={ngCount} icon={AlertOctagon} color="rose" />
+        <StatCard title="Proses Running (Status 1)" value={runningCount} icon={Clock} color="amber" />
+        <StatCard title="Batal (Status 99)" value={cancelCount} icon={AlertOctagon} color="rose" />
       </div>
 
       {/* Live Table */}

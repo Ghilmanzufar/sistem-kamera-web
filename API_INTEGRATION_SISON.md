@@ -39,10 +39,10 @@ sequenceDiagram
     Note over Kamera,Model: Operator memposisikan komponen sesuai panduan visual
     
     alt Inspeksi Selesai (Semua Sisi OK)
-        Kamera->>SISON: POST <CALLBACK_URL> (id_trans, status: 1 [OK])
+        Kamera->>SISON: POST <CALLBACK_URL> (id_trans, status: 2 [OK])
         SISON-->>Kamera: 200 OK (Ack Callback)
-    else Inspeksi Gagal / Komponen Cacat (NG)
-        Kamera->>SISON: POST <CALLBACK_URL> (id_trans, status: 2 [NG])
+    else Part NG & Stok Pengganti Habis (Cancel Kanban)
+        Kamera->>SISON: POST <CALLBACK_URL> (id_trans, status: 99 [Cancel])
         SISON-->>Kamera: 200 OK (Ack Callback)
     end
 ```
@@ -180,7 +180,7 @@ Setelah operator selesai melakukan inspeksi seluruh sisi part pada kamera, kamer
 ```json
 {
   "id_trans": "string",
-  "status": "integer (1 atau 2)"
+  "status": "integer (0, 1, 2, 99)"
 }
 ```
 
@@ -189,22 +189,24 @@ Setelah operator selesai melakukan inspeksi seluruh sisi part pada kamera, kamer
 | Field | Tipe Data | Nilai | Deskripsi Status |
 | :--- | :--- | :---: | :--- |
 | `id_trans` | `string` | Sesuai pemicu | ID Transaksi yang sama dengan pemicu `POST /api/start`. |
-| `status` | `integer` | **`1`** | **OK (Passed)** — Semua komponen part terpasang lengkap dan lolos threshold AI. |
-| `status` | `integer` | **`2`** | **NG (Not Good / Defect)** — Terdapat komponen hilang/cacat atau transaksi dihentikan/reject. |
+| `status` | `integer` | **`0`** | **Standby** — Transaksi belum mulai diproses / sistem menunggu. |
+| `status` | `integer` | **`1`** | **Processing** — Transaksi sedang berlangsung / dalam proses inspeksi. |
+| `status` | `integer` | **`2`** | **OK (Passed)** — Semua sisi dan komponen part terverifikasi lengkap & lolos threshold AI. |
+| `status` | `integer` | **`99`** | **Cancel (Dibatalkan)** — Transaksi Kanban dibatalkan (misal: part NG & stok pengganti habis). |
 
-#### Contoh Payload Webhook Hasil OK:
-```json
-{
-  "id_trans": "TRX-20260829-001",
-  "status": 1
-}
-```
-
-#### Contoh Payload Webhook Hasil NG:
+#### Contoh Payload Webhook Hasil OK (Status 2):
 ```json
 {
   "id_trans": "TRX-20260829-001",
   "status": 2
+}
+```
+
+#### Contoh Payload Webhook Batalkan Kanban (Status 99):
+```json
+{
+  "id_trans": "TRX-20260829-001",
+  "status": 99
 }
 ```
 

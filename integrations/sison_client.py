@@ -13,10 +13,13 @@ def get_callback_url() -> str:
 
 class SisonSender:
     @staticmethod
-    def send_callback(id_trans: str, status: int = 1, max_retries: int = 3, retry_delay: float = 1.0) -> dict:
+    def send_callback(id_trans: str, status: int = 2, max_retries: int = 3, retry_delay: float = 1.0) -> dict:
         """
-        Mengirim status hasil inspeksi (1=OK, 2=NG) ke server SISON dengan Auto-Retry hingga 3x
-        jika terjadi network glitch / timeout jaringan.
+        Mengirim status hasil inspeksi ke server SISON dengan Auto-Retry hingga 3x:
+        - 0  = Standby (Belum diproses)
+        - 1  = Processing (Sedang diproses / Running)
+        - 2  = OK (Inspeksi selesai & lolos semua part)
+        - 99 = Cancel (Transaksi Kanban dibatalkan / Cancel Kanban)
         """
         url = get_callback_url()
         payload = {"id_trans": id_trans, "status": status}

@@ -196,6 +196,10 @@ def operator_logout(req: Optional[OperatorLogoutPayload] = None, db: Session = D
     log_audit_event(db, uname, "OPERATOR_LOGOUT", f"Operator {uname} logout dari layar inspeksi.")
     return {"success": True}
 
+class CancelKanbanRequest(BaseModel):
+    reason: Optional[str] = "Stok part pengganti habis"
+    username: Optional[str] = ""
+
 @router.post("/operator/manual-pass")
 def manual_pass():
     """Trigger manual pass OK saat part diverifikasi secara visual oleh operator (Fallback jika AI tidak mendeteksi)."""
@@ -251,7 +255,7 @@ def manual_pass():
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "OK", 1.0, "MANUAL", op_name), daemon=True).start()
     if rem_qty <= 0:
-        threading.Thread(target=SisonSender.send_callback, args=(cur_id, 1), daemon=True).start()
+        threading.Thread(target=SisonSender.send_callback, args=(cur_id, 2), daemon=True).start()
         
     return {
         "success": True,
@@ -271,24 +275,27 @@ def manual_reject():
         cur_pno = state.p_no
         cur_id = state.id_trans
         op_name = state.operator_name or state.operator_username or "Operator"
-        stream_worker.last_pesan_ui = "STATUS: NG (MANUAL REJECT)! INPUT PIN UNTUK VALIDASI."
+        stream_worker.last_pesan_ui = "STATUS: NG (MANUAL REJECT)! TENTUKAN AKSI PADA MODAL."
         stream_worker.ng_active = True
 
     threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "NG", 0.0, "MANUAL", op_name), daemon=True).start()
-    threading.Thread(target=SisonSender.send_callback, args=(cur_id, 2), daemon=True).start()
     return {"success": True, "message": "Manual reject triggered. Status: NG."}
 
 @router.api_route("/operator/resolve-ng", methods=["GET", "POST"])
 def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get_db)):
-    """Konfirmasi abnormalitas NG (Cacat Terkonfirmasi atau False Alarm / Abaikan) langsung dari modal."""
-    action_type = (req.action if req and req.action else "CONFIRM_NG").upper()
+    """
+    Konfirmasi abnormalitas NG dari modal inspeksi operator:
+    1. RETRY / DISMISS: Part sebenarnya bagus (model salah baca / reposisi part). Kamera langsung deteksi ulang part yang sama.
+    2. CONFIRM_REPLACE / CONFIRM_NG: Part benar cacat (NG) dan diganti dengan part baru. Catat log NG, reset sisi ke Depan (F).
+    """
+    action_type = (req.action if req and req.action else "RETRY").upper()
     
     with state.lock:
         state.status = "RUNNING"
         state.current_side = "F"
         state.flip_part_popup = False
         state.part_ok_popup = False
-        state.cooldown_until = time.time() + 2.0
+        state.cooldown_until = time.time() + 1.5
             
         cur_op = state.operator_name or state.operator_username or "Operator"
         cur_id = state.id_trans
@@ -296,17 +303,72 @@ def resolve_ng(req: Optional[NGResolveRequest] = None, db: Session = Depends(get
 
     stream_worker.ng_active = False
 
-    if action_type in ["CONFIRM_NG", "CONFIRM", "YES"]:
-        msg = f"Part dikonfirmasi cacat (NG) oleh {cur_op}."
+    if action_type in ["CONFIRM_REPLACE", "CONFIRM_NG", "REPLACE", "CONFIRM", "YES"]:
+        msg = f"Part dikonfirmasi cacat (NG) dan diganti part baru oleh {cur_op}."
+        threading.Thread(target=log_inspeksi_db, args=(cur_id, cur_pno, "NG", 0.0, "AI", cur_op), daemon=True).start()
+        try:
+            log_audit_event(db, cur_op, "NG_REPLACED", f"{msg} (Trans: {cur_id}, Part: {cur_pno})")
+        except Exception:
+            pass
     else:
-        msg = f"Alarm NG diabaikan / False Alarm oleh {cur_op}."
-
-    try:
-        log_audit_event(db, cur_op, "RESOLVE_NG", f"{msg} (Trans: {cur_id}, Part: {cur_pno})")
-    except Exception:
-        pass
+        # RETRY / DISMISS / FALSE_ALARM
+        msg = f"Alarm NG diabaikan / Deteksi ulang (Salah Baca) oleh {cur_op}."
+        stream_worker.last_pesan_ui = "Mendeteksi Ulang Part... Tahan Posisi Part."
+        try:
+            log_audit_event(db, cur_op, "RETRY_INSPECTION", f"{msg} (Trans: {cur_id}, Part: {cur_pno})")
+        except Exception:
+            pass
 
     return {"success": True, "message": msg}
+
+@router.post("/operator/cancel-kanban")
+def cancel_kanban(req: Optional[CancelKanbanRequest] = None, db: Session = Depends(get_db)):
+    """Membatalkan proses transaksi Kanban yang sedang aktif (misal jika stok part pengganti habis)."""
+    with state.lock:
+        cur_status = state.status
+        cur_id = state.id_trans
+        cur_pno = state.p_no
+        cur_op = state.operator_name or state.operator_username or "Operator"
+        rem_qty = state.qty
+        tgt_qty = state.target_qty
+        
+        if not cur_id or cur_status == "STANDBY":
+            raise HTTPException(status_code=400, detail="Tidak ada transaksi aktif yang dapat dibatalkan.")
+            
+        state.reset_to_standby()
+        stream_worker.ng_active = False
+        stream_worker.last_pesan_ui = "STANDBY"
+
+    reason_str = req.reason.strip() if (req and req.reason and req.reason.strip()) else "Stok part pengganti habis"
+
+    # Kirim Webhook Callback status 99 (CANCEL) ke Server SISON
+    threading.Thread(target=SisonSender.send_callback, args=(cur_id, 99), daemon=True).start()
+
+    # Update status transaksi di database lokal ke 99 (CANCEL)
+    try:
+        from sqlalchemy.sql import func
+        from database import Transaction
+        trans = db.query(Transaction).filter(Transaction.id_trans == cur_id).first()
+        if trans:
+            trans.status = 99  # 99 = CANCEL
+            trans.end_time = func.now()
+            db.commit()
+    except Exception as e:
+        print(f"[DB WARN] Gagal update status transaksi cancel: {e}")
+
+    # Catat audit log
+    log_audit_event(
+        db, 
+        cur_op, 
+        "CANCEL_KANBAN", 
+        f"Transaksi {cur_id} (Part: {cur_pno}) dibatalkan oleh {cur_op}. Sisa {rem_qty}/{tgt_qty} PCS. Alasan: {reason_str}"
+    )
+
+    return {
+        "success": True, 
+        "message": f"Transaksi {cur_id} berhasil dibatalkan (Status: 99). Sistem kembali ke STANDBY.",
+        "id_trans": cur_id
+    }
 
 @router.post("/operator/clear-popup")
 def clear_popup(req: ClearPopupRequest):

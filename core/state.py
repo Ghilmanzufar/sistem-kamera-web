@@ -125,8 +125,8 @@ class SystemState:
         try:
             from database import SessionLocal, Transaction, InspectionLog, PartRule
             with SessionLocal() as db:
-                # Cari transaksi status in [0, 2] (IN_PROGRESS / RUNNING) yang paling baru
-                pending_trans = db.query(Transaction).filter(Transaction.status.in_([0, 2])).order_by(Transaction.id.desc()).first()
+                # Cari transaksi status 1 (IN_PROGRESS / PROCESSING) yang paling baru
+                pending_trans = db.query(Transaction).filter(Transaction.status == 1).order_by(Transaction.id.desc()).first()
                 if not pending_trans:
                     return
 
@@ -156,8 +156,8 @@ class SystemState:
                 } for r in db_rules]
 
                 if completed_count >= target_qty:
-                    # Transaksi sebenarnya sudah terpenuhi sebelum crash, tandai selesai
-                    pending_trans.status = 1
+                    # Transaksi sebenarnya sudah terpenuhi sebelum crash, tandai selesai OK (2)
+                    pending_trans.status = 2
                     db.commit()
                     print(f"[CRASH RECOVERY] Transaksi {id_trans} (Part {p_no}) sudah selesai ({completed_count}/{target_qty} PCS).")
                     return

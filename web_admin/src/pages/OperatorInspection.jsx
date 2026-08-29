@@ -11,6 +11,7 @@ import InspectionCameraFeed from '../components/operator/InspectionCameraFeed';
 import PartOkModal from '../components/operator/PartOkModal';
 import FlipPartModal from '../components/operator/FlipPartModal';
 import NgAlarmModal from '../components/operator/NgAlarmModal';
+import CancelKanbanModal from '../components/operator/CancelKanbanModal';
 import AudioSettingsModal from '../components/operator/AudioSettingsModal';
 
 export default function OperatorInspection() {
@@ -49,6 +50,8 @@ export default function OperatorInspection() {
   const [showPartOkModal, setShowPartOkModal] = useState(false);
   const [showFlipModal, setShowFlipModal] = useState(false);
   const [showNgModal, setShowNgModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showAudioModal, setShowAudioModal] = useState(false);
 
@@ -340,27 +343,27 @@ export default function OperatorInspection() {
   }, []);
 
   // Action Handlers
-  const handleManualPass = async () => {
-    soundManager.stopAll();
-    try {
-      const res = await api.post('/api/operator/manual-pass');
-      toast.success(res.data?.message || 'Part Diverifikasi OK (Manual Pass)!');
-      const stateRes = await api.get('/api/operator/state');
-      if (stateRes.data) setTelemetry(stateRes.data);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal trigger Pass Manual');
-    }
+  const handleOpenCancelModal = () => {
+    setShowCancelModal(true);
   };
 
-  const handleManualReject = async () => {
+  const handleCancelKanban = async (reason = 'Stok part pengganti habis') => {
     soundManager.stopAll();
+    setIsCancelling(true);
     try {
-      const res = await api.post('/api/operator/manual-reject');
-      toast.error(res.data?.message || 'Part Di-reject (Manual NG)!');
+      const res = await api.post('/api/operator/cancel-kanban', { reason });
+      soundManager.stopAll();
+      setShowCancelModal(false);
+      setShowNgModal(false);
+      setShowFlipModal(false);
+      setShowPartOkModal(false);
+      toast.error(res.data?.message || 'Transaksi Kanban Dibatalkan (Status: 99).', { icon: '⛔', duration: 4000 });
       const stateRes = await api.get('/api/operator/state');
       if (stateRes.data) setTelemetry(stateRes.data);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal trigger Reject Manual');
+      toast.error(err.response?.data?.detail || 'Gagal membatalkan transaksi Kanban');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -393,7 +396,7 @@ export default function OperatorInspection() {
     } catch {}
   };
 
-  const handleResolveNg = async (actionType = 'CONFIRM_NG') => {
+  const handleResolveNg = async (actionType = 'RETRY') => {
     soundManager.stopAll();
     setNgResolving(true);
     try {
@@ -401,10 +404,10 @@ export default function OperatorInspection() {
       if (res.data?.success) {
         soundManager.stopAll();
         setShowNgModal(false);
-        if (actionType === 'CONFIRM_NG') {
-          toast.error('Part Cacat (NG) Telah Dikonfirmasi!');
+        if (actionType === 'CONFIRM_REPLACE') {
+          toast.success('Part Cacat Dikonfirmasi. Silakan pasang Part Pengganti Baru!', { icon: '🚨' });
         } else {
-          toast.success('Alarm NG Dibatalkan (Bukan NG/Abaikan).');
+          toast.success('Alarm Dimatikan. Memulai Deteksi Ulang Part (Reposisi)...', { icon: '🔄' });
         }
         const stateRes = await api.get('/api/operator/state');
         if (stateRes.data) setTelemetry(stateRes.data);
@@ -501,12 +504,11 @@ export default function OperatorInspection() {
         onOpenLogoutModal={() => setShowLogoutModal(true)}
       />
 
-      {/* 2. ACTION TOOLBAR (Ukuran Nyaman untuk Touch & Klik) */}
+      {/* 2. ACTION TOOLBAR (Permanen, Disabled saat Standby, Aktif saat Transaksi) */}
       <InspectionToolbar
         isRunning={isRunning}
-        isManualMode={isManualMode}
-        onManualPass={handleManualPass}
-        onManualReject={handleManualReject}
+        isNg={isNg}
+        onOpenCancelKanban={handleOpenCancelModal}
       />
 
       {/* 3. LIVE VIDEO CAMERA STREAM CONTAINER WITH FLOATING POPUPS */}
@@ -526,12 +528,22 @@ export default function OperatorInspection() {
           onClose={handleCloseFlipModal}
         />
 
-        {/* DRAGGABLE FLOATING POPUP: NG ABNORMALITY & KONFIRMASI */}
+        {/* DRAGGABLE FLOATING POPUP: NG ABNORMALITY & 3 OPSI KEPUTUSAN */}
         <NgAlarmModal
           isOpen={showNgModal}
           telemetry={telemetry}
           ngResolving={ngResolving}
           onResolveNg={handleResolveNg}
+          onOpenCancelKanban={handleOpenCancelModal}
+        />
+
+        {/* DRAGGABLE FLOATING POPUP: SAFE CONFIRMATION BATALKAN KANBAN */}
+        <CancelKanbanModal
+          isOpen={showCancelModal}
+          telemetry={telemetry}
+          isCancelling={isCancelling}
+          onClose={() => setShowCancelModal(false)}
+          onConfirmCancel={handleCancelKanban}
         />
       </InspectionCameraFeed>
 

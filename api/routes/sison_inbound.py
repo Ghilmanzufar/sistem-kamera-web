@@ -90,7 +90,7 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
     if existing_trans:
         existing_trans.target_qty = qty
         existing_trans.qty_actual = 0
-        existing_trans.status = 2  # 2 = PROSES / RUNNING
+        existing_trans.status = 1  # 1 = PROSES / PROCESSING
         existing_trans.start_time = func.now()
     else:
         new_trans = Transaction(
@@ -101,7 +101,7 @@ def execute_sison_start(req: StartRequest, db: Session) -> dict:
             unique_no=unique_no,
             target_qty=qty,
             qty_actual=0,
-            status=2,
+            status=1,  # 1 = PROSES / PROCESSING
             start_time=func.now()
         )
         db.add(new_trans)
