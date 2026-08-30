@@ -1,0 +1,122 @@
+================================================================================
+          PANDUAN INSTALASI & DEPLOYMENT SISTEM KAMERA INSPEKSI AI
+                           (PC LOKAL PRODUKSI)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. PRASYARAT SOFTWARE DI PC PRODUKSI (HARUS TERPASANG DULU)
+--------------------------------------------------------------------------------
+Sebelum mengekstrak dan menjalankan sistem, pastikan software berikut sudah
+terinstall di Windows PC Produksi:
+
+1. Python (Versi 3.10.x atau 3.11.x)
+   - Download dari: https://www.python.org/downloads/
+   - [PENTING] Saat instalasi, WAJIB centang: "Add python.exe to PATH"
+
+2. PostgreSQL (Versi 14, 15, atau 16)
+   - Download dari: https://www.postgresql.org/download/windows/
+   - Catat password superuser 'postgres' saat instalasi (misal: user / admin123).
+
+3. Visual C++ Redistributable 2015-2022 (x64)
+   - Biasanya sudah ada di Windows, diperlukan untuk runtime OpenCV & ONNX.
+
+4. Kamera USB / Webcam
+   - Colokkan kamera USB inspeksi ke port USB PC.
+
+* CATATAN: Node.js TIDAK PERLU di-install di PC produksi, karena tampilan Web
+  (React) sudah di-build ke dalam folder "web_admin/dist" dan disajikan otomatis
+  oleh server Python FastAPI.
+
+
+--------------------------------------------------------------------------------
+2. DAFTAR FILE & FOLDER YANG DI-BUNGKUS KE FILE RAR
+--------------------------------------------------------------------------------
+[V] FILE & FOLDER YANG WAJIB DIMASUKKAN KE DALAM RAR:
+  + setup.bat                   (Script 1-klik pasang dependensi)
+  + start_system.bat            (Script 1-klik jalankan aplikasi)
+  + main.py                     (Entry point server)
+  + requirements.txt            (Daftar library Python)
+  + .env                        (File konfigurasi database & port)
+  + PANDUAN_INSTALASI_PC_PRODUKSI.txt (File panduan ini)
+  + Folder "api/"
+  + Folder "core/"
+  + Folder "database/"
+  + Folder "integrations/"
+  + Folder "weights/"           (Model AI .onnx dan .pt)
+  + Folder "uploads/"
+  + Folder "web_admin/dist/"    (Hasil build frontend)
+
+[X] FILE & FOLDER YANG JANGAN DIMASUKKAN (BIAR RINGAN & TIDAK ERROR):
+  - Folder "web_admin/node_modules/" (Ukuran besar ratusan MB, tidak dipakai)
+  - Folder "venv/"                   (Akan dibuat otomatis baru oleh setup.bat)
+  - Folder ".git/" & ".agents/"      (History git/agent, tidak diperlukan)
+  - Folder "__pycache__/"
+
+
+--------------------------------------------------------------------------------
+3. LANGKAH-LANGKAH INSTALASI DI PC PRODUKSI (3 LANGKAH)
+--------------------------------------------------------------------------------
+Setelah file RAR diekstrak di PC Produksi (misal di C:\sistem-kamera-web):
+
+LANGKAH 1: Buat Database di PostgreSQL
+1. Buka "pgAdmin 4" atau "SQL Shell (psql)".
+2. Jalankan perintah SQL berikut:
+   
+   CREATE DATABASE sugity_camera_db;
+
+   *(Skema tabel, relasi, user default, dan audio buzzer akan dibuat otomatis
+     oleh sistem saat aplikasi pertama kali dijalankan).*
+
+LANGKAH 2: Sesuaikan Password Database pada File .env
+1. Buka file ".env" menggunakan Notepad.
+2. Pastikan DB_PASSWORD sesuai dengan password PostgreSQL di PC tersebut:
+   
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=sugity_camera_db
+   DB_USER=postgres
+   DB_PASSWORD=masukkan_password_postgres_anda
+
+LANGKAH 3: Jalankan Setup & Start System
+1. Pastikan PC terhubung ke internet/hotspot sebentar.
+2. Dobel-klik file "setup.bat".
+   - Tunggu proses pembuatan 'venv' dan download dependensi selesai sampai
+     muncul pesan [BERHASIL].
+3. Dobel-klik file "start_system.bat".
+   - Server FastAPI & AI Engine akan berjalan.
+   - Browser default akan otomatis membuka: http://localhost:8000
+
+
+--------------------------------------------------------------------------------
+4. INFORMASI AKUN LOGIN BAWAAN (DEFAULT)
+--------------------------------------------------------------------------------
+1. AKUN ADMINISTRATOR / PENGAWAS:
+   - Username : admin
+   - NIK      : 123456
+   - Password : admin
+   - Akses    : Dashboard, Model AI, Rule, Setting Hardware, User Management.
+
+2. AKUN OPERATOR INSPEKSI:
+   - Username : operator1
+   - NIK      : 999001
+   - Password : password123
+   - Akses    : Kiosk Layar Inspeksi Kamera (Real-time Detection).
+
+
+--------------------------------------------------------------------------------
+5. TIPS PENGATURAN & TROUBLESHOOTING
+--------------------------------------------------------------------------------
+1. Memilih Kamera USB yang Aktif:
+   - Jika PC/Laptop memiliki lebih dari 1 kamera (misal webcam internal + USB),
+     login sebagai Admin -> Buka menu "Hardware & Kamera" -> Pilih Device Index
+     (0, 1, atau 2) -> Klik Simpan.
+
+2. Menjalankan Tanpa Internet:
+   - Internet hanya dibutuhkan sekali saja saat menjalankan "setup.bat".
+   - Untuk operasional sehari-hari ("start_system.bat"), sistem bekerja 100%
+     secara offline di jaringan lokal.
+
+3. Akses dari Monitor/Perangkat Lain di Jaringan yang Sama:
+   - Komputer lain / tablet di line produksi dapat mengakses UI melalui alamat:
+     http://[IP_PC_PRODUKSI]:8000
+================================================================================
