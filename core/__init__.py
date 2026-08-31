@@ -6,7 +6,8 @@ from .detector import (
     KameraProses,
     model_cache,
     log_inspeksi_db,
-    log_ng_db
+    log_ng_db,
+    extract_model_labels_dict
 )
 
 from .stream import stream_worker, CameraStreamWorker
@@ -22,6 +23,7 @@ __all__ = [
     "model_cache",
     "log_inspeksi_db",
     "log_ng_db",
+    "extract_model_labels_dict",
     "stream_worker",
     "CameraStreamWorker"
 ]

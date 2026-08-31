@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db, PartRule, Transaction, log_audit_event
 from api.auth import get_current_user_name
-from core import model_cache
+from core import model_cache, extract_model_labels_dict
 from .rule_routes import get_or_create_global_settings
 
 router = APIRouter()
@@ -156,14 +156,9 @@ def get_model_detail(part_no: str, db: Session = Depends(get_db)):
     # Fallback jika PartRule di DB belum terisi tapi file .pt ada
     if not components and os.path.exists(pt_path):
         try:
-            import torch
-            ckpt = torch.load(pt_path, map_location="cpu", weights_only=False)
-            names = None
-            if isinstance(ckpt, dict) and 'model' in ckpt:
-                raw = getattr(ckpt['model'], 'names', None)
-                if raw is not None:
-                    names = [str(v) for k, v in sorted(raw.items(), key=lambda x: int(x[0]))]
-            if names:
+            raw_dict = extract_model_labels_dict(pt_path)
+            if raw_dict:
+                names = [str(v) for k, v in sorted(raw_dict.items(), key=lambda x: int(x[0]))]
                 for label in names:
                     raw_lbl = str(label).strip()
                     first_tok = raw_lbl.split('-')[0].strip().upper() if '-' in raw_lbl else (raw_lbl.split('_')[0].strip().upper() if '_' in raw_lbl else raw_lbl[:1].upper())
@@ -220,14 +215,9 @@ def upload_model(
         # Auto-generate PartRule jika file adalah .pt
         if ext == '.pt':
             try:
-                import torch
-                ckpt = torch.load(file_path, map_location="cpu", weights_only=False)
-                names = None
-                if isinstance(ckpt, dict) and 'model' in ckpt:
-                    raw = getattr(ckpt['model'], 'names', None)
-                    if raw is not None:
-                        names = [str(v) for k, v in sorted(raw.items(), key=lambda x: int(x[0]))]
-                if names:
+                raw_dict = extract_model_labels_dict(file_path)
+                if raw_dict:
+                    names = [str(v) for k, v in sorted(raw_dict.items(), key=lambda x: int(x[0]))]
                     gs = get_or_create_global_settings(db)
                     db.query(PartRule).filter(PartRule.p_no == safe_part_no).delete()
                     db.flush()
@@ -235,6 +225,12 @@ def upload_model(
                         raw_lbl = str(label).strip()
                         first_tok = raw_lbl.split('-')[0].strip().upper() if '-' in raw_lbl else (raw_lbl.split('_')[0].strip().upper() if '_' in raw_lbl else raw_lbl[:1].upper())
                         detected_sisi = first_tok if first_tok in ['F', 'R', 'FRONT', 'REAR'] else (first_tok or "-")
+                        
+                        # Skip defect / NG labels agar tidak wajib terdeteksi saat inspeksi normal
+                        tokens = [t.lower() for t in re.split(r'[-_\s]+', raw_lbl)]
+                        if any(token in {'ng', 'defect', 'cacat', 'reject', 'broken', 'patah', 'scratch', 'dent', 'missing', 'crack', 'miss'} for token in tokens):
+                            continue
+
                         db.add(PartRule(
                             p_no=safe_part_no,
                             sisi=detected_sisi,
@@ -259,34 +255,26 @@ async def preview_model_labels(file: UploadFile = File(...)):
     if not file.filename.endswith('.pt'):
         return {"label_count": 0, "labels": {}, "note": "Preview label otomatis hanya tersedia untuk file .pt"}
     
-    try:
-        import torch
-    except ImportError:
-        raise HTTPException(status_code=500, detail="torch tidak terinstall di server")
-
     tmp = tempfile.NamedTemporaryFile(suffix=".pt", delete=False)
     try:
         shutil.copyfileobj(file.file, tmp)
         tmp.close()
 
-        ckpt = torch.load(tmp.name, map_location="cpu", weights_only=False)
-
-        names = None
-        if isinstance(ckpt, dict) and 'model' in ckpt:
-            raw = getattr(ckpt['model'], 'names', None)
-            if raw is not None:
-                names = {str(k): v for k, v in raw.items()}
-        
-        if names is None:
+        raw_dict = extract_model_labels_dict(tmp.name)
+        if not raw_dict:
             return {"label_count": 0, "labels": {}}
 
+        names = {str(k): v for k, v in raw_dict.items()}
         return {"label_count": len(names), "labels": names}
 
     except Exception as e:
         return {"label_count": 0, "labels": {}, "error": str(e)}
     finally:
         if os.path.exists(tmp.name):
-            os.unlink(tmp.name)
+            try:
+                os.unlink(tmp.name)
+            except Exception:
+                pass
 
 @router.put("/models/{part_no}")
 def rename_model(part_no: str, data: RenameModelSchema, db: Session = Depends(get_db), uname: str = Depends(get_current_user_name)):

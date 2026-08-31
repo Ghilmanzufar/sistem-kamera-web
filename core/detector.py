@@ -70,7 +70,7 @@ def log_ng_db(id_trans: str, part_no: str, image_path: str = None, operator_name
             "operator_name": operator_name
         })
 
-DEFECT_KEYWORDS = {"ng", "defect", "cacat", "reject", "broken", "patah", "scratch", "dent", "missing", "crack"}
+DEFECT_KEYWORDS = {"ng", "defect", "cacat", "reject", "broken", "patah", "scratch", "dent", "missing", "crack", "miss"}
 
 def is_defect_label(lbl: str, required_labels_set: set) -> bool:
     """
@@ -88,6 +88,44 @@ def is_defect_label(lbl: str, required_labels_set: set) -> bool:
     
     # 3. Cek apakah ada token kata utuh yang cocok persis dengan kata kunci defect
     return any(token in DEFECT_KEYWORDS for token in tokens)
+
+def extract_model_labels_dict(file_or_ckpt):
+    """
+    Ekstrak dictionary nama label {0: 'name', ...} dari checkpoint PyTorch YOLO (.pt).
+    Mendukung format standar Ultralytics, model stripped, checkpoint training dengan EMA (Exponential Moving Average),
+    maupun objek model PyTorch langsung.
+    """
+    try:
+        import torch
+        if isinstance(file_or_ckpt, str):
+            if not os.path.exists(file_or_ckpt):
+                return None
+            ckpt = torch.load(file_or_ckpt, map_location="cpu", weights_only=False)
+        else:
+            ckpt = file_or_ckpt
+
+        if isinstance(ckpt, dict):
+            # 1. Coba dari ckpt['model'] atau ckpt['ema']
+            model_obj = ckpt.get('model') or ckpt.get('ema')
+            if model_obj is not None and hasattr(model_obj, 'names') and model_obj.names:
+                return model_obj.names
+            # 2. Coba dari key 'names' langsung pada ckpt
+            if 'names' in ckpt and ckpt['names']:
+                return ckpt['names']
+        elif hasattr(ckpt, 'names') and ckpt.names:
+            return ckpt.names
+
+        # 3. Fallback Ultralytics YOLO loader jika file path berupa string
+        if isinstance(file_or_ckpt, str):
+            try:
+                yolo = YOLO(file_or_ckpt, verbose=False)
+                if hasattr(yolo, 'names') and yolo.names:
+                    return yolo.names
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"[EXTRACT_MODEL_LABELS_ERROR] {e}")
+    return None
 
 class ModelCache:
     """In-Memory LRU Model Cache dengan hot-reload otomatis jika file bobot .pt/.onnx diupdate."""

@@ -13,13 +13,14 @@ from .models import (
 )
 from .security import hash_password, verify_password
 from .migrations import auto_migrate_schema
-from .seeder import seed_default_users, auto_seed_camera_hardware, seed_default_audio_config
+from .seeder import seed_default_users, auto_seed_camera_hardware, seed_default_audio_config, auto_seed_part_rules_from_weights
 
 # Inisialisasi otomatis skema & data awal
 auto_migrate_schema()
 seed_default_users()
 auto_seed_camera_hardware()
 seed_default_audio_config()
+auto_seed_part_rules_from_weights()
 
 __all__ = [
     "engine",
@@ -40,5 +41,6 @@ __all__ = [
     "verify_password",
     "auto_migrate_schema",
     "seed_default_users",
-    "auto_seed_camera_hardware"
+    "auto_seed_camera_hardware",
+    "auto_seed_part_rules_from_weights"
 ]
